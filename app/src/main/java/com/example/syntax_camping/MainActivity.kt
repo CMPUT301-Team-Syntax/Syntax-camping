@@ -16,6 +16,8 @@ import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 // Andrew's first contribution:
 // Some comments as a test
 
+// test 2
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
