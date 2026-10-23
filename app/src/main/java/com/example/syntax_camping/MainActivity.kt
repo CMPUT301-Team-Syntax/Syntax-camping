@@ -1,7 +1,6 @@
 package com.example.syntax_camping
 
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,9 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
-
-
-
 // Andrew's first contribution:
 // Some comments as a test
 
@@ -25,21 +21,19 @@ import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
+        val db = Database()
+        val deviceId = db.getDeviceId(this)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
-
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-
-                        name = "Android",
-
+                        name = deviceId,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
-
             }
         }
     }
@@ -47,6 +41,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
+
+
     Text(
         text = "Hello $name!",
         modifier = modifier

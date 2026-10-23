@@ -1,5 +1,7 @@
 package com.example.syntax_camping
 
+import android.content.Context
+import android.provider.Settings
 import com.google.firebase.firestore.FirebaseFirestore
 
 class Database {
@@ -20,6 +22,14 @@ class Database {
 
         return true
 
+    }
+
+
+    public fun getDeviceId(context: Context): String {
+        return Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ANDROID_ID
+        ) ?: "unknown"
     }
 
 
