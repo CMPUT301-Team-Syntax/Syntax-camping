@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "994969226547",
+    "project_id": "syntaxcamping",
+    "storage_bucket": "syntaxcamping.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994969226547:android:e0a0ae62ab3a10a9d58246",
+        "android_client_info": {
+          "package_name": "com.example.syntax_camping"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYqo5K46ocHeliPCdVUtplXOPcK9Zh7mo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
