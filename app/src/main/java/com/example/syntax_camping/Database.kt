@@ -13,7 +13,6 @@ class Database {
 
     public fun userExistsByDeviceId(devId: String): Boolean {
 
-
         val usersRef = db.collection("users")
         val query = usersRef.whereEqualTo("deviceId", devId)
 
@@ -22,5 +21,11 @@ class Database {
         return true
 
     }
+
+
+
+    //
+    // todo: print current campsites
+
 
 }
