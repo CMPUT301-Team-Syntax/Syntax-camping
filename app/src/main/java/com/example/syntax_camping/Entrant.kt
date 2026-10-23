@@ -1,6 +1,6 @@
 package com.example.syntax_camping
 
-class Entrant(name:String): User(name) {
+class Entrant(name:String): User(name, 0) {
 
     fun addReservation(/*reservation: Reservation*/){
         //ToDo

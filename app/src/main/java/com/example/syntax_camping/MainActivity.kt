@@ -13,16 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
-// Andrew's first contribution:
-// Some comments as a test
-
-// test 2
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val db = Database()
         val deviceId = db.getDeviceId(this)
+
+        Startup(db, deviceId)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -37,6 +34,27 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+// Startup routine:
+// Called by MainActivity. Takes reference to Database instance and the user's DeviceId
+
+fun Startup(db: Database, devId: String) {
+
+    db.userExistsByDeviceId(devId) { exists ->
+        if (exists) {
+
+            // Do whatever we need to do when a user already exists
+
+        } else {
+
+            // Create a new user and upload to database
+            val aNewUser = User("New User", 0)
+            db.createNewUser(devId, aNewUser)
+
+        }
+    }
+
 }
 
 @Composable

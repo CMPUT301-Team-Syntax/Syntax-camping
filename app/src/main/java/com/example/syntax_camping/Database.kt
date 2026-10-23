@@ -4,38 +4,98 @@ import android.content.Context
 import android.provider.Settings
 import com.google.firebase.firestore.FirebaseFirestore
 
+// class Database
+// author: Andrew
+// a class used to handle all database data requests
+
+// NOTE: we must use callbacks as firebase calls are asynchronous
+// usage:
+// userExistsByDeviceId(someDeviceId) { -> exists
+//      if (exists)
+//          code to run if user exists
+//      else
+//          code to run if not
+// }
+
 class Database {
 
-    // Andrew
-    // userExistsByDeviceId(String):
-    // returns 1 if user exists with specified deviceId
-    // returns 0 if not
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
-    private var db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    // userExistsByDeviceId
+    // calls callback function if there is a document with matching document id to device id
 
-    public fun userExistsByDeviceId(devId: String): Boolean {
-
-        val usersRef = db.collection("users")
-        val query = usersRef.whereEqualTo("deviceId", devId)
-
-        // return if !query is emprty
-
-        return true
-
+    fun userExistsByDeviceId(devId: String, callback: (Boolean) -> Unit) {
+        db.collection("users")
+            .document(devId)
+            .get()
+            .addOnSuccessListener { document ->
+                callback(document.exists())
+            }
+            .addOnFailureListener {
+                callback(false)
+            }
     }
 
+    // getDeviceId
+    // returns a string representation of user's device id
 
-    public fun getDeviceId(context: Context): String {
+    fun getDeviceId(context: Context): String {
         return Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ANDROID_ID
         ) ?: "unknown"
     }
 
+    // updateUser
+    // takes in a device id (this will be the document id)
+    // and sets the field according to userDetails
 
+    fun updateUser(devId: String, userDetails: User) {
+        db.collection("users")
+            .document(devId)
+            .update(
+                mapOf(
+                    "displayName" to userDetails.name,
+                    "userType" to userDetails.userType
+                )
+            )
+    }
 
-    //
-    // todo: print current campsites
+    // createNewUser
+    // takes a device id, creates new document with document id equal to device id
+    // sets fields equal to userDetails
 
+    fun createNewUser(devId: String, userDetails: User) {
+        db.collection("users")
+            .document(devId)
+            .set(
+                mapOf(
+                    "displayName" to userDetails.name,
+                    "userType" to userDetails.userType
+                )
+            )
+    }
 
+    // fetchUserDetailsByDeviceId
+    // calls callback function when a matching document is found.
+
+    fun fetchUserDetailsByDeviceId(devId: String, callback: (User) -> Unit) {
+        db.collection("users")
+            .document(devId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val name = document.getString("displayName") ?: "New User"
+                    val userType = document.getLong("userType")?.toInt() ?: 0
+
+                    callback(User(name, userType))
+                } else {
+                    callback(User("New User", 0))
+                }
+            }
+            .addOnFailureListener { e ->
+                println("Error fetching user: $e")
+                callback(User("New User", 0))
+            }
+    }
 }
