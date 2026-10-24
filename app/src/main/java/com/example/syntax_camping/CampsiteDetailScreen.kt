@@ -1,7 +1,9 @@
 package com.example.syntax_camping
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,38 +11,123 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
 fun CampsiteDetailsScreen(navController: NavController){
-
+/*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
+    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
     Scaffold(
 
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color.White), // Set the background color to white
         containerColor = Color.White,
+        topBar = { // top bar with back button and notification icon
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                //icon button for back button, template for adding icons
+                IconButton(
+
+                    onClick = { /* TODO: Navigate to notifications */ },
+                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
+
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.back),
+                        contentDescription = "back button",
+                        tint = Color.Unspecified  //without it the icon would be black
+                    )
+                }
+
+                IconButton(onClick = { /* TODO: Navigate to notifications */ },
+                    modifier = Modifier.size(100.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.notification),
+                        contentDescription = "notifications",
+                        tint = Color.Unspecified
+                    )
+                }
+            }
+        },
 
         bottomBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .background(Color.Yellow)
+                    .background(Color(0xFFE2AFAF))
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
+                IconButton(onClick = { /* TODO: Navigate to Search */ },
+                    modifier = Modifier.size(100.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_search),
+                        contentDescription = "Search",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
+                    modifier = Modifier.size(100.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.reservations),
+                        contentDescription = "Reservations",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .clickable { /* TODO: Navigate to Reservations */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.account),
+                        contentDescription = "Account",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(onClick = { /* TODO: Navigate to Settings */ },
+                        modifier = Modifier.size(100.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = "Settings",
+                        tint = Color.Unspecified,
+                    )
+                }
+
             }
         }
     ) { innerPadding ->
+
+        //inside the scaffold, this would be the content of the screen, start editing screen content from in here
 
         Column(
             modifier = Modifier
