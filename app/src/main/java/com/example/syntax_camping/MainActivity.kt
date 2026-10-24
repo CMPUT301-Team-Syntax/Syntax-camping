@@ -26,51 +26,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             SyntaxcampingTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = deviceId,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    SyntaxCamping(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
-    }
-}
-
-// Startup routine:
-// Called by MainActivity. Takes reference to Database instance and the user's DeviceId
-
-fun Startup(db: Database, devId: String) {
-
-    db.userExistsByDeviceId(devId) { exists ->
-        if (exists) {
-
-            // Do whatever we need to do when a user already exists
-
-        } else {
-
-            // Create a new user and upload to database
-            val aNewUser = User("New User", 0)
-            db.createNewUser(devId, aNewUser)
-
-        }
-    }
-
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-
-
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SyntaxcampingTheme {
-        Greeting("Android")
     }
 }
