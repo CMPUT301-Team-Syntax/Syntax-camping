@@ -10,7 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 // NOTE: we must use callbacks as firebase calls are asynchronous
 // usage:
-// userExistsByDeviceId(someDeviceId) { -> exists
+// userExistsByDeviceId(someDeviceId) { exists ->
 //      if (exists)
 //          code to run if user exists
 //      else
@@ -88,14 +88,14 @@ class Database {
                     val name = document.getString("displayName") ?: "New User"
                     val userType = document.getLong("userType")?.toInt() ?: 0
 
-                    callback(User(name, userType))
+                    callback(User(name, devId, userType))
                 } else {
-                    callback(User("New User", 0))
+                    callback(User("New User", devId, 0))
                 }
             }
             .addOnFailureListener { e ->
                 println("Error fetching user: $e")
-                callback(User("New User", 0))
+                callback(User("New User", devId, 0))
             }
     }
 }

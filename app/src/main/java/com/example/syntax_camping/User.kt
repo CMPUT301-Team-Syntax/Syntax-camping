@@ -1,18 +1,23 @@
 package com.example.syntax_camping
 
-open class User(name: String, deviceID: String, userType: Int) {
-    fun addDetails(){
-        //ToDo
-    }
-    fun updateDetails(){
-        //ToDo
-    }
-    fun storeSettings(){
-    //TODO
+open class User(
+    var name: String,
+    val deviceID: String,
+    var userType: Int
+) {
+    fun addDetails() {
+        // TODO
     }
 
-    fun getLocation(){
-        //ToDO
+    fun updateDetails() {
+        // TODO
     }
 
+    fun storeSettings() {
+        // TODO
+    }
+
+    fun getLocation() {
+        // TODO
+    }
 }

@@ -42,7 +42,15 @@ fun SearchHomeScreen(navController: NavController){
                 //icon button for back button, template for adding icons
                 IconButton(
 
-                    onClick = { /* TODO: Navigate to notifications */ },
+                    onClick = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate("MyCampsites") {
+                                launchSingleTop = true
+                            }
+                        }
+                    },
                     modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
 
                 ) {
@@ -53,11 +61,17 @@ fun SearchHomeScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
+                IconButton(
+                    onClick = {
+                        navController.navigate("Notifications") {
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.size(100.dp)
+                ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
+                        painter = painterResource(R.drawable.notification),
+                        contentDescription = "Notifications",
                         tint = Color.Unspecified
                     )
                 }

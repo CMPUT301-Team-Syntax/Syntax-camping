@@ -46,7 +46,15 @@ fun SettingsScreen(navController: NavController){
                 //icon button for back button, template for adding icons
                 IconButton(
 
-                    onClick = { /* TODO: Navigate to notifications */ },
+                    onClick = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate("Search") {
+                                launchSingleTop = true
+                            }
+                        }
+                    },
                     modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
 
                 ) {
