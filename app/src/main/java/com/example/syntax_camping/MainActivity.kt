@@ -13,46 +13,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
-// Andrew's first contribution:
-// Some comments as a test
-
-// test 2
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val db = Database()
         val deviceId = db.getDeviceId(this)
 
+        Startup(db, deviceId)
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = deviceId,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    SyntaxCamping(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-
-
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SyntaxcampingTheme {
-        Greeting("Android")
     }
 }
