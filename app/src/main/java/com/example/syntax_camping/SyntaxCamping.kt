@@ -12,8 +12,12 @@ fun SyntaxCamping(
 ){
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "home"){
-        composable("home") { CampsiteDetailsScreen(navController) }
+    NavHost(navController = navController, startDestination = "Search"){
+        composable("home") { CampsiteDetailsScreen(navController)}
+        composable("Settings") { SettingsScreen(navController)}
+        composable("Search") { SearchHomeScreen(navController)}
+        composable("Reservations") { ReservationsScreen(navController)}
+        composable("Profile") { ProfileScreen(navController)}
 
     }
 
