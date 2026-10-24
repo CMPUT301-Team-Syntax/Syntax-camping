@@ -11,7 +11,8 @@ fun SyntaxCamping(
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
-
+//PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
+    //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
     NavHost(navController = navController, startDestination = "Search"){
         composable("home") { CampsiteDetailsScreen(navController)}
         composable("Settings") { SettingsScreen(navController)}
