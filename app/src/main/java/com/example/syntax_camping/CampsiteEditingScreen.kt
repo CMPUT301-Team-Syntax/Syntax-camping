@@ -26,6 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+//TO be added to the correct Navigation calss (ie syntax camping
+/*
+At Top var selectedCampsite by remember {
+        mutableStateOf<Campsite?>(null)
+    }
+composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
+            campsite = selectedCampsite)}
+
+* */
 import androidx.navigation.NavController
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.rememberScrollState
@@ -36,12 +45,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import kotlin.String
 
-//TO be added to the correct Navigation calss (ie syntax camping
-/*
-composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
-            campsite = selectedCampsite)}
 
-* */
 @Composable
 fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
