@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="58dp"
+    android:height="58dp"
+    android:viewportWidth="58"
+    android:viewportHeight="58">
+  <!-- Pink background circle -->
+  <path
+      android:pathData="M0,29C0,12.984 12.984,0 29,0C45.016,0 58,12.984 58,29C58,45.016 45.016,58 29,58C12.984,58 0,45.016 0,29Z"
+      android:fillColor="#E2AFAF"/>
+  <!-- Bold letter "L" -->
+  <path
+      android:pathData="M 22,17 H 28 V 35 H 38 V 41 H 22 Z"
+      android:fillColor="#000000"/>
+</vector>
