@@ -1,4 +1,7 @@
 package com.example.syntax_camping
 
-class CampsiteDetailslotteryScreen {
-}
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
+
+@Composable
+fun CampsiteDetailslotteryScreen (navController: NavController){}

@@ -25,8 +25,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
+//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+//                    campsiteOwnerScreen()
+//                    SyntaxCamping(modifier = Modifier.padding(innerPadding))
+//                }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    SyntaxCamping(modifier = Modifier.padding(innerPadding))
+                    campsiteOwnerScreen(Modifier.padding(innerPadding))
                 }
             }
         }

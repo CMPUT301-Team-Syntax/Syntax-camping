@@ -1,4 +1,9 @@
 package com.example.syntax_camping
 
-class CampsiteSettingsScreen {
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
+
+@Composable
+fun CampsiteSettingsScreen(navController: NavController){
+
 }
