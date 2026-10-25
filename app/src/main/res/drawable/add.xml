@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="58dp"
+    android:height="58dp"
+    android:viewportWidth="58"
+    android:viewportHeight="58">
+  <!-- Outer circle outline -->
+  <path
+      android:pathData="M 29,6 A 23,23 0 1,0 29,52 A 23,23 0 1,0 29,6 Z"
+      android:strokeColor="#1C1B1F"
+      android:strokeWidth="3"
+      android:fillColor="#00000000"/>
+  <!-- Plus sign -->
+  <path
+      android:pathData="M 19,29 H 39 M 29,19 V 39"
+      android:strokeColor="#1C1B1F"
+      android:strokeWidth="3.5"
+      android:strokeLineCap="round"/>
+</vector>

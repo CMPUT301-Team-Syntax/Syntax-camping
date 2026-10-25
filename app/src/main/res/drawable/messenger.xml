@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="58dp"
+    android:height="58dp"
+    android:viewportWidth="58"
+    android:viewportHeight="58">
+  <!-- Pink background circle -->
+  <path
+      android:pathData="M0,29C0,12.984 12.984,0 29,0C45.016,0 58,12.984 58,29C58,45.016 45.016,58 29,58C12.984,58 0,45.016 0,29Z"
+      android:fillColor="#E2AFAF"/>
+  <!-- Chat message bubble -->
+  <path
+      android:pathData="M18,19 C16.34,19 15,20.34 15,22 V33 C15,34.66 16.34,36 18,36 H20 V41 L25,36 H40 C41.66,36 43,34.66 43,33 V22 C43,20.34 41.66,19 40,19 Z"
+      android:strokeColor="#1C1B1F"
+      android:strokeWidth="2.5"
+      android:fillColor="#00000000"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
+</vector>
