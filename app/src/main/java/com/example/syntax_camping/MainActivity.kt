@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         val db = Database()
         val deviceId = db.getDeviceId(this)
 
-        Startup(db, deviceId)
+        //Startup(db, deviceId)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

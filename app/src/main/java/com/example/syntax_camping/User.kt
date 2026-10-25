@@ -1,6 +1,8 @@
 package com.example.syntax_camping
 
-open class User(name: String, deviceID: String, userType: Int) {
+open class User(name: String, userType: Int) {
+    var name = name
+    var userType = userType
     fun addDetails(){
         //ToDo
     }
