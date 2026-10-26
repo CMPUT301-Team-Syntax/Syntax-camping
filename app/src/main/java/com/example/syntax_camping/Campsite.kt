@@ -14,6 +14,23 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
     private var _maxOcc = maxOcc
     private val _tags =tags
     private var _images = mutableListOf<Photo>()
+    private var rating: Float = 0.0f
+
+    private var raters = 0
+
+
+
+
+
+
+
+
+    //make a function to get a main photo for campsite summary card
+
+
+
+
+
     fun getName(): String{
         return _name
     }
@@ -77,6 +94,7 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
     fun getPhotos(): MutableList<Photo>{
         return _images
     }
+
     //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
     fun getNextPhoto():String{
         if(_images.size == 0) {
@@ -111,6 +129,10 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
     //resets the photo index, should be called each time you leavve a page with an image caraousel
     fun resetIndex(){
         _currImageIndex = 0
+    }
+
+    fun getRating():Float{
+        return rating
     }
 
 
