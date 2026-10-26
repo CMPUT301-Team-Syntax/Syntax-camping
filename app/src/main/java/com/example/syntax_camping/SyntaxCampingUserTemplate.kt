@@ -22,8 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
-fun ProfileScreen(navController: NavController) {
-
+fun SynTaxCampingUserTemplate(navController: NavController){
+    /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
+    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
     Scaffold(
 
         modifier = Modifier
@@ -76,7 +77,7 @@ fun ProfileScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                IconButton(onClick = { navController.navigate("Search") },
+                IconButton(onClick = { /* TODO: Navigate to Search */ },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_search),
@@ -85,7 +86,7 @@ fun ProfileScreen(navController: NavController) {
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Reservations") },
+                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.reservations),
@@ -94,17 +95,17 @@ fun ProfileScreen(navController: NavController) {
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Profile") },
+                IconButton(onClick = { /* TODO: Navigate to Settings */ },
                     modifier = Modifier.size(100.dp)
-                ){
+                ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.account_tapped),
+                        painter = painterResource(id = R.drawable.account),
                         contentDescription = "Account",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Settings") },
+                IconButton(onClick = { /* TODO: Navigate to Settings */ },
                     modifier = Modifier.size(100.dp)
                 ) {
                     Icon(

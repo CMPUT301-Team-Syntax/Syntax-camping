@@ -7,10 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.syntax_camping.screens.CampsiteOwnerScreen
+import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,13 +24,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    campsiteOwnerScreen()
-//                    SyntaxCamping(modifier = Modifier.padding(innerPadding))
-//                }
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    campsiteOwnerScreen(Modifier.padding(innerPadding))
+
+                val isCampsiteOwner = true // change this if you want to test a different screen
+
+                if (isCampsiteOwner) {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        CampsiteOwnerScreen((Modifier.padding(innerPadding)))
+                    }
                 }
+
+                else {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        SyntaxCamping((Modifier.padding(innerPadding))) }
+                }
+
+
             }
         }
     }
