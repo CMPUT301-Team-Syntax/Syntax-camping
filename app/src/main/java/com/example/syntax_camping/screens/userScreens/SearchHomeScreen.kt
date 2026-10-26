@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.UserScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.syntax_camping.R
 
 @Composable
-fun ReservationsScreen(navController: NavController) {
+fun SearchHomeScreen(navController: NavController){
     Scaffold(
 
         modifier = Modifier
@@ -78,7 +79,7 @@ fun ReservationsScreen(navController: NavController) {
                 IconButton(onClick = { navController.navigate("Search") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
+                        painter = painterResource(id = R.drawable.search_tapped),
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
@@ -87,7 +88,7 @@ fun ReservationsScreen(navController: NavController) {
                 IconButton(onClick = { navController.navigate("Reservations") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.circle),
+                        painter = painterResource(id = R.drawable.reservations),
                         contentDescription = "Reservations",
                         tint = Color.Unspecified
                     )

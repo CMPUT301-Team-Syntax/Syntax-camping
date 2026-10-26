@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.UserScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,17 +14,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.syntax_camping.R
 
 @Composable
-fun CampsiteDetailsScreen(navController: NavController){
-/*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
-    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
+fun ReservationsScreen(navController: NavController) {
     Scaffold(
 
         modifier = Modifier
@@ -77,7 +76,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                IconButton(onClick = { /* TODO: Navigate to Search */ },
+                IconButton(onClick = { navController.navigate("Search") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_search),
@@ -86,18 +85,18 @@ fun CampsiteDetailsScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
+                IconButton(onClick = { navController.navigate("Reservations") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.reservations),
+                        painter = painterResource(id = R.drawable.circle),
                         contentDescription = "Reservations",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
+                IconButton(onClick = { navController.navigate("Profile") },
                     modifier = Modifier.size(100.dp)
-                ) {
+                ){
                     Icon(
                         painter = painterResource(id = R.drawable.account),
                         contentDescription = "Account",
@@ -105,8 +104,8 @@ fun CampsiteDetailsScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                        modifier = Modifier.size(100.dp)
+                IconButton(onClick = { navController.navigate("Settings") },
+                    modifier = Modifier.size(100.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_settings),

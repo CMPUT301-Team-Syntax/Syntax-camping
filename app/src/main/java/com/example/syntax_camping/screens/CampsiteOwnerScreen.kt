@@ -1,11 +1,15 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.screens
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailslotteryScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHomeScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteProfileScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteSettingsScreen
 
 
 @Composable
