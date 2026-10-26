@@ -10,6 +10,7 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
+import com.example.syntax_camping.screens.userScreens.CampsiteSummaryScreen
 
 @Composable
 fun SyntaxCamping(
@@ -34,6 +35,10 @@ fun SyntaxCamping(
         }
         composable("Profile") {
             ProfileScreen(navController)
+        }
+
+        composable("test") {
+            CampsiteSummaryScreen(navController)
         }
 
     }

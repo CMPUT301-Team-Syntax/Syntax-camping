@@ -1,20 +1,26 @@
 package com.example.syntax_camping.screens.userScreens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.navArgument
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.Rating
@@ -61,14 +67,70 @@ fun CampsiteSummaryCard(campsite: Campsite){
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ){
+
+                        Row(
+                            modifier = Modifier.clickable(
+                                onClick = { campsite.getName() } //edit for map
+                            )
+                        ){
+
+                            Icon(
+                                painter = painterResource(id = R.drawable.location_on),
+                                contentDescription = "location",
+                                tint = Color.Unspecified
+                            )
+
+                            Text(
+                                text = campsite.getLocation(),
+                            )
+                        }
 
 
-            // 1. Title Text ("Dolor Campsite")
-            // 2. Location Row (Pin Icon + "Edmonton")
-            // 3. Info Text ("9 people max")
-            // 4. Waiting Text ("304 people currently waiting")
-            // 5. Days Left Text ("5 days left")
-            // 6. Clickable Text ("Apply now")
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ){
+                            Text(
+                                text = "${campsite.getmaxOcc()} people max",
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ){
+                        Text(
+                            text = "20 people waiting",
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ){
+                        Text(
+                            text = "5 days left",
+                        )
+                    }
+
+
+
+            //  Clickable Text ("Apply now") should we still have this?
         }
     }
 

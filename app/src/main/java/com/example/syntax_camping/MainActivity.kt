@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SyntaxcampingTheme {
 
-                val isCampsiteOwner = true // change this if you want to test a different screen
+                val isCampsiteOwner = false // change this if you want to test a different screen
 
                 if (isCampsiteOwner) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
