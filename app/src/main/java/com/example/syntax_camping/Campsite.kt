@@ -1,10 +1,14 @@
 package com.example.syntax_camping
+
+import android.R.attr.description
+import android.R.attr.name
+
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -112,7 +116,6 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
     fun resetIndex(){
         _currImageIndex = 0
     }
-
 
 
 }
