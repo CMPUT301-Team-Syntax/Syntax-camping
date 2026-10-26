@@ -10,7 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHomeScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteProfileScreen
