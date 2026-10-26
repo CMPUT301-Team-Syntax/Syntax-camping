@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.syntax_camping.screens.campsiteOwnerScreen
+import com.example.syntax_camping.screens.CampsiteOwnerScreen
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
@@ -25,11 +25,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             SyntaxcampingTheme {
 
-                val isCampsiteOwner = false // change this if you want to test a different screen
+                val isCampsiteOwner = true // change this if you want to test a different screen
 
                 if (isCampsiteOwner) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        campsiteOwnerScreen((Modifier.padding(innerPadding)))
+                        CampsiteOwnerScreen((Modifier.padding(innerPadding)))
                     }
                 }
 
