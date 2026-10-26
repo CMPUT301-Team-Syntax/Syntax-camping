@@ -117,6 +117,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             ) {
 
                 //icon button for back button, template for adding icons
+
                 IconButton(
 
                     onClick = { /* TODO: Navigate to notifications */ },
@@ -130,14 +131,28 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.Unspecified
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ){
+                    IconButton(onClick = { /* TODO: Navigate to add */ },
+                        modifier = Modifier.size(40 .dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.add),
+                            contentDescription = "notifications",
+                            tint = Color.Unspecified
+                        )
+                    }
+                    IconButton(onClick = { /* TODO: Navigate to notifications */ },
+                        modifier = Modifier.size(100.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.notification),
+                            contentDescription = "notifications",
+                            tint = Color.Unspecified
+                        )
+                    }
                 }
+
             }
         },
 
@@ -152,27 +167,37 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                IconButton(onClick = { /* TODO: Navigate to Search */ },
-                    modifier = Modifier.size(100.dp)) {
+
+                IconButton(onClick = { navController.navigate("home") },
+                    modifier = Modifier.size(80.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
+                        painter = painterResource(id = R.drawable.home),
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
-                    modifier = Modifier.size(100.dp)) {
+                IconButton(onClick = { navController.navigate("lottery") },
+                    modifier = Modifier.size(80.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.reservations),
+                        painter = painterResource(id = R.drawable.lottery),
+                        contentDescription = "Search",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(onClick = { navController.navigate("messenger") },
+                    modifier = Modifier.size(80.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.messenger),
                         contentDescription = "Reservations",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                    modifier = Modifier.size(100.dp)
-                ) {
+                IconButton(onClick = { navController.navigate("Profile") },
+                    modifier = Modifier.size(80.dp)
+                ){
                     Icon(
                         painter = painterResource(id = R.drawable.account),
                         contentDescription = "Account",
@@ -180,8 +205,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                    modifier = Modifier.size(100.dp)
+                IconButton(onClick = { navController.navigate("Settings") },
+                    modifier = Modifier.size(80.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_settings),

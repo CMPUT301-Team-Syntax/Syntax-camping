@@ -59,7 +59,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ){
-                    IconButton(onClick = { /* TODO: Navigate to add */ },
+                    IconButton(onClick = {navController.navigate( "UpdateCamp")},
                         modifier = Modifier.size(40 .dp)) {
                         Icon(
                             painter = painterResource(id = R.drawable.add),
