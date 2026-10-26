@@ -18,6 +18,11 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private var _maxOcc = maxOcc
     private val _tags =tags
     private var _images = mutableListOf<Photo>()
+    private var _documentId= documentId
+
+    fun getDocumentId(): String{
+        return _documentId
+    }
     fun getName(): String{
         return _name
     }
@@ -116,6 +121,5 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun resetIndex(){
         _currImageIndex = 0
     }
-
 
 }
