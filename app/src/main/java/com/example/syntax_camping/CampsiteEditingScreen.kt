@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import android.R.attr.text
 //TO be added to the correct Navigation calss (ie syntax camping
 /*
 At Top var selectedCampsite by remember {
@@ -415,7 +416,10 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     error = "Max Int must be a string"
                                 } else {
                                     error = ""
+                                    val documentID = ""
+                                   // val documentID = text.replace("\\s".toRegex(), "")
                                     val newCampsite = Campsite(
+                                        documentID,
                                         newCampName,
                                         newCampLocation,
                                         newCampDescription,
@@ -449,6 +453,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     campsite.updateLocation(newCampLocation)
                                     campsite.updateDescription(newCampDescription)
                                     campsite.updateMaxOcc(intNewMaxOcc)
+                                    campsite.updateTag(newTags)
 
 
                                 }
