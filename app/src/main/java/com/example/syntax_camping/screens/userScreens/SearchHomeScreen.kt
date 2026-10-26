@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.UserScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.syntax_camping.R
 
 @Composable
 fun SearchHomeScreen(navController: NavController){

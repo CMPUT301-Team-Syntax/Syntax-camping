@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.UserScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,9 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.syntax_camping.R
 
 @Composable
-fun CampsiteOwnerHomeScreen (navController: NavController){
+fun SettingsScreen(navController: NavController){
     Scaffold(
 
         modifier = Modifier
@@ -41,7 +41,6 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             ) {
 
                 //icon button for back button, template for adding icons
-
                 IconButton(
 
                     onClick = { /* TODO: Navigate to notifications */ },
@@ -55,28 +54,14 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ){
-                    IconButton(onClick = {navController.navigate( "UpdateCamp")},
-                        modifier = Modifier.size(40 .dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                        modifier = Modifier.size(100.dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.notification),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
+                IconButton(onClick = { /* TODO: Navigate to notifications */ },
+                    modifier = Modifier.size(100.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.notification),
+                        contentDescription = "notifications",
+                        tint = Color.Unspecified
+                    )
                 }
-
             }
         },
 
@@ -91,36 +76,26 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-
-                IconButton(onClick = { navController.navigate("home") },
-                    modifier = Modifier.size(80.dp)) {
+                IconButton(onClick = { navController.navigate("Search") },
+                    modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.home),
+                        painter = painterResource(id = R.drawable.ic_search),
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("lottery") },
-                    modifier = Modifier.size(80.dp)) {
+                IconButton(onClick = { navController.navigate("Reservations") },
+                    modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.lottery),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("messenger") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.messenger),
+                        painter = painterResource(id = R.drawable.reservations),
                         contentDescription = "Reservations",
                         tint = Color.Unspecified
                     )
                 }
 
                 IconButton(onClick = { navController.navigate("Profile") },
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(100.dp)
                 ){
                     Icon(
                         painter = painterResource(id = R.drawable.account),
@@ -130,10 +105,10 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                 }
 
                 IconButton(onClick = { navController.navigate("Settings") },
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(100.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
+                        painter = painterResource(id = R.drawable.settings_tapped),
                         contentDescription = "Settings",
                         tint = Color.Unspecified,
                     )
@@ -141,7 +116,9 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
 
             }
         }
-    ){ innerPadding ->
+    ) { innerPadding ->
+
+        //inside the scaffold, this would be the content of the screen, start editing screen content from in here
 
         Column(
             modifier = Modifier
@@ -161,26 +138,4 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-
-    // displaying the camp
-
 }
-
-@Composable
-fun CampRow(campsiteName: String, campsiteLocation: String, campsiteLotteryStatus: String){
-    Row(){
-        Text(text = campsiteName)
-    }
-    Row(){
-        Text(text = campsiteLocation,)
-    }
-    Row(){
-        Text(text = campsiteLotteryStatus,)
-    }
-
-}
-
-
-
-
-

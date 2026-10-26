@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +44,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.Photo
+import com.example.syntax_camping.R
 import kotlin.String
 
 

@@ -99,4 +99,28 @@ class Database {
                 callback(User("New User", 0))
             }
     }
+
+    fun createNewCampsite(campsite: Campsite) {
+        db.collection("campsites")
+            .document(campsite.getDocumentId())
+            .set(
+                mapOf(
+                    "name" to campsite.getName(),
+                    "location" to campsite.getLocation(),
+                    "description" to campsite.getDescription()
+                )
+            )
+    }
+
+    fun updateCampsite(campsite: Campsite) {
+        db.collection("campsites")
+            .document(campsite.getDocumentId())
+            .update(
+                mapOf(
+                    "name" to campsite.getName(),
+                    "location" to campsite.getLocation(),
+                    "description" to campsite.getDescription()
+                )
+            )
+    }
 }
