@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 /*
 * This class takes as argument a URL for an image. since images are kind of wierd to handle in Kotlin I made a sepertae class for them, so for profile picture, etc use an image
  */
-class Image(url: String) {
+class Photo(url: String) {
     private val _url = url
     @Composable
     fun Displayimage() {
@@ -15,6 +15,9 @@ class Image(url: String) {
             contentDescription = "Description of the image",
             modifier = Modifier.fillMaxWidth()
         )
+    }
+    fun uploadUserImage(){
+
     }
     fun getUrl(): String{
         return _url
