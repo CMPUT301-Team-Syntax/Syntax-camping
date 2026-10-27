@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
-import android.R.attr.text
 //TO be added to the correct Navigation calss (ie syntax camping
 /*
 At Top var selectedCampsite by remember {
@@ -46,8 +45,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteRepository
-import com.example.syntax_camping.Photo
 import com.example.syntax_camping.R
 import kotlin.String
 
@@ -56,12 +53,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import com.example.syntax_camping.PhotoPicker
 //import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+
 @Composable
 fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/

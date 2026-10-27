@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
