@@ -11,12 +11,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHomeScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteSettingsScreen
+import androidx.compose.runtime.LaunchedEffect
 
 
 @Composable
@@ -24,9 +26,11 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteSettingsScreen
 fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
 
     val navController = rememberNavController()
-    var selectedCampsite by remember {
-        mutableStateOf<Campsite?>(null)
-    }
+    var isLoading by remember { mutableStateOf(true) }
+    var rp = CampsiteRepository()
+    var documentId = "Test12"
+    var selCampsite by remember { mutableStateOf<Campsite?>(null) }
+
 
     NavHost(navController = navController, startDestination = "campsiteOwner"){
         composable("campsiteOwner"){
@@ -44,8 +48,22 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
         composable("campsiteSettings") {
             CampsiteSettingsScreen(navController)
         }
-        composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
-            campsite = selectedCampsite)}
+        composable( "UpdateCamp"){
+
+           //val selCampsite = Campsite("Test12", "Name", "Lop", "This is a description", 10, mutableListOf<String>())
+            LaunchedEffect(documentId) {
+                rp.getCampsite(documentId) { campsite ->
+                    selCampsite = campsite
+                }
+            }
+
+           CampsiteEditingScreen(
+               navController,
+               selCampsite)
+
+             }
+
+
     }
 }
 
