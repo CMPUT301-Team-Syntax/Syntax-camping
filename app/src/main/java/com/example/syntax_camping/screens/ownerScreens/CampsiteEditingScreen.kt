@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import android.R.attr.text
 //TO be added to the correct Navigation calss (ie syntax camping
 /*
 At Top var selectedCampsite by remember {
@@ -44,64 +46,94 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.Photo
 import com.example.syntax_camping.R
 import kotlin.String
 
-
+import com.example.syntax_camping.Database
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import com.example.syntax_camping.photoPicker
+//import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 @Composable
 fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
     /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
-    val oldLocation: String
-    var qrCodeChecked: Boolean
-    val oldName: String
-    val oldDescription: String
-    val oldMaxOcc: Int
-    var oldTags = mutableListOf<String>()
-    var oldImages = mutableListOf<Photo>()
-    val locationDisplay: String
-    val nameDisplay: String
-    val descriptionDisplay: String
-    val maxOccDisplay: String
+    //Note that campsite inof has two variable representations, one is fo rhte labels of text fields and is lebaled as display before what it displays, the otehrs are for actual
+    //Changing values for addition to campsite
+    val db = Database()
+    var newCampsite: Campsite
+    var documentID: String
+    var qrCodeChecked = false
+    var nameDisplay by remember { mutableStateOf("") }
+    var locationDisplay by remember { mutableStateOf("") }
+    var descriptionDisplay by remember { mutableStateOf("") }
+    var maxOccDisplay by remember {mutableStateOf("")}
     val scrollState = rememberScrollState()
     var error by remember {mutableStateOf("")}
-    var stringRepOfTags = ""
-    if (campsite == null){
-        oldLocation = ""
-        locationDisplay = "Enter campsite Location"
-        oldName = ""
-        qrCodeChecked = false
-        nameDisplay = "Enter campsite Name"
-        oldDescription = ""
-        descriptionDisplay = "Enter campsite Description"
-        oldMaxOcc = 0
-        maxOccDisplay = "Enter campsite Maximum Occupancy"
-
-    }
-    else{
-        oldLocation  = campsite.getLocation()
-        locationDisplay = oldLocation
-        oldName = campsite.getName()
-        nameDisplay = oldName
-        oldDescription = campsite.getDescription()
-        descriptionDisplay = oldDescription
-        oldMaxOcc = campsite.getmaxOcc()
-        maxOccDisplay = oldMaxOcc.toString()
-        qrCodeChecked = campsite.getQRCode()
-        oldTags = campsite.getTags()
-        oldImages = campsite.getPhotos()
-    }
+    var intNewMaxOcc: Int?
     var newCampName by remember { mutableStateOf("") }
     var newCampLocation by remember { mutableStateOf("") }
-    //name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>
     var newCampDescription by remember { mutableStateOf("") }
     var newMaxOcc by remember {mutableStateOf("")}
     val newTags = remember {mutableStateListOf<String>()}
+    val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
-    for (item in oldTags){
-        newTags.add(item)
+    //Note the following is a list of selected photos, initialized as empty
+    var  selectedPhotos by remember {
+        mutableStateOf<List<Uri>>(emptyList())
     }
+    //Not this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
+    val launcher =  rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    )
+    { uris ->
+        selectedPhotos = uris
+    }
+    //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
+    //edit text fields since they ckept getting reset to campsite name values)
+    LaunchedEffect(campsite?.getDocumentId()){
+        //If we are creating a cmapsite
+        if (campsite == null){
+            locationDisplay = "Enter campsite Location"
+            qrCodeChecked = false
+            nameDisplay = "Enter campsite Name"
+            descriptionDisplay = "Enter campsite Description"
+            maxOccDisplay = "Enter campsite Maximum Occupancy"
+        }
+        //If a campsite already ecxists
+        else{
+            qrCodeChecked = false
+            newCampLocation  = campsite.getLocation()
+            locationDisplay = newCampLocation
+            newCampName = campsite.getName()
+            nameDisplay = campsite.getName()
+            newCampDescription = campsite.getDescription()
+            descriptionDisplay = newCampDescription
+            newMaxOcc = campsite.getmaxOcc().toString()
+            maxOccDisplay = newMaxOcc.toString()
+            qrCodeChecked = campsite.getQRCode()
+
+            for (item in (campsite.getPhotos())){
+                newPhotos.add(item)
+            }
+            for (item in (campsite.getTags())){
+                newTags.add(item)
+            }
+
+
+        }
+    }
+
+
+
     //var displayTag by remember{mutableStateOf(newTags.joinToString())}
     Scaffold(
 
@@ -379,7 +411,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     Text("remove Tag")
                 }
             }
-            //The following will Hand LE images
+            //The following will Handle images
             //TODO
             Row(
                 modifier = Modifier.fillMaxWidth()
@@ -389,7 +421,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.missing_image_filler),
@@ -398,6 +431,26 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 )
 
 
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+
+            ) {
+                Button(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    //This onclick handles the launcher for Android's built in image selector.
+                    onClick = {
+                        launcher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts
+                                    .PickVisualMedia.ImageOnly
+                            )
+                        )
+                    }
+                ) {
+                    Text("Add Images")
+                }
             }
             //The following is to handle updating/creating the cmapsite
             //Each button has a couple of if statemnets to make sure none of the required fields are blank/max occupancy entered is a number
@@ -418,13 +471,26 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     error = "Max Int must be a string"
                                 } else {
                                     error = ""
-                                    val newCampsite = Campsite(
+                                    documentID = newCampName
+
+
+                                    newCampsite = Campsite(
+                                        documentID,
                                         newCampName,
                                         newCampLocation,
                                         newCampDescription,
                                         intNewMaxOcc,
                                         newTags
                                     )
+                                    //Addds images to Photos. Deleting images will be handled with the carousel, to be implemented TODO
+                                    if (selectedPhotos.isNotEmpty()){
+                                        for (photo in selectedPhotos) {
+                                            newCampsite.addImage(photo)
+                                        }
+                                    }
+
+
+                                    db.createNewCampsite(newCampsite)
                                 }
                             }
                             else{
@@ -442,17 +508,23 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                         modifier = Modifier.padding(vertical = 12.dp),
                         onClick = {
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
-                                val intNewMaxOcc = newMaxOcc.toIntOrNull()
+                                intNewMaxOcc = newMaxOcc.toIntOrNull()
                                 error = ""
                                 if (intNewMaxOcc == null) {
-                                    error = "Max Int must be a string"
+                                    error = "Max Int must be an int"
                                 } else {
                                     error = ""
                                     campsite.updateName(newCampName)
                                     campsite.updateLocation(newCampLocation)
                                     campsite.updateDescription(newCampDescription)
-                                    campsite.updateMaxOcc(intNewMaxOcc)
-
+                                    campsite.updateMaxOcc(intNewMaxOcc!!)
+                                    campsite.updateTag(newTags)
+                                    db.updateCampsite(campsite)
+                                    if (selectedPhotos.isNotEmpty()){
+                                        for (photo in selectedPhotos) {
+                                            campsite.addImage(photo)
+                                        }
+                                    }
 
                                 }
                             }
