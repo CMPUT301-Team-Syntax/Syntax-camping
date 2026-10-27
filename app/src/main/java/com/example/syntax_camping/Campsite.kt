@@ -1,10 +1,14 @@
 package com.example.syntax_camping
+
+import android.R.attr.description
+import android.R.attr.name
+import android.net.Uri
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -13,7 +17,12 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
     private var _description = description
     private var _maxOcc = maxOcc
     private val _tags =tags
-    private var _images = mutableListOf<Photo>()
+    private var _images = mutableListOf<Uri>()
+    private var _documentId= documentId
+
+    fun getDocumentId(): String{
+        return _documentId
+    }
     private var rating: Float = 0.0f
 
     private var raters = 0
@@ -78,24 +87,28 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
             _tags.add(item)
         }
     }
-    fun addImage(image:Photo){
+    fun addImage(image:Uri){
         _images.add(image)
     }
-    fun removeImage(image:Photo){
+    fun removeImage(image:Uri){
         _images.remove(image)
     }
-    //returns the current photo, checking first to make sure na image exists
+
+    fun getPhotos(): MutableList<Uri>{
+        return _images
+    }
+    //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
+    /* this is being moved out of Campsite into image carousel handling, leaving the functions though incase someone wants to reuse them
+     //returns the current photo, checking first to make sure na image exists
+    /*
     fun getCurrPhoto(): String{
         if(_images.size == 0)
             return "No image Found"
         else
             return _images[_currImageIndex].getUrl()
     }
-    fun getPhotos(): MutableList<Photo>{
-        return _images
-    }
+    */
 
-    //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
     fun getNextPhoto():String{
         if(_images.size == 0) {
             return "No image Found"
@@ -131,10 +144,12 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
         _currImageIndex = 0
     }
 
+
+
+
+
+*/
     fun getRating():Float{
         return rating
     }
-
-
-
 }
