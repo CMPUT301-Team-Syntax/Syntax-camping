@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.userScreens
+package com.example.syntax_camping.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CampsiteSummaryCard
+import com.example.syntax_camping.screens.CampsiteCard
 
 @Composable
 fun CampsiteSummaryScreen(navController: NavController){
@@ -139,16 +139,15 @@ fun CampsiteSummaryScreen(navController: NavController){
 
             val mockCampsites = remember {
                 listOf(
-                    Campsite(documentId = "1", name = "Dolor Campsite", location = "Edmonton", description = "Nice place", maxOcc = 9, tags = mutableListOf()),
-                    Campsite(documentId = "2", name = "Lorem Campsite", location = "Calgary", description = "Cool place", maxOcc = 4, tags = mutableListOf()),
-                    Campsite(documentId = "3", name = "Ipsum Campsite", location = "Banff", description = "Cold place", maxOcc = 12, tags = mutableListOf())
+                    Campsite(documentId = "1", name = "Dolor Campsite", location = "Edmonton", description = "Nice place", maxOcc = 9, tags = mutableListOf(), 4.0),
+                    Campsite(documentId = "2", name = "Lorem Campsite", location = "Calgary", description = "Cool place", maxOcc = 4, tags = mutableListOf(),3.2),
+                    Campsite(documentId = "3", name = "Ipsum Campsite", location = "Banff", description = "Cold place", maxOcc = 12, tags = mutableListOf(),4.4)
                 )
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(mockCampsites) { index, camp ->
-                    CampsiteSummaryCard(camp)
-
+                    CampsiteCard(camp, onClick = {})
                     if (index < mockCampsites.lastIndex) {
                         HorizontalDivider()
                     }

@@ -2,13 +2,14 @@ package com.example.syntax_camping
 
 import android.R.attr.description
 import android.R.attr.name
+import android.media.Rating
 import android.net.Uri
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -23,9 +24,15 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun getDocumentId(): String{
         return _documentId
     }
-    private var rating: Float = 0.0f
-    private var raters = 0
+    private var _rating =  rating
+    private var _raters = 0 //number of people that have rated
 
+    fun updateRating(number: Double){
+
+        _rating = (_rating*_raters) + number
+        _raters += 1
+        _rating /= _raters
+    }
 
     fun getName(): String{
         return _name
@@ -137,7 +144,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
 */
 
-    fun getRating():Float{
-        return rating
+    fun getRating():Double{
+        return _rating
     }
 }

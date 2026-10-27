@@ -79,6 +79,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
+
     //Note the following is a list of selected photos, initialized as empty
     var  selectedPhotos by remember {
         mutableStateOf<List<Uri>>(emptyList())
@@ -473,7 +474,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                         newCampLocation,
                                         newCampDescription,
                                         intNewMaxOcc,
-                                        newTags
+                                        newTags,
+                                        0.0
                                     )
                                     //Addds images to Photos. Deleting images will be handled with the carousel, to be implemented TODO
                                     if (selectedPhotos.isNotEmpty()){

@@ -18,6 +18,8 @@ class MainActivity : ComponentActivity() {
         val db = Database()
         val deviceId = db.getDeviceId(this)
 
+        var campsiteRepository: CampsiteRepository
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {

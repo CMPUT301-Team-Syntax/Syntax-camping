@@ -148,8 +148,8 @@ fun SearchHomeScreen(navController: NavController){
         ) {
 
             val sampleCampsites = listOf(
-                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf()),
-                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf())
+                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
+                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
             )
             CampsiteListScreen(
                 campsiteList = sampleCampsites,
@@ -158,12 +158,4 @@ fun SearchHomeScreen(navController: NavController){
 
         }
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun SearchHomeScreenPreview() {
-
 }
