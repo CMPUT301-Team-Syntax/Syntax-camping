@@ -20,13 +20,13 @@ fun SyntaxCamping(
     //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
 //    androidx.navigation.NavHost(navController = navController, startDestination = "Search")
     NavHost(navController = navController, startDestination = "home", modifier = modifier) {
-        composable("home") {
+        composable("") {
             CampsiteDetailsScreen(navController)
         }
         composable("Settings") {
             SettingsScreen(navController)
         }
-        composable("Search") {
+        composable("home") {
             SearchHomeScreen(navController)
         }
         composable("Reservations") {

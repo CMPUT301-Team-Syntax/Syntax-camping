@@ -38,6 +38,7 @@ import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CampsiteListScreen
 
 @Composable
 fun SearchHomeScreen(navController: NavController){
@@ -146,117 +147,23 @@ fun SearchHomeScreen(navController: NavController){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            val sampleCampsites = listOf(
+                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf()),
+                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf())
+            )
+            CampsiteListScreen(
+                campsiteList = sampleCampsites,
+                onItemClick = {}
+            )
 
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
-
-@Composable
-fun CampsiteListScreen(campsitelist: List<Campsite>, onItemClick: (String) -> Unit){
-    Scaffold { innerPadding ->
-        LazyColumn(Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ){
-            items(campsitelist.size){index ->
-                CampsiteRowTab(campsitelist[index]){
-                    onItemClick(campsitelist[index].getDocumentId())
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CampsiteRowTab(campsite: Campsite, onClick:() -> Unit){
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(33.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE2AFAF)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        )
-
-    ){
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-
-        ){
-            Box(
-                contentAlignment = Alignment.CenterStart
-            ){
-                if (campsite.getPhotos().isNotEmpty()){
-                    AsyncImage(
-                        model = campsite.getPhotos()[0],
-                        contentDescription = " photo",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(8.dp)
-                    )
-                }
-                else{
-                    Image(
-                        painter = painterResource(id = R.drawable.home),
-                        contentDescription = "No Image",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(8.dp)
-                    )
-                }
-
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-
-                Text(
-                    text = campsite.getName(),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                )
-                Text(text = campsite.getLocation()
-                    , fontSize = 14.sp,
-                    color = Color.Black,)
-
-            }
-
-        }
-
-
-
-    }
-}
-
 
 
 
 @Preview(showBackground = true)
 @Composable
 fun SearchHomeScreenPreview() {
-    val sampleCampsites = listOf(
-        Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf()),
-        Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf())
-    )
-    CampsiteListScreen(
-        campsitelist = sampleCampsites,
-        onItemClick = {}
-    )
+
 }
