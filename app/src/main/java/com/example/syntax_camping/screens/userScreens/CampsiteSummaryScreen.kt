@@ -26,23 +26,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import kotlin.compareTo
 
 @Composable
 fun CampsiteSummaryScreen(navController: NavController){
+
+
     Scaffold(
 
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White), // Set the background color to white
-        containerColor = Color.White,
+            .background(Color(0xFFF4E8D5)), // Set the background color to white
+        containerColor = Color(0xFFF4E8D5),
         topBar = { // top bar with back button and notification icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
+                    .background(Color(0xFF3E6B68)), // sets the background color to pink lkie the figma mockups
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -57,7 +60,7 @@ fun CampsiteSummaryScreen(navController: NavController){
                     Icon(
                         painter = painterResource(id = R.drawable.back),
                         contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
+                        tint = Color.White  //without it the icon would be black
                     )
                 }
 
@@ -66,7 +69,7 @@ fun CampsiteSummaryScreen(navController: NavController){
                     Icon(
                         painter = painterResource(id = R.drawable.notification),
                         contentDescription = "notifications",
-                        tint = Color.Unspecified
+                        tint = Color.White
                     )
                 }
             }
@@ -77,7 +80,7 @@ fun CampsiteSummaryScreen(navController: NavController){
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
+                    .background(Color(0xFF3E6B68))
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -135,19 +138,25 @@ fun CampsiteSummaryScreen(navController: NavController){
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            //my brain is actually on fire how the hell do i test thissevijawifnalknfAJNVDKJKCkomJVAJNOJN GJNVPINU.
 
-            var campsiteList: MutableList<Campsite> = mutableListOf()
+            val mockCampsites = remember {
+                listOf(
+                    Campsite(documentId = "1", name = "Dolor Campsite", location = "Edmonton", description = "Nice place", maxOcc = 9, tags = mutableListOf()),
+                    Campsite(documentId = "2", name = "Lorem Campsite", location = "Calgary", description = "Cool place", maxOcc = 4, tags = mutableListOf()),
+                    Campsite(documentId = "3", name = "Ipsum Campsite", location = "Banff", description = "Cold place", maxOcc = 12, tags = mutableListOf())
+                )
+            }
 
-            LazyColumn(modifier =  Modifier.fillMaxSize()) {
-                itemsIndexed(campsiteList) {index, camp ->
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                itemsIndexed(mockCampsites) { index, camp ->
                     CampsiteSummaryCard(camp)
-                    if (index < campsiteList.lastIndex) {
+
+                    if (index < mockCampsites.lastIndex) {
                         HorizontalDivider()
                     }
                 }
             }
-
-
 
         }
     }

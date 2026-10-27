@@ -149,6 +149,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
 
 */
+
     fun getRating():Float{
         return rating
     }

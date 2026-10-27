@@ -59,7 +59,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.example.syntax_camping.photoPicker
+import com.example.syntax_camping.PhotoPicker
 //import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 @Composable

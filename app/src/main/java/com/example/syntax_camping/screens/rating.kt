@@ -8,56 +8,65 @@ import androidx.compose.ui.res.painterResource
 import com.example.syntax_camping.R
 
 @Composable
-fun Rating(num: Float){
+fun Rating(numRating: Float){
     Row(
 
     ){
 
-        val myInt = num.toInt()
-        val dec = num - myInt
-        repeat(myInt) { index ->
-            Icon(
-                painter = painterResource(id = R.drawable.star),
-                contentDescription = "star",
-                tint = Color.Unspecified
-            )
-        }
+        var myInt = numRating.toInt()
+        val decimalLeft = numRating - myInt
+        repeat(5) { index ->
+            if (myInt >= 1){
+                Icon(
+                    painter = painterResource(id = R.drawable.star),
+                    contentDescription = "star",
+                    tint = Color.Unspecified
+                )
+                myInt -= 1
+            }
+            
+            else if (decimalLeft.toDouble() > 0.0){
+                if (decimalLeft < 0.5){
+                    Icon(
+                        painter = painterResource(id = R.drawable.star_less),
+                        contentDescription = "star",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                else if (decimalLeft < 0.5){
+                    Icon(
+                        painter = painterResource(id = R.drawable.star_less),
+                        contentDescription = "star",
+                        tint = Color.Unspecified
+                    )
+                }
 
 
-        if (myInt < 5){
-            if (dec.toDouble() == 0.0){
+                else if (decimalLeft.toDouble() == 0.5){
+                    Icon(
+                        painter = painterResource(id = R.drawable.star_middle),
+                        contentDescription = "star",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.star_more),
+                        contentDescription = "star",
+                        tint = Color.Unspecified
+                    )
+                }
+            }
+
+            else {
                 Icon(
                     painter = painterResource(id = R.drawable.star_empty),
                     contentDescription = "star",
                     tint = Color.Unspecified
                 )
             }
-
-            else if (dec < 0.5){
-                Icon(
-                    painter = painterResource(id = R.drawable.star_less),
-                    contentDescription = "star",
-                    tint = Color.Unspecified
-                )
-            }
-
-            else if (dec.toDouble() == 0.5){
-                Icon(
-                    painter = painterResource(id = R.drawable.star_middle),
-                    contentDescription = "star",
-                    tint = Color.Unspecified
-                )
-            }
-
-            else {
-                Icon(
-                    painter = painterResource(id = R.drawable.star_more),
-                    contentDescription = "star",
-                    tint = Color.Unspecified
-                )
-            }
-
         }
-
     }
 }
