@@ -36,10 +36,10 @@ fun SyntaxCamping(
         composable("Profile") {
             ProfileScreen(navController)
         }
-
         composable("home") {
             CampsiteSummaryScreen(navController)
         }
+
 
     }
 

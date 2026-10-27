@@ -24,20 +24,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         return _documentId
     }
     private var rating: Float = 0.0f
-
     private var raters = 0
-
-
-
-
-
-
-
-
-    //make a function to get a main photo for campsite summary card
-
-
-
 
 
     fun getName(): String{

@@ -34,16 +34,7 @@ fun Rating(numRating: Float){
                     )
                 }
 
-                else if (decimalLeft < 0.5){
-                    Icon(
-                        painter = painterResource(id = R.drawable.star_less),
-                        contentDescription = "star",
-                        tint = Color.Unspecified
-                    )
-                }
-
-
-                else if (decimalLeft.toDouble() == 0.5){
+                else if (decimalLeft == 0.5f){
                     Icon(
                         painter = painterResource(id = R.drawable.star_middle),
                         contentDescription = "star",
