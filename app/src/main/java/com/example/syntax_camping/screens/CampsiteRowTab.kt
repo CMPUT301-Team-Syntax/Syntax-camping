@@ -50,9 +50,9 @@ fun CampsiteRowTab(campsite: Campsite, onClick:() -> Unit){
             Box(
                 contentAlignment = Alignment.CenterStart
             ){
-                if (campsite.getPhotos().isNotEmpty()){
+                if (campsite.images.isNotEmpty()){
                     AsyncImage(
-                        model = campsite.getPhotos()[0],
+                        model = campsite.images[0],
                         contentDescription = " photo",
                         modifier = Modifier
                             .size(100.dp)
@@ -77,12 +77,12 @@ fun CampsiteRowTab(campsite: Campsite, onClick:() -> Unit){
             ) {
 
                 Text(
-                    text = campsite.getName(),
+                    text = campsite.name,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                 )
-                Text(text = campsite.getLocation()
+                Text(text = campsite.location
                     , fontSize = 14.sp,
                     color = Color.Black,)
 

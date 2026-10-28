@@ -19,36 +19,31 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private val _tags =tags
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
+    val name: String
+        get() = _name
+    val location: String
+        get() = _location
+    val description: String
+        get() = _description
+    val maxOcc: Int
+        get() = _maxOcc
+    val tags: MutableList<String>
+        get() = _tags
+    val images: MutableList<Uri>
+        get() = _images
+    val documentId: String
+        get() = _documentId
+    val hasQRCode: Boolean
+        get() = _hasQRCode
 
-    fun getDocumentId(): String{
-        return _documentId
-    }
-    fun getName(): String{
-        return _name
-    }
-    fun getLocation(): String{
-        return _location
-    }
-
-    fun getDescription(): String{
-        return _description
-    }
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
+    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
     fun generateQRcode(){
         _hasQRCode = true
     }
-    fun getQRCode(): Boolean{
-        return _hasQRCode
-    }
-    fun getmaxOcc(): Int{
-        return _maxOcc
-    }
 
-    fun getTags(): MutableList<String>{
-        return _tags
-    }
     fun updateName(newName: String){
         _name = newName
     }
@@ -77,9 +72,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         _images.remove(image)
     }
 
-    fun getPhotos(): MutableList<Uri>{
-        return _images
-    }
+
     //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
     /* this is being moved out of Campsite into image carousel handling, leaving the functions though incase someone wants to reuse them
      //returns the current photo, checking first to make sure na image exists
