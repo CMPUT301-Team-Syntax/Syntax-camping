@@ -445,8 +445,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                             PickVisualMediaRequest(
                                 ActivityResultContracts
                                     .PickVisualMedia.ImageOnly
-                            )
-                        )
+                            )                        )
                     }
                 ) {
                     Text("Add Images")

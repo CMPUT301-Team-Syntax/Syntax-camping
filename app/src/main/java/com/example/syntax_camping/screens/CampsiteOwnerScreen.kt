@@ -56,6 +56,7 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
                     selCampsite = campsite
                 }
             }
+            selCampsite = null
 
            CampsiteEditingScreen(
                navController,
