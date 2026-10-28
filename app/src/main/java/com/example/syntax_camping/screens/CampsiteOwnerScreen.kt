@@ -56,6 +56,10 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
                     selCampsite = campsite
                 }
             }
+            //comment out the following line if you want to update a campsite, then update the document id above to matcht e campsite you want to update
+            selCampsite = null
+
+
            CampsiteEditingScreen(
                navController,
                selCampsite)
