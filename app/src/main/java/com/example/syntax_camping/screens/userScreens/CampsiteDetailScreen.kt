@@ -30,14 +30,14 @@ fun CampsiteDetailsScreen(navController: NavController){
 
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White), // Set the background color to white
-        containerColor = Color.White,
+            .background(Color(0xFFF4E8D5)), // Set the background color to white
+        containerColor = Color(0xFFF4E8D5),
         topBar = { // top bar with back button and notification icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
+                    .background(Color(0xFF3E6B68)), // sets the background color to pink lkie the figma mockups
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -52,7 +52,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                     Icon(
                         painter = painterResource(id = R.drawable.back),
                         contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
+                        tint = Color.White  //without it the icon would be black
                     )
                 }
 
@@ -61,7 +61,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                     Icon(
                         painter = painterResource(id = R.drawable.notification),
                         contentDescription = "notifications",
-                        tint = Color.Unspecified
+                        tint = Color.White
                     )
                 }
             }
@@ -72,7 +72,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
+                    .background(Color(0xFF3E6B68))
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -83,7 +83,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                     Icon(
                         painter = painterResource(id = R.drawable.ic_search),
                         contentDescription = "Search",
-                        tint = Color.Unspecified
+                        tint = Color(0xFF3F6B68)
                     )
                 }
 

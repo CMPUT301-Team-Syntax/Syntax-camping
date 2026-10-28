@@ -57,7 +57,8 @@ class Database {
             .update(
                 mapOf(
                     "displayName" to userDetails.name,
-                    "userType" to userDetails.userType
+                    "userType" to userDetails.userType,
+                    "location" to userDetails.location
                 )
             )
     }
@@ -72,7 +73,8 @@ class Database {
             .set(
                 mapOf(
                     "displayName" to userDetails.name,
-                    "userType" to userDetails.userType
+                    "userType" to userDetails.userType,
+                    "location" to userDetails.location
                 )
             )
     }
@@ -88,39 +90,41 @@ class Database {
                 if (document.exists()) {
                     val name = document.getString("displayName") ?: "New User"
                     val userType = document.getLong("userType")?.toInt() ?: 0
-
-                    callback(User(name, userType))
+                    val location = document.getString("location") ?: "N/A"
+                    callback(User(name, userType, location))
                 } else {
-                    callback(User("New User", 0))
+                    callback(User("New User", 0, "N/A"))
                 }
             }
             .addOnFailureListener { e ->
                 println("Error fetching user: $e")
-                callback(User("New User", 0))
+                callback(User("New User", 0, "N/A"))
             }
     }
 
     fun createNewCampsite(campsite: Campsite) {
         db.collection("campsites")
-            .document(campsite.getDocumentId())
+            .document(campsite.documentId)
             .set(
                 mapOf(
-                    "name" to campsite.getName(),
-                    "location" to campsite.getLocation(),
-                    "description" to campsite.getDescription()
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
                 )
             )
     }
 
     fun updateCampsite(campsite: Campsite) {
         db.collection("campsites")
-            .document(campsite.getDocumentId())
+            .document(campsite.documentId)
             .update(
                 mapOf(
-                    "name" to campsite.getName(),
-                    "location" to campsite.getLocation(),
-                    "description" to campsite.getDescription()
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
                 )
             )
     }
+
+
 }
