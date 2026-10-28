@@ -24,7 +24,7 @@ fun Rating(numRating: Double){
                     painter = painterResource(id = R.drawable.star),
                     contentDescription = "star",
                     modifier = Modifier.size(18.dp),
-                    tint = Color.Black
+                    tint = Color.Unspecified
                 )
                 myInt -= 1
             }
@@ -34,6 +34,7 @@ fun Rating(numRating: Double){
                     Icon(
                         painter = painterResource(id = R.drawable.star_less),
                         contentDescription = "star",
+                        modifier = Modifier.size(18.dp),
                         tint = Color.Unspecified
                     )
                 }
@@ -42,6 +43,7 @@ fun Rating(numRating: Double){
                     Icon(
                         painter = painterResource(id = R.drawable.star_middle),
                         contentDescription = "star",
+                        modifier = Modifier.size(18.dp),
                         tint = Color.Unspecified
                     )
                 }
@@ -50,6 +52,7 @@ fun Rating(numRating: Double){
                     Icon(
                         painter = painterResource(id = R.drawable.star_more),
                         contentDescription = "star",
+                        modifier = Modifier.size(18.dp),
                         tint = Color.Unspecified
                     )
                 }
