@@ -65,7 +65,7 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
             {
 
                 Text(
-                    text = campsite.getName(),
+                    text = campsite.name,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -85,7 +85,7 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text = campsite.getLocation(),
+                        text = campsite.location,
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -100,7 +100,7 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${campsite.getmaxOcc()} people max",
+                        text = "${campsite.maxOcc} people max",
                         fontSize = 12.sp,
                         color = Color.Black
                     )
@@ -118,7 +118,7 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
                     color = Color.DarkGray
                 )
 
-                Rating(numRating = campsite.getRating())
+                Rating(numRating = campsite.rating)
             }
 
         }

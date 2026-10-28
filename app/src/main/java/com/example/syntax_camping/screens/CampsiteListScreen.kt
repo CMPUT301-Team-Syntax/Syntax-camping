@@ -23,7 +23,7 @@ fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Un
         ){
             itemsIndexed(campsiteList){index, camp ->
                 CampsiteCard(camp) {
-                    onItemClick(campsiteList[index].getDocumentId())
+                    onItemClick(campsiteList[index].documentId)
                 }
             }
         }

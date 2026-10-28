@@ -136,8 +136,4 @@ class Campsite(documentId: String, name: String, location: String, description: 
         _currImageIndex = 0
     }
 */
-
-    fun getRating():Double{
-        return _rating
-    }
 }
