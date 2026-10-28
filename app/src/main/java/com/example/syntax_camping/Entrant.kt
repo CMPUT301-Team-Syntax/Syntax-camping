@@ -23,9 +23,11 @@ class Entrant(
     fun addLotteryEntry(lotteryEntry: LotteryEntry){
         lotteryEntries.add(lotteryEntry)
     }
-    fun getReservations(): MutableList<Reservation> {
-        return reservations
-    }
+
+    //BUG1
+    //fun getReservations(): MutableList<Reservation> {
+    //    return reservations
+    //}
 
     fun addWaitList(waitlist: WaitList) {
         waitlist.addUser(deviceId)
