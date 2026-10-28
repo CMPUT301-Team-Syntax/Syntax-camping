@@ -19,7 +19,7 @@ fun SyntaxCamping(
 //PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
     //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
 //    androidx.navigation.NavHost(navController = navController, startDestination = "Search")
-    NavHost(navController = navController, startDestination = "home", modifier = modifier) {
+    NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
         composable("home") {
             CampsiteDetailsScreen(navController)
         }
@@ -39,3 +39,4 @@ fun SyntaxCamping(
     }
 
 }
+
