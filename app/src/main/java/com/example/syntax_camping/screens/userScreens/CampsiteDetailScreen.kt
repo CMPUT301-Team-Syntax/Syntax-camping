@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.TopBar
 
 @Composable
 fun CampsiteDetailsScreen(navController: NavController){
@@ -33,38 +34,7 @@ fun CampsiteDetailsScreen(navController: NavController){
             .background(Color(0xFFF4E8D5)), // Set the background color to white
         containerColor = Color(0xFFF4E8D5),
         topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFF3E6B68)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.White  //without it the icon would be black
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.White
-                    )
-                }
-            }
+            TopBar()
         },
 
         bottomBar = {

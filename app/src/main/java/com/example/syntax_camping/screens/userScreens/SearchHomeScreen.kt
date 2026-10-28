@@ -39,6 +39,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreen
+import com.example.syntax_camping.screens.TopBar
 
 @Composable
 fun SearchHomeScreen(navController: NavController){
@@ -48,39 +49,8 @@ fun SearchHomeScreen(navController: NavController){
             .fillMaxSize()
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
-        topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.Unspecified
-                    )
-                }
-            }
+        topBar = {
+            TopBar()
         },
 
         bottomBar = {
