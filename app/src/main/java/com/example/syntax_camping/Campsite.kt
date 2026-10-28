@@ -2,13 +2,14 @@ package com.example.syntax_camping
 
 import android.R.attr.description
 import android.R.attr.name
+import android.media.Rating
 import android.net.Uri
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -19,6 +20,9 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private val _tags =tags
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
+    private var _rating =  rating
+    private var _raters = 0 //number of people that have rated
+
     val name: String
         get() = _name
     val location: String
@@ -35,11 +39,23 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _documentId
     val hasQRCode: Boolean
         get() = _hasQRCode
+    val rating: Double
+        get() = _rating
+    val raters: Int
+        get() = _raters
+
 
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
     //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
+    fun updateRating(number: Double){
+
+        _rating = (_rating*_raters) + number
+        _raters += 1
+        _rating /= _raters
+    }
+
     fun generateQRcode(){
         _hasQRCode = true
     }
