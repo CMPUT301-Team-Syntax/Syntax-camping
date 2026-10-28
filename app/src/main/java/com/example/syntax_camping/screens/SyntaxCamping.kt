@@ -10,6 +10,7 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
+import com.example.syntax_camping.screens.CampsiteSummaryScreen
 
 @Composable
 fun SyntaxCamping(
@@ -19,8 +20,8 @@ fun SyntaxCamping(
 //PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
     //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
 //    androidx.navigation.NavHost(navController = navController, startDestination = "Search")
-    NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
-        composable("home") {
+    NavHost(navController = navController, startDestination = "home", modifier = modifier) {
+        composable("test") {
             CampsiteDetailsScreen(navController)
         }
         composable("Settings") {
@@ -35,8 +36,11 @@ fun SyntaxCamping(
         composable("Profile") {
             ProfileScreen(navController)
         }
+        composable("home") {
+            CampsiteSummaryScreen(navController)
+        }
+
 
     }
 
 }
-

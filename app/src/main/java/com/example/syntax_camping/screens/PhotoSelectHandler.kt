@@ -1,4 +1,4 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 @Composable
-fun photoPicker(){
+fun PhotoPicker(){
     var  selectedPhotos by remember {
         mutableStateOf<List<Uri>>(emptyList())
     }

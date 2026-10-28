@@ -10,6 +10,10 @@ class CampsiteRepository {
         return _campsites
     }
 
+    fun updateRating(campsite: Campsite, num: Double){
+        campsite.updateRating(num)
+    }
+
     fun getCampsite(documentId: String, callback: (Campsite) -> Unit ) {
         val db = FirebaseFirestore.getInstance()
 
@@ -26,7 +30,8 @@ class CampsiteRepository {
                     location = document.getString("location") ?: "",
                     description = document.getString("description") ?: "",
                     maxOcc = 0,
-                    tags = mutableListOf<String>()
+                    tags = mutableListOf<String>(),
+                    rating = 0.0
                 ))
             }
 

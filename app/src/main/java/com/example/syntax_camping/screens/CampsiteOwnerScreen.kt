@@ -65,8 +65,6 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
                selCampsite)
 
              }
-
-
     }
 }
 
