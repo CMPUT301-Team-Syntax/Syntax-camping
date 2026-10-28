@@ -23,7 +23,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +48,9 @@ import com.example.syntax_camping.screens.CampsiteListScreen
 
 @Composable
 fun SearchHomeScreen(navController: NavController){
+
+    var  SearchInput by remember { mutableStateOf("")  }
+    // var FlitteredCampsiteList by remember { mutableStateListOf(List<Campsite>) }
     Scaffold(
 
         modifier = Modifier
@@ -140,22 +149,55 @@ fun SearchHomeScreen(navController: NavController){
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+                .padding(9.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(){
+
+                TextField(
+                    value = SearchInput,
+                    onValueChange = { newValue -> SearchInput = newValue },
+                    label = { Text("Type in the location or Campsite Name") },
+                    modifier = Modifier
+
+                        .padding(bottom = 16.dp)
+                )
+                IconButton(onClick = {
+                    // FlitteredCampsiteList = campsiteList.filter { campsite ->
+                    //     campsite.name().contains(SearchInput, ignoreCase = true) || campsite.location().contains(SearchInput, ignoreCase = true)
+                    //
+                    // }
+                    // Box(modifier = Modifier.weight(1f)) {
+                    //                CampsiteListScreen(
+                    //                    campsiteList = FlitteredCampsiteList,
+                    //                    onItemClick = {}
+                    //                )
+                    //            }
+
+
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_search),
+                        contentDescription = "Search",
+                        tint = Color.Unspecified
+                    )
+                }
+            }
 
             val sampleCampsites = listOf(
                 Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf()),
                 Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf())
             )
-            CampsiteListScreen(
-                campsiteList = sampleCampsites,
-                onItemClick = {}
-            )
 
+            Box(modifier = Modifier.weight(1f)) {
+                CampsiteListScreen(
+                    campsiteList = sampleCampsites,
+                    onItemClick = {}
+                )
+            }
         }
     }
 }
