@@ -104,24 +104,24 @@ class Database {
 
     fun createNewCampsite(campsite: Campsite) {
         db.collection("campsites")
-            .document(campsite.getDocumentId())
+            .document(campsite.documentId)
             .set(
                 mapOf(
-                    "name" to campsite.getName(),
-                    "location" to campsite.getLocation(),
-                    "description" to campsite.getDescription()
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
                 )
             )
     }
 
     fun updateCampsite(campsite: Campsite) {
         db.collection("campsites")
-            .document(campsite.getDocumentId())
+            .document(campsite.documentId)
             .update(
                 mapOf(
-                    "name" to campsite.getName(),
-                    "location" to campsite.getLocation(),
-                    "description" to campsite.getDescription()
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
                 )
             )
     }

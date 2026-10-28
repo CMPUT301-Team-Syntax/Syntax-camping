@@ -22,7 +22,7 @@ fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Un
         ){
             items(campsiteList.size){index ->
                 CampsiteRowTab(campsiteList[index]) {
-                    onItemClick(campsiteList[index].getDocumentId())
+                    onItemClick(campsiteList[index].documentId)
                 }
             }
         }
