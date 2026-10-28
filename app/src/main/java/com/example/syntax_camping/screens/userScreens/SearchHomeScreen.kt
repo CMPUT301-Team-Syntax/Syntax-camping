@@ -50,7 +50,7 @@ import com.example.syntax_camping.screens.CampsiteListScreen
 fun SearchHomeScreen(navController: NavController){
 
     var  SearchInput by remember { mutableStateOf("")  }
-    // var FlitteredCampsiteList by remember { mutableStateListOf(List<Campsite>) }
+    var FlitteredCampsiteList by remember { mutableStateOf(listOf<Campsite>()) }
     Scaffold(
 
         modifier = Modifier
@@ -165,17 +165,16 @@ fun SearchHomeScreen(navController: NavController){
 
                         .padding(bottom = 16.dp)
                 )
+
+                val sampleCampsites = listOf(
+                    Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
+                    Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
+                )
                 IconButton(onClick = {
-                    // FlitteredCampsiteList = campsiteList.filter { campsite ->
-                    //     campsite.name().contains(SearchInput, ignoreCase = true) || campsite.location().contains(SearchInput, ignoreCase = true)
-                    //
-                    // }
-                    // Box(modifier = Modifier.weight(1f)) {
-                    //                CampsiteListScreen(
-                    //                    campsiteList = FlitteredCampsiteList,
-                    //                    onItemClick = {}
-                    //                )
-                    //            }
+                     FlitteredCampsiteList = sampleCampsites.filter { campsite ->
+                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
+                     }
+
 
 
                 }) {
@@ -187,14 +186,11 @@ fun SearchHomeScreen(navController: NavController){
                 }
             }
 
-            val sampleCampsites = listOf(
-                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
-                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
-            )
 
+//
             Box(modifier = Modifier.weight(1f)) {
                 CampsiteListScreen(
-                    campsiteList = sampleCampsites,
+                    campsiteList = FlitteredCampsiteList,
                     onItemClick = {}
                 )
             }
