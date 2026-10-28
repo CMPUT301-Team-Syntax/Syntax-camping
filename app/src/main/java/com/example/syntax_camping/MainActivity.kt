@@ -1,6 +1,7 @@
 package com.example.syntax_camping
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,12 +26,26 @@ class MainActivity : ComponentActivity() {
          *val user = User(name, userId)
          */
 
+        //
+
+        CampsiteRepository.refreshCampsiteCache { success ->
+            if (success) {
+                Log.d("MainActivity", "Successfully loaded Campsites from database!")
+            } else {
+                Log.e("MainActivity", "Could not fetch Campsites from database!")
+            }
+        }
+
+
+        // get deviceId from android
+
         val db = Database()
         val deviceId = db.getDeviceId(this)
-        //For now, I just have a test user.
+
+        // For now, I just have a test user.
         val testUser = User("HelloWorld", 0, "Alberta")
 
-        //See if user already has account, then create it if not.
+        // See if user already has account (by deviceId), then create it if not.
         db.userExistsByDeviceId(deviceId) { exists ->
             if (exists) {
                 println("Welcome back, User!")

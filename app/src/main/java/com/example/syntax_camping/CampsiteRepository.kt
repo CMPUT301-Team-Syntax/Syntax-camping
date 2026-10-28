@@ -70,8 +70,9 @@ object CampsiteRepository {
                     name = document.getString("name") ?: "",
                     location = document.getString("location") ?: "",
                     description = document.getString("description") ?: "",
-                    maxOcc = document.getField<Int>("maxOccupancy") ?: 0,
-                    tags = mutableListOf<String>()
+                    maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
+                    tags = mutableListOf<String>(),
+                    document.getDouble("rating") ?: 0.00
                 )
 
                 callback(campsite)
@@ -109,7 +110,9 @@ object CampsiteRepository {
                                 document.get("tags") as? List<*>
                                 )?.filterIsInstance<String>()
                             ?.toMutableList()
-                            ?: mutableListOf()
+                            ?: mutableListOf(),
+
+                        document.getDouble("rating") ?: 0.00
                     )
 
                     loadedCampsites.add(campsite)
