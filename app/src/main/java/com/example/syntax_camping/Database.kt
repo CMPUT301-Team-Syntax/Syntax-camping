@@ -3,6 +3,7 @@ package com.example.syntax_camping
 import android.content.Context
 import android.provider.Settings
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.collections.joinToString
 
 // class Database
 // author: Andrew
@@ -109,7 +110,9 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
-                    "description" to campsite.description
+                    "description" to campsite.description,
+                    "maxOccupancy" to campsite.maxOcc,
+                    "tags" to campsite.tags.joinToString(separator = ",")   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                 )
             )
     }
@@ -121,7 +124,9 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
-                    "description" to campsite.description
+                    "description" to campsite.description,
+                    "maxOccupancy" to campsite.maxOcc,
+                    "tags" to campsite.tags.joinToString(separator = ",")
                 )
             )
     }
