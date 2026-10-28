@@ -16,19 +16,21 @@ open class User(var name: String, var userType: Int, var location: String) {
 
     //Each class has specific details. I don't see the point to this so ill disable it for now
     //open fun addDetails(firstName: String, type: Int) {
-    //}
+    //
 
-    private fun getName(): String {
-        return name
-    }
+    //BUG1
+    //private fun getName(): String {
+    //    return name
+    //}
 
     private fun getType(): Int {
         return userType
     }
 
-    open fun getLocation(): String {
-        return location
-    }
+    //BUG2
+    //private fun getLocation(): String {
+    //    return location
+    //}
 
     //Update the user's information
     open fun updateDetails(newName: String, newType: Int){
