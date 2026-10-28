@@ -2,13 +2,14 @@ package com.example.syntax_camping
 
 import android.R.attr.description
 import android.R.attr.name
+import android.media.Rating
 import android.net.Uri
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -19,36 +20,46 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private val _tags =tags
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
+    private var _rating =  rating
+    private var _raters = 0 //number of people that have rated
 
-    fun getDocumentId(): String{
-        return _documentId
-    }
-    fun getName(): String{
-        return _name
-    }
-    fun getLocation(): String{
-        return _location
-    }
+    val name: String
+        get() = _name
+    val location: String
+        get() = _location
+    val description: String
+        get() = _description
+    val maxOcc: Int
+        get() = _maxOcc
+    val tags: MutableList<String>
+        get() = _tags
+    val images: MutableList<Uri>
+        get() = _images
+    val documentId: String
+        get() = _documentId
+    val hasQRCode: Boolean
+        get() = _hasQRCode
+    val rating: Double
+        get() = _rating
+    val raters: Int
+        get() = _raters
 
-    fun getDescription(): String{
-        return _description
-    }
+
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
+    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
+    fun updateRating(number: Double){
+
+        _rating = (_rating*_raters) + number
+        _raters += 1
+        _rating /= _raters
+    }
+
     fun generateQRcode(){
         _hasQRCode = true
     }
-    fun getQRCode(): Boolean{
-        return _hasQRCode
-    }
-    fun getmaxOcc(): Int{
-        return _maxOcc
-    }
 
-    fun getTags(): MutableList<String>{
-        return _tags
-    }
     fun updateName(newName: String){
         _name = newName
     }
@@ -77,9 +88,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         _images.remove(image)
     }
 
-    fun getPhotos(): MutableList<Uri>{
-        return _images
-    }
+
     //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
     /* this is being moved out of Campsite into image carousel handling, leaving the functions though incase someone wants to reuse them
      //returns the current photo, checking first to make sure na image exists

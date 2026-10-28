@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
-import android.R.attr.text
 //TO be added to the correct Navigation calss (ie syntax camping
 /*
 At Top var selectedCampsite by remember {
@@ -46,8 +45,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteRepository
-import com.example.syntax_camping.Photo
 import com.example.syntax_camping.R
 import kotlin.String
 
@@ -56,18 +53,15 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import com.example.syntax_camping.photoPicker
 //import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+
 @Composable
 fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
     /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
-    //Note that campsite inof has two variable representations, one is fo rhte labels of text fields and is lebaled as display before what it displays, the otehrs are for actual
-    //Changing values for addition to campsite
+    //Note that campsite inof has two variable representations, one is for the labels of text fields and is labelled as display before what it displays, the others are for actually storing and changing what that variable display
+    //ie newCampName stores the new name that will be passed when the camp is updated/created, while displayName is fo rthe text field label and determines what it displays(As it may be please enter name here or the old name)
+    //A
     val db = Database()
     var newCampsite: Campsite
     var documentID: String
@@ -86,11 +80,12 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
+
     //Note the following is a list of selected photos, initialized as empty
     var  selectedPhotos by remember {
         mutableStateOf<List<Uri>>(emptyList())
     }
-    //Not this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
+    //Note this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
     val launcher =  rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     )
@@ -99,7 +94,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     }
     //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
     //edit text fields since they ckept getting reset to campsite name values)
-    LaunchedEffect(campsite?.getDocumentId()){
+    LaunchedEffect(campsite?.documentId){
         //If we are creating a cmapsite
         if (campsite == null){
             locationDisplay = "Enter campsite Location"
@@ -111,20 +106,20 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
         //If a campsite already ecxists
         else{
             qrCodeChecked = false
-            newCampLocation  = campsite.getLocation()
+            newCampLocation  = campsite.location
             locationDisplay = newCampLocation
-            newCampName = campsite.getName()
-            nameDisplay = campsite.getName()
-            newCampDescription = campsite.getDescription()
+            newCampName = campsite.name
+            nameDisplay = campsite.name
+            newCampDescription = campsite.description
             descriptionDisplay = newCampDescription
-            newMaxOcc = campsite.getmaxOcc().toString()
+            newMaxOcc = campsite.maxOcc.toString()
             maxOccDisplay = newMaxOcc.toString()
-            qrCodeChecked = campsite.getQRCode()
+            qrCodeChecked = campsite.hasQRCode
 
-            for (item in (campsite.getPhotos())){
+            for (item in (campsite.images)){
                 newPhotos.add(item)
             }
-            for (item in (campsite.getTags())){
+            for (item in (campsite.tags)){
                 newTags.add(item)
             }
 
@@ -255,7 +250,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     ) { innerPadding ->
 
         //inside the scaffold, this would be the content of the screen, start editing screen content from in here
-
+        //THis column handles all of the main display stuff
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -313,11 +308,14 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         //A filler Image for map until map is updated later down the road
+                        /*
                         Image(
                             painter = painterResource(id = R.drawable.map_filler_image),
                             contentDescription = "A description of the image for accessibility",
                             modifier = Modifier.size(150.dp)
                         )
+                        */
+
                     }
                     //A check box for Qr code, not currently implemented as we are oding Qr Code at a later date
                     Row(
@@ -445,8 +443,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                             PickVisualMediaRequest(
                                 ActivityResultContracts
                                     .PickVisualMedia.ImageOnly
-                            )
-                        )
+                            )                        )
                     }
                 ) {
                     Text("Add Images")
@@ -480,7 +477,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                         newCampLocation,
                                         newCampDescription,
                                         intNewMaxOcc,
-                                        newTags
+                                        newTags,
+                                        0.0
                                     )
                                     //Addds images to Photos. Deleting images will be handled with the carousel, to be implemented TODO
                                     if (selectedPhotos.isNotEmpty()){
