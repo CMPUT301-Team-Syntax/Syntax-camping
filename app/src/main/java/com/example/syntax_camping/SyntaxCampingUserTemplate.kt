@@ -14,15 +14,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
-fun SearchHomeScreen(navController: NavController){
+fun SynTaxCampingUserTemplate(navController: NavController){
+    /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
+    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
     Scaffold(
 
         modifier = Modifier
@@ -42,15 +44,7 @@ fun SearchHomeScreen(navController: NavController){
                 //icon button for back button, template for adding icons
                 IconButton(
 
-                    onClick = {
-                        if (navController.previousBackStackEntry != null) {
-                            navController.popBackStack()
-                        } else {
-                            navController.navigate("MyCampsites") {
-                                launchSingleTop = true
-                            }
-                        }
-                    },
+                    onClick = { /* TODO: Navigate to notifications */ },
                     modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
 
                 ) {
@@ -61,17 +55,11 @@ fun SearchHomeScreen(navController: NavController){
                     )
                 }
 
-                IconButton(
-                    onClick = {
-                        navController.navigate("Notifications") {
-                            launchSingleTop = true
-                        }
-                    },
-                    modifier = Modifier.size(100.dp)
-                ) {
+                IconButton(onClick = { /* TODO: Navigate to notifications */ },
+                    modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(R.drawable.notification),
-                        contentDescription = "Notifications",
+                        painter = painterResource(id = R.drawable.notification),
+                        contentDescription = "notifications",
                         tint = Color.Unspecified
                     )
                 }
@@ -89,16 +77,16 @@ fun SearchHomeScreen(navController: NavController){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                IconButton(onClick = { navController.navigate("Search") },
+                IconButton(onClick = { /* TODO: Navigate to Search */ },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.search_tapped),
+                        painter = painterResource(id = R.drawable.ic_search),
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Reservations") },
+                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.reservations),
@@ -107,9 +95,9 @@ fun SearchHomeScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Profile") },
+                IconButton(onClick = { /* TODO: Navigate to Settings */ },
                     modifier = Modifier.size(100.dp)
-                ){
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.account),
                         contentDescription = "Account",
@@ -117,7 +105,7 @@ fun SearchHomeScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Settings") },
+                IconButton(onClick = { /* TODO: Navigate to Settings */ },
                     modifier = Modifier.size(100.dp)
                 ) {
                     Icon(

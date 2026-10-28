@@ -1,38 +1,49 @@
 package com.example.syntax_camping
 
-class Campsite(name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
+import android.R.attr.description
+import android.R.attr.name
+import android.net.Uri
+/*
+* THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
+* and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
+ */
+
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
+    private var _hasQRCode = false
     private var _currImageIndex = 0
     private var _name = name
-
     private var _location = location
-
     private var _description = description
-
     private var _maxOcc = maxOcc
-
     private val _tags =tags
+    private var _images = mutableListOf<Uri>()
+    private var _documentId= documentId
+    val name: String
+        get() = _name
+    val location: String
+        get() = _location
+    val description: String
+        get() = _description
+    val maxOcc: Int
+        get() = _maxOcc
+    val tags: MutableList<String>
+        get() = _tags
+    val images: MutableList<Uri>
+        get() = _images
+    val documentId: String
+        get() = _documentId
+    val hasQRCode: Boolean
+        get() = _hasQRCode
 
-    private var _images = mutableListOf<Image>()
-
-    fun getName(): String{
-        return _name
-    }
-    fun getLocation(): String{
-        return _location
-    }
-
-    fun getDescription(): String{
-        return _description
+    /*
+    * These functions for QR code are just filler until QR code is fully implemented
+    * */
+    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
+    fun generateQRcode(){
+        _hasQRCode = true
     }
 
-    fun getmaxOcc(): Int{
-        return _maxOcc
-    }
-
-    fun getTags(): List<String>{
-        return _tags
-    }
     fun updateName(newName: String){
         _name = newName
     }
@@ -48,42 +59,65 @@ class Campsite(name: String, location: String, description: String, maxOcc: Int,
         _maxOcc = newMaxOcc
     }
 
-    fun addTag(tag: String){
-        _tags.add(tag)
+    fun updateTag(newTags: MutableList<String>){
+        _tags.clear()
+        for (item in newTags){
+            _tags.add(item)
+        }
     }
-    fun removeTag(tag: String){
-        _tags.remove(tag)
-    }
-    fun addImage(image:Image){
+    fun addImage(image:Uri){
         _images.add(image)
     }
-    fun removeImage(image:Image){
+    fun removeImage(image:Uri){
         _images.remove(image)
     }
 
+
+    //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
+    /* this is being moved out of Campsite into image carousel handling, leaving the functions though incase someone wants to reuse them
+     //returns the current photo, checking first to make sure na image exists
+    /*
     fun getCurrPhoto(): String{
         if(_images.size == 0)
             return "No image Found"
         else
             return _images[_currImageIndex].getUrl()
     }
+    */
+
     fun getNextPhoto():String{
-        if(_images.size == 0)
+        if(_images.size == 0) {
             return "No image Found"
+        }
         else if(_currImageIndex == (_images.size-1)){
             _currImageIndex = 0
             return _images[_currImageIndex].getUrl()
 
         }
-        else
+        else {
             _currImageIndex += 1
             return _images[_currImageIndex].getUrl()
+        }
+    }
+    fun getPreviousPhoto():String{
+        if(_images.size == 0) {
+            return "No image Found"
+        }
+        else if(_currImageIndex == (0)){
+            _currImageIndex = _images.size - 1
+            return _images[_currImageIndex].getUrl()
+
+        }
+        else {
+            _currImageIndex -= 1
+        }
+
+        return _images[_currImageIndex].getUrl()
 
     }
+    //resets the photo index, should be called each time you leavve a page with an image caraousel
     fun resetIndex(){
         _currImageIndex = 0
     }
-
-
-
+*/
 }

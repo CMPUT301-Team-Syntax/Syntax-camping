@@ -1,8 +1,12 @@
-package com.example.syntax_camping
+package com.example.syntax_camping.UserScreens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,21 +14,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CampsiteListScreen
 
 @Composable
-fun CampsiteDetailsScreen(navController: NavController){
-/*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
-    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
+fun SearchHomeScreen(navController: NavController){
     Scaffold(
 
         modifier = Modifier
@@ -44,7 +61,15 @@ fun CampsiteDetailsScreen(navController: NavController){
                 //icon button for back button, template for adding icons
                 IconButton(
 
-                    onClick = { /* TODO: Navigate to notifications */ },
+                    onClick = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate("MyCampsites") {
+                                launchSingleTop = true
+                            }
+                        }
+                    },
                     modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
 
                 ) {
@@ -55,11 +80,17 @@ fun CampsiteDetailsScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
+                IconButton(
+                    onClick = {
+                        navController.navigate("Notifications") {
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.size(100.dp)
+                ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
+                        painter = painterResource(R.drawable.notification),
+                        contentDescription = "Notifications",
                         tint = Color.Unspecified
                     )
                 }
@@ -77,16 +108,16 @@ fun CampsiteDetailsScreen(navController: NavController){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                IconButton(onClick = { /* TODO: Navigate to Search */ },
+                IconButton(onClick = { navController.navigate("Search") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
+                        painter = painterResource(id = R.drawable.search_tapped),
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
+                IconButton(onClick = { navController.navigate("Reservations") },
                     modifier = Modifier.size(100.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.reservations),
@@ -95,9 +126,9 @@ fun CampsiteDetailsScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
+                IconButton(onClick = { navController.navigate("Profile") },
                     modifier = Modifier.size(100.dp)
-                ) {
+                ){
                     Icon(
                         painter = painterResource(id = R.drawable.account),
                         contentDescription = "Account",
@@ -105,8 +136,8 @@ fun CampsiteDetailsScreen(navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                        modifier = Modifier.size(100.dp)
+                IconButton(onClick = { navController.navigate("Settings") },
+                    modifier = Modifier.size(100.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_settings),
@@ -130,13 +161,23 @@ fun CampsiteDetailsScreen(navController: NavController){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            val sampleCampsites = listOf(
+                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf()),
+                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf())
+            )
+            CampsiteListScreen(
+                campsiteList = sampleCampsites,
+                onItemClick = {}
+            )
 
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+
+
+@Preview(showBackground = true)
+@Composable
+fun SearchHomeScreenPreview() {
+
 }

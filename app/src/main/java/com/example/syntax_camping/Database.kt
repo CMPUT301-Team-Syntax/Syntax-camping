@@ -10,7 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 // NOTE: we must use callbacks as firebase calls are asynchronous
 // usage:
-// userExistsByDeviceId(someDeviceId) { exists ->
+// userExistsByDeviceId(someDeviceId) { -> exists
 //      if (exists)
 //          code to run if user exists
 //      else
@@ -44,6 +44,7 @@ class Database {
             context.contentResolver,
             Settings.Secure.ANDROID_ID
         ) ?: "unknown"
+
     }
 
     // updateUser
@@ -56,7 +57,8 @@ class Database {
             .update(
                 mapOf(
                     "displayName" to userDetails.name,
-                    "userType" to userDetails.userType
+                    "userType" to userDetails.userType,
+                    "location" to userDetails.location
                 )
             )
     }
@@ -71,7 +73,8 @@ class Database {
             .set(
                 mapOf(
                     "displayName" to userDetails.name,
-                    "userType" to userDetails.userType
+                    "userType" to userDetails.userType,
+                    "location" to userDetails.location
                 )
             )
     }
@@ -87,15 +90,41 @@ class Database {
                 if (document.exists()) {
                     val name = document.getString("displayName") ?: "New User"
                     val userType = document.getLong("userType")?.toInt() ?: 0
-
-                    callback(User(name, devId, userType))
+                    val location = document.getString("location") ?: "N/A"
+                    callback(User(name, userType, location))
                 } else {
-                    callback(User("New User", devId, 0))
+                    callback(User("New User", 0, "N/A"))
                 }
             }
             .addOnFailureListener { e ->
                 println("Error fetching user: $e")
-                callback(User("New User", devId, 0))
+                callback(User("New User", 0, "N/A"))
             }
     }
+
+    fun createNewCampsite(campsite: Campsite) {
+        db.collection("campsites")
+            .document(campsite.documentId)
+            .set(
+                mapOf(
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
+                )
+            )
+    }
+
+    fun updateCampsite(campsite: Campsite) {
+        db.collection("campsites")
+            .document(campsite.documentId)
+            .update(
+                mapOf(
+                    "name" to campsite.name,
+                    "location" to campsite.location,
+                    "description" to campsite.description
+                )
+            )
+    }
+
+
 }
