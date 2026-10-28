@@ -113,7 +113,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             newCampDescription = campsite.description
             descriptionDisplay = newCampDescription
             newMaxOcc = campsite.maxOcc.toString()
-            maxOccDisplay = newMaxOcc.toString()
+            maxOccDisplay = newMaxOcc
             qrCodeChecked = campsite.hasQRCode
 
             for (item in (campsite.images)){

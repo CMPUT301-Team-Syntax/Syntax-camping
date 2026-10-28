@@ -3,6 +3,8 @@ package com.example.syntax_camping
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.getField
+import kotlin.collections.toMutableList
+import kotlin.text.split
 
 // object CampsiteRepository
 // author: Andrew
@@ -64,6 +66,8 @@ object CampsiteRepository {
                     callback(null)
                     return@addOnSuccessListener
                 }
+                // Tags and ImageURIs are stored as a string in firestore
+                // we must parse it back into a MutableList for other implementations to work
 
                 val campsite = Campsite(
                     documentId = document.id,
@@ -71,7 +75,7 @@ object CampsiteRepository {
                     location = document.getString("location") ?: "",
                     description = document.getString("description") ?: "",
                     maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
-                    tags = mutableListOf<String>(),
+                    tags = (document.getString("tags") ?: "").split(",").toMutableList(),
                     document.getDouble("rating") ?: 0.00
                 )
 
@@ -99,6 +103,9 @@ object CampsiteRepository {
 
                 val loadedCampsites = mutableListOf<Campsite>()
 
+                // Tags and ImageURIs are stored as a string in firestore
+                // we must parse it back into a MutableList for other implementations to work
+
                 for (document in result) {
                     val campsite = Campsite(
                         documentId = document.id,
@@ -106,13 +113,8 @@ object CampsiteRepository {
                         location = document.getString("location") ?: "",
                         description = document.getString("description") ?: "",
                         maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
-                        tags = (
-                                document.get("tags") as? List<*>
-                                )?.filterIsInstance<String>()
-                            ?.toMutableList()
-                            ?: mutableListOf(),
-
-                        document.getDouble("rating") ?: 0.00
+                        tags = (document.getString("tags") ?: "").split(",").toMutableList(),
+                        rating = document.getDouble("rating") ?: 0.00
                     )
 
                     loadedCampsites.add(campsite)
@@ -126,9 +128,6 @@ object CampsiteRepository {
             .addOnFailureListener { exception ->
                 callback(false)
             }
-
-
-
 
     }
 
