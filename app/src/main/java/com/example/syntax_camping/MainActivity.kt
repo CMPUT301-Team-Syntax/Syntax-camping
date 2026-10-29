@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
          *val user = User(name, userId)
          */
 
-        
+
 
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
