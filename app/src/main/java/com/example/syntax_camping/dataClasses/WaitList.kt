@@ -6,19 +6,25 @@ import com.google.firebase.Timestamp
 /**
  * WORK IN PROGRESS.
  * Waitlist data class that is stored in a campsite.
+ * The waitlist itself
  */
-data class WaitList(
+class WaitList(
     val campsite: Campsite,
     val joined: Timestamp
 ) {
+    //Contains a list of Entrant class because we need to access their name.
     private var waitlist = mutableListOf<String>()
 
-    fun addUser(userId: String) {
-        waitlist.add(userId)
+    fun addUser(entrantId: String) {
+        waitlist.add(entrantId)
     }
 
-    fun removeUser(userId: String) {
-        waitlist.remove(userId)
+    fun removeUser(entrantId: String) {
+        waitlist.remove(entrantId)
+    }
+
+    fun getListWinners(){
+        //Todo
     }
 
 }
