@@ -10,31 +10,17 @@ package com.example.syntax_camping
  * we access the collectionPath and edit its data.
  *
  * Assuming that this is a singular user, all data will be handled as if it was.
+ * Will be updated as user gets updated.
  */
 
-open class User(var name: String, var userType: Int, var location: String) {
-
-    //Each class has specific details. I don't see the point to this so ill disable it for now
-    //open fun addDetails(firstName: String, type: Int) {
-    //
-
-    //BUG1
-    //private fun getName(): String {
-    //    return name
-    //}
-
-    private fun getType(): Int {
-        return userType
-    }
-
-    //BUG2
-    //private fun getLocation(): String {
-    //    return location
-    //}
+open class User(var name: String, var userType: Int) {
 
     //Update the user's information
-    open fun updateDetails(newName: String, newType: Int){
+    open fun updateName(newName: String) {
         name = newName
+    }
+
+    open fun updateUserType(newType: Int) {
         userType = newType
     }
 
