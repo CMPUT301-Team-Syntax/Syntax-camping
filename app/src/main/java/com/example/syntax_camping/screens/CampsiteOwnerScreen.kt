@@ -27,7 +27,7 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
 
     val navController = rememberNavController()
     var isLoading by remember { mutableStateOf(true) }
-    var rp = CampsiteRepository()
+    // var rp = CampsiteRepository()
     var documentId = "Test12"
     var selCampsite by remember { mutableStateOf<Campsite?>(null) }
 
@@ -51,13 +51,13 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
         composable( "UpdateCamp"){
 
            //val selCampsite = Campsite("Test12", "Name", "Lop", "This is a description", 10, mutableListOf<String>())
-            LaunchedEffect(documentId) {
+            /*LaunchedEffect(documentId) {
                 rp.getCampsite(documentId) { campsite ->
                     selCampsite = campsite
                 }
             }
             //comment out the following line if you want to update a campsite, then update the document id above to matcht e campsite you want to update
-            selCampsite = null
+            selCampsite = null*/
 
 
            CampsiteEditingScreen(

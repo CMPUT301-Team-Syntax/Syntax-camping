@@ -3,6 +3,7 @@ package com.example.syntax_camping
 import android.content.Context
 import android.provider.Settings
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.collections.joinToString
 
 // class Database
 // author: Andrew
@@ -58,7 +59,6 @@ class Database {
                 mapOf(
                     "displayName" to userDetails.name,
                     "userType" to userDetails.userType,
-                    "location" to userDetails.location
                 )
             )
     }
@@ -74,7 +74,6 @@ class Database {
                 mapOf(
                     "displayName" to userDetails.name,
                     "userType" to userDetails.userType,
-                    "location" to userDetails.location
                 )
             )
     }
@@ -90,15 +89,14 @@ class Database {
                 if (document.exists()) {
                     val name = document.getString("displayName") ?: "New User"
                     val userType = document.getLong("userType")?.toInt() ?: 0
-                    val location = document.getString("location") ?: "N/A"
-                    callback(User(name, userType, location))
+                    callback(User(name, userType))
                 } else {
-                    callback(User("New User", 0, "N/A"))
+                    callback(User("New User", 0))
                 }
             }
             .addOnFailureListener { e ->
                 println("Error fetching user: $e")
-                callback(User("New User", 0, "N/A"))
+                callback(User("New User", 0))
             }
     }
 
@@ -109,7 +107,9 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
-                    "description" to campsite.description
+                    "description" to campsite.description,
+                    "maxOccupancy" to campsite.maxOcc,
+                    "tags" to campsite.tags.joinToString(separator = ",")   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                 )
             )
     }
@@ -121,7 +121,9 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
-                    "description" to campsite.description
+                    "description" to campsite.description,
+                    "maxOccupancy" to campsite.maxOcc,
+                    "tags" to campsite.tags.joinToString(separator = ",")
                 )
             )
     }
