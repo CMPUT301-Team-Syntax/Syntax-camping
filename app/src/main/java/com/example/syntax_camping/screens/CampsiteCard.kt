@@ -79,15 +79,13 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
                         painter = painterResource(id = R.drawable.location_on),
                         contentDescription = "location",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Gray // Change to Color.Gray to ensure visibility
+                        tint = Color.Black
                     )
-
-                    Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
                         text = campsite.location,
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = Color.Black
                     )
                 }
 

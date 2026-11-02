@@ -105,6 +105,7 @@ fun CampsiteDetailsScreen(navController: NavController){
                 modifier = Modifier.fillMaxWidth()
             ) {
 
+
             }
 
             Spacer(modifier = Modifier.height(16.dp))
