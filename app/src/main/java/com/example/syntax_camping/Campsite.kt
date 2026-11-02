@@ -4,12 +4,14 @@ import android.R.attr.description
 import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
+import androidx.core.net.toUri
+
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
  */
 
-class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, /*mapLocation<MapLocation> */) {
+class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String>, /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
     private var _currImageIndex = 0
@@ -43,7 +45,6 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _rating
     val raters: Int
         get() = _raters
-
 
     /*
     * These functions for QR code are just filler until QR code is fully implemented
@@ -86,6 +87,30 @@ class Campsite(documentId: String, name: String, location: String, description: 
     }
     fun removeImage(image:Uri){
         _images.remove(image)
+    }
+
+    fun getImagesAsStrs(): MutableList<String> {
+
+        val imagesAsStrs = mutableListOf<String>()
+        for (image in _images) {
+            imagesAsStrs.add(image.toString())
+        }
+
+        return imagesAsStrs
+
+    }
+
+    // Database stores images as a list of string.
+    // On init, we must parse these strings as Uris
+
+    init {
+
+        for (image in images) {
+
+            addImage(image.toUri())
+
+        }
+
     }
 
 

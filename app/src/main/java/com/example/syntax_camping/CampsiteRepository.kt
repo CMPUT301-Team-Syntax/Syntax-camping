@@ -76,7 +76,8 @@ object CampsiteRepository {
                     description = document.getString("description") ?: "",
                     maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
                     tags = (document.getString("tags") ?: "").split(",").toMutableList(),
-                    document.getDouble("rating") ?: 0.00
+                    document.getDouble("rating") ?: 0.00,
+                    images = (document.getString("images") ?: "").split(",").toMutableList()
                 )
 
                 callback(campsite)
@@ -114,7 +115,8 @@ object CampsiteRepository {
                         description = document.getString("description") ?: "",
                         maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
                         tags = (document.getString("tags") ?: "").split(",").toMutableList(),
-                        rating = document.getDouble("rating") ?: 0.00
+                        rating = document.getDouble("rating") ?: 0.00,
+                        images = (document.getString("images") ?: "").split(",").toMutableList()
                     )
 
                     loadedCampsites.add(campsite)

@@ -109,7 +109,8 @@ class Database {
                     "location" to campsite.location,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
-                    "tags" to campsite.tags.joinToString(separator = ",")   // Campsite() stores tags as a MutableList, firestore stores them as a string.
+                    "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
+                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
                 )
             )
     }
@@ -123,7 +124,8 @@ class Database {
                     "location" to campsite.location,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
-                    "tags" to campsite.tags.joinToString(separator = ",")
+                    "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
+                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
                 )
             )
     }
