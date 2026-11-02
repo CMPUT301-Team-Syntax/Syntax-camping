@@ -23,7 +23,7 @@ fun TopBar(navController: NavController){
         modifier = Modifier
             .fillMaxWidth()
             .height(80.dp)
-            .background(Color(0xFF3E6B68)), // sets the background color to pink lkie the figma mockups
+            .background(Color(0xFF3E6B68)), // sets the background color to whatever colour really lkie the figma mockups
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

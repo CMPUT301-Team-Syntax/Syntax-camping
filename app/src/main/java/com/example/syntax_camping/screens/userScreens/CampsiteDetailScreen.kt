@@ -46,7 +46,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
     val scrollState = rememberScrollState()
 
     if (campsite == null) {
-        // Optionally, put a Text("Campsite not found") here
+        //maybe a launched effect then a campsite not here, after 5 seconds back to home
         return
     }
 
@@ -75,7 +75,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(scrollState) // Makes the content scrollable
+                .verticalScroll(scrollState) // Makes the content scrollable, gemini prompted, doubt its necessary though
         ) {
             // -- Photo Carousel Section --
             campsiteCarousel.displayCarousel(
@@ -83,25 +83,22 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                 photoCarousel = campsiteCarousel
             )
 
-            // Content below the carousel gets side padding
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
-                // -- Header Section --
-
-                    // Rating
-                    Row(modifier = Modifier.fillMaxWidth(),
+                 Row(modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically) {
                         Rating(campsite.rating)
                         Text(
-                            text = " ${campsite.rating} (${campsite.raters})",
+                            text = " ${campsite.rating} (${campsite.raters})", //rating
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
                     }
+                //campsite name
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,11 +114,11 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // -- Information Grid Section --
+                // 2 grid information
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    // Left Column
+                    // Left column
                     Column (
                         modifier = Modifier.weight(1f)
                             .padding(end = 8.dp)
@@ -159,7 +156,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                     }
 
 
-                    // Right Column
+                    // Right column
                     Column(
                         modifier = Modifier.weight(1f)
                             .padding(start = 8.dp)
@@ -190,7 +187,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
 
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // -- Description Section --
+                // description dection
                 Text(
                     text = "Description",
                     fontSize = 25.sp,
@@ -210,7 +207,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // -- Lottery / Waitlist Section --
+                // Lottery Waitlist Section
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -227,7 +224,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                     Button(
                         onClick = { /* TODO: Implement Waitlist Logic */ },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF2C9C9) // Pinkish button color
+                            containerColor = Color(0xFFF2C9C9) // button color
                         ),
                         shape = MaterialTheme.shapes.small
                     ) {

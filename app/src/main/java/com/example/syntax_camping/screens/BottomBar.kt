@@ -11,8 +11,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
 
-// 1. The Blueprint for your specific app tabs
-enum class BottomTab(
+// The blueprint for user bottom bar
+enum class BottomTab(//can replicate for campsite owner, just change the navigations as per campsite owner navhost names and routes
     val route: String,
     @DrawableRes val iconUnselected: Int,
     @DrawableRes val iconSelected: Int
@@ -33,10 +33,11 @@ fun CustomBottomBar(
     NavigationBar(
         containerColor = backgroundColor
     ) {
-        BottomTab.entries.forEach { tab ->
+        BottomTab.entries.forEach { tab -> //here it uses the bottom bar enum made atop
             val isSelected = currentRoute == tab.route
 
             NavigationBarItem(
+                //this is becasue i made two states in the figma mockup, may be unnecessary if campsite owner icons don't change colour when tapped to go to the screens
                 selected = isSelected,
                 onClick = {
                     if (!isSelected) {
@@ -44,7 +45,7 @@ fun CustomBottomBar(
                     }
                 },
                 icon = {
-                    // Swaps the icon if it is the currently selected page
+                    // swaps the icon if it is the currently selected page
                     val targetIcon = if (isSelected) tab.iconSelected else tab.iconUnselected
                     Icon(
                         painter = painterResource(id = targetIcon),
@@ -52,9 +53,10 @@ fun CustomBottomBar(
                         tint = Color.Unspecified
                     )
                 },
+
                 colors = NavigationBarItemDefaults.colors(
                     // Optional: changes the color of the bubble behind the active icon
-                    indicatorColor = Color.White.copy(alpha = 0.2f)
+                    indicatorColor = Color.White.copy(alpha = 0.2f)//for some reason the tap on click kept having a white colour
                 )
             )
         }
