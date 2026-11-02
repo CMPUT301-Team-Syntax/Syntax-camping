@@ -39,10 +39,8 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.Rating
 
-// US 02.01.04: owner details layout from the team's owner storyboard.
-// TODO: Connect notifications, editing and the remaining lottery information.
+/** US 02.01.04: displays the selected owner's campsite in one scrollable page. */
 @Composable
 fun OwnerCampsiteDetailsScreen(
     navController: NavController,
@@ -51,7 +49,6 @@ fun OwnerCampsiteDetailsScreen(
     onNotificationsClick: () -> Unit = {}
 ) {
     val pink = Color(0xFFEBC3C3)
-
     OwnerPagesLayout(
         navController = navController,
         onNotificationsClick = onNotificationsClick,
@@ -60,10 +57,7 @@ fun OwnerCampsiteDetailsScreen(
         }
     ) { innerPadding ->
         if (campsite == null) {
-            Text(
-                "Select a campsite first.",
-                Modifier.padding(innerPadding).padding(16.dp)
-            )
+            Text("Select a campsite first.", Modifier.padding(innerPadding).padding(16.dp))
         } else {
             Column(
                 modifier = Modifier.fillMaxSize().padding(innerPadding)
@@ -71,10 +65,10 @@ fun OwnerCampsiteDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OwnerPhotoSection(campsite)
-
                 Column(
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 280.dp)
-                        .background(pink).padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        .heightIn(min = 280.dp)
+                        .background(pink, RoundedCornerShape(10.dp)).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(campsite.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -82,10 +76,9 @@ fun OwnerCampsiteDetailsScreen(
                     Text("Campsite description", fontWeight = FontWeight.Bold)
                     Text(campsite.description.ifBlank { "No description yet." })
                 }
-
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth()
@@ -99,14 +92,12 @@ fun OwnerCampsiteDetailsScreen(
                             campsite.tags.forEach { tag -> Text("#$tag") }
                         }
                     }
-
                     OwnerDetailRow("Maximum occupants", campsite.maxOcc.toString())
+                    // TODO: Bind these three values when lottery data is integrated.
                     OwnerDetailRow("Current occupants", "—")
                     OwnerDetailRow("Current waitlist count", "—")
                     OwnerDetailRow("Next draw", "—")
-
-                    Spacer(Modifier.height(64.dp))
-
+                    Spacer(Modifier.height(32.dp))
                     Column(
                         modifier = Modifier.fillMaxWidth()
                             .background(pink, RoundedCornerShape(10.dp)).padding(16.dp),
@@ -114,11 +105,13 @@ fun OwnerCampsiteDetailsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text("Campsite Rating:", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Rating(numRating = campsite.rating)
+                        OwnerCardStars(
+                            rating = campsite.rating,
+                            modifier = Modifier.size(width = 140.dp, height = 28.dp)
+                        )
                         Text("${campsite.rating}/5", fontSize = 14.sp)
                     }
-
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                 }
             }
         }
@@ -127,15 +120,16 @@ fun OwnerCampsiteDetailsScreen(
 
 @Composable
 private fun OwnerPhotoSection(campsite: Campsite) {
-    var photoIndex by remember(campsite.documentId) { mutableIntStateOf(0) }
-
+    // Reset when the number of photos changes, keeping the selected index valid.
+    var photoIndex by remember(campsite.documentId, campsite.images.size) { mutableIntStateOf(0) }
     Column(
-        modifier = Modifier.fillMaxWidth()
-            .background(Color(0xFFE6E6E6)).padding(bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            .background(Color(0xFFE6E6E6), RoundedCornerShape(10.dp))
+            .padding(bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth().height(240.dp),
+            modifier = Modifier.fillMaxWidth().height(220.dp),
             contentAlignment = Alignment.Center
         ) {
             val photo = campsite.images.getOrNull(photoIndex)
@@ -154,23 +148,24 @@ private fun OwnerPhotoSection(campsite: Campsite) {
                     contentScale = ContentScale.Crop
                 )
             }
-
-            if (campsite.images.size > 1) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TextButton(onClick = {
-                        photoIndex = (photoIndex - 1 + campsite.images.size) % campsite.images.size
-                    }) { Text("Previous") }
-                    TextButton(onClick = {
-                        photoIndex = (photoIndex + 1) % campsite.images.size
-                    }) { Text("Next") }
-                }
+        }
+        if (campsite.images.size > 1) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TextButton(onClick = {
+                    photoIndex = (photoIndex - 1 + campsite.images.size) % campsite.images.size
+                }) { Text("Previous") }
+                TextButton(onClick = {
+                    photoIndex = (photoIndex + 1) % campsite.images.size
+                }) { Text("Next") }
             }
         }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             repeat(campsite.images.size.coerceAtLeast(1)) { index ->
                 Box(
                     Modifier.size(6.dp).background(
@@ -212,12 +207,9 @@ private fun OwnerCampsiteDetailsPreview() {
             rating = 4.4
         )
     }
-
     OwnerCampsiteDetailsScreen(
         navController = rememberNavController(),
         campsite = campsite,
         onEditCampsite = {}
     )
 }
-
-// End of OwnerCampsiteDetailsScreen.kt
