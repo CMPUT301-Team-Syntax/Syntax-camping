@@ -32,7 +32,7 @@ fun SettingsScreen(navController: NavController){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = {
-            TopBar()
+            TopBar(navController)
         },
 
         bottomBar = {

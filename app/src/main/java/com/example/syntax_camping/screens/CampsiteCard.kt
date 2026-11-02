@@ -91,7 +91,7 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.location_on), // Double-check if this should be a different icon like group/person
+                        painter = painterResource(id = R.drawable.occupancy), // Double-check if this should be a different icon like group/person
                         contentDescription = "Capacity",
                         modifier = Modifier.size(16.dp),
                         tint = Color.Gray

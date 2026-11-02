@@ -33,7 +33,7 @@ fun ProfileScreen(navController: NavController) {
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            TopBar()
+            TopBar(navController)
         },
 
         bottomBar = {

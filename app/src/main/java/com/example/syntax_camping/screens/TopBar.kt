@@ -14,10 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.syntax_camping.R
 
 @Composable
-fun TopBar(){
+fun TopBar(navController: NavController){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -30,7 +31,7 @@ fun TopBar(){
         //icon button for back button, template for adding icons
         IconButton(
 
-            onClick = { /* TODO: Navigate to notifications */ },
+            onClick = { navController.popBackStack() },
             modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
 
         ) {

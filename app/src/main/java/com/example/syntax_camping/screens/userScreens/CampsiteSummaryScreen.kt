@@ -38,7 +38,7 @@ fun CampsiteSummaryScreen(navController: NavController){
             .background(Color(0xFFF4E8D5)), // Set the background color to white
         containerColor = Color(0xFFF4E8D5),
         topBar = {
-            TopBar()
+            TopBar(navController)
         },
 
         bottomBar = {
@@ -116,7 +116,7 @@ fun CampsiteSummaryScreen(navController: NavController){
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(mockCampsites) { index, camp ->
-                    CampsiteCard(camp, onClick = {})
+                    CampsiteCard(camp, onClick = {navController.navigate("campsiteDetails/${camp.documentId}")})
                     if (index < mockCampsites.lastIndex) {
                         HorizontalDivider()
                     }

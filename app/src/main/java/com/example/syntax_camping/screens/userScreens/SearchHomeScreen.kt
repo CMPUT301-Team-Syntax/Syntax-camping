@@ -40,9 +40,19 @@ import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreen
 import com.example.syntax_camping.screens.TopBar
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.remember
 
 @Composable
 fun SearchHomeScreen(navController: NavController){
+
+    var realCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
     Scaffold(
 
         modifier = Modifier
@@ -50,7 +60,7 @@ fun SearchHomeScreen(navController: NavController){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = {
-            TopBar()
+            TopBar(navController)
         },
 
         bottomBar = {
@@ -106,8 +116,6 @@ fun SearchHomeScreen(navController: NavController){
         }
     ) { innerPadding ->
 
-        //inside the scaffold, this would be the content of the screen, start editing screen content from in here
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,14 +125,34 @@ fun SearchHomeScreen(navController: NavController){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            val sampleCampsites = listOf(
-                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
-                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
-            )
-            CampsiteListScreen(
-                campsiteList = sampleCampsites,
-                onItemClick = {}
-            )
+            LaunchedEffect(Unit) {
+                CampsiteRepository.refreshCampsiteCache { success ->
+                    if (success) {
+                        // If Firebase succeeded, grab the newly downloaded list
+                        realCampsites = CampsiteRepository.getCampsites().toList()
+                    }
+                    // Tell the UI to stop showing the loading spinner
+                    isLoading = false
+                }
+            }
+
+
+
+            if (isLoading) {
+                // Show a loading spinner while waiting for Firebase
+                CircularProgressIndicator()
+            } else if (realCampsites.isEmpty()) {
+                // Show this if the database is empty or failed to load
+                Text("No campsites found in database.")
+            } else {
+                // Show the actual list of cards!
+                CampsiteListScreen(
+                    campsiteList = realCampsites,
+                    onItemClick = { clickedId ->
+                        navController.navigate("campsiteDetails/$clickedId")
+                    }
+                )
+            }
 
         }
     }

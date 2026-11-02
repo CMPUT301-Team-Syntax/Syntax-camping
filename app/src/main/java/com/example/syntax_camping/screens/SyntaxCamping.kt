@@ -17,12 +17,17 @@ fun SyntaxCamping(
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
+
 //PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
     //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
 //    androidx.navigation.NavHost(navController = navController, startDestination = "Search")
-    NavHost(navController = navController, startDestination = "home", modifier = modifier) {
-        composable("test") {
-            CampsiteDetailsScreen(navController)
+    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+
+        composable("campsiteDetails/{campsiteId}") { backStackEntry ->
+            // Extract the ID from the navigation route
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId")
+
+            CampsiteDetailsScreen(navController, campsiteId)
         }
         composable("Settings") {
             SettingsScreen(navController)
