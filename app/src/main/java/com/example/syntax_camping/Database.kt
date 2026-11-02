@@ -59,7 +59,6 @@ class Database {
                 mapOf(
                     "displayName" to userDetails.name,
                     "userType" to userDetails.userType,
-                    "location" to userDetails.location
                 )
             )
     }
@@ -75,7 +74,6 @@ class Database {
                 mapOf(
                     "displayName" to userDetails.name,
                     "userType" to userDetails.userType,
-                    "location" to userDetails.location
                 )
             )
     }
@@ -91,15 +89,14 @@ class Database {
                 if (document.exists()) {
                     val name = document.getString("displayName") ?: "New User"
                     val userType = document.getLong("userType")?.toInt() ?: 0
-                    val location = document.getString("location") ?: "N/A"
-                    callback(User(name, userType, location))
+                    callback(User(name, userType))
                 } else {
-                    callback(User("New User", 0, "N/A"))
+                    callback(User("New User", 0))
                 }
             }
             .addOnFailureListener { e ->
                 println("Error fetching user: $e")
-                callback(User("New User", 0, "N/A"))
+                callback(User("New User", 0))
             }
     }
 

@@ -22,11 +22,10 @@ class MainActivity : ComponentActivity() {
          *we'll have to connect the register screen to this.
          *var name by remember { mutableStateOf("") }
          *var userId by remember { mutableIntStateOf(0) }
-         *var location by remember { mutableStateOf("") }
          *val user = User(name, userId)
          */
 
-        //
+
 
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
@@ -43,7 +42,7 @@ class MainActivity : ComponentActivity() {
         val deviceId = db.getDeviceId(this)
 
         // For now, I just have a test user.
-        val testUser = User("HelloWorld", 0, "Alberta")
+        val testUser = User("HelloWorld", 0)
 
         // See if user already has account (by deviceId), then create it if not.
         db.userExistsByDeviceId(deviceId) { exists ->
