@@ -33,6 +33,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 
@@ -60,55 +61,11 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFF3E6B68))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                IconButton(onClick = { /* TODO: Navigate to Search */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
-                        contentDescription = "Search",
-                        tint = Color(0xFF3F6B68)
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.reservations),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                    modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                        modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomBottomBar(
+                navController = navController,
+                currentRoute = "CampsiteDetails",
+                backgroundColor = Color(0xFF3E6B68)
+            )
         }
     ) { innerPadding ->
 
@@ -163,13 +120,15 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                 // -- Information Grid Section --
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Left Column
-                    Column {
+                    Column (
+                        modifier = Modifier.weight(1f)
+                            .padding(end = 8.dp)
+                    ){
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically)
+                            verticalAlignment = Alignment.Top)
                         {
                             Icon(
                                 painter = painterResource(id = R.drawable.location_on),
@@ -188,7 +147,6 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
 
                         Text(text = "💰 Rate: $25/n",
                             fontSize = 16.sp,
-                            modifier = Modifier.weight(1f)
                         ) // Hardcoded price placeholder
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -196,14 +154,16 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                         Text(text = "🏕️ Campsite Rules",
                             fontSize = 16.sp,
                             color = Color.Blue,
-                            modifier = Modifier.weight(1f)
                         )
 
                     }
 
 
                     // Right Column
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                            .padding(start = 8.dp)
+                    ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically)
@@ -215,7 +175,6 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
 
                             Text(text = " Max Occupancy: ${campsite.maxOcc}",
                                 fontSize = 16.sp,
-                                modifier = Modifier.weight(1f)
                             )
 
                         }
@@ -275,8 +234,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                         Text(
                             text = "Click to join Waitlist!!",
                             color = Color.Black,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.weight(1f)
+                            fontWeight = FontWeight.Medium
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -285,8 +243,7 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                         text = "50+ people currently waiting\n5 days left", //nothing about lottery or waitlist implemented yet
                         fontSize = 12.sp,
                         color = Color.Gray,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.weight(1f)
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
 
