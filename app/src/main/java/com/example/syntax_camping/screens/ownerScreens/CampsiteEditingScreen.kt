@@ -53,6 +53,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.syntax_camping.PhotoCarousel
+
 //import androidx.compose.ui.Modifier
 
 @Composable
@@ -81,6 +83,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
 
+
     //Note the following is a list of selected photos, initialized as empty
     var  selectedPhotos by remember {
         mutableStateOf<List<Uri>>(emptyList())
@@ -92,6 +95,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     { uris ->
         selectedPhotos = uris
     }
+    var photoCarousel = PhotoCarousel(selectedPhotos)
     //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
     //edit text fields since they ckept getting reset to campsite name values)
     LaunchedEffect(campsite?.documentId){
@@ -116,9 +120,11 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             maxOccDisplay = newMaxOcc
             qrCodeChecked = campsite.hasQRCode
 
+
             for (item in (campsite.images)){
                 newPhotos.add(item)
             }
+
             for (item in (campsite.tags)){
                 newTags.add(item)
             }
@@ -272,6 +278,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     label = { Text(nameDisplay) },
                     modifier = Modifier.weight(1f)
                 )
+                //THIS WILL CHANGE WITH MAP IMPLEMENTATION SLIGHTLY AS IT NEEDS TO ALSO RECIEVE POTENTIAL STRINGS FORM THE MAP/TODO
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = newCampLocation,
@@ -418,16 +425,13 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     text = "Please select images you would like to upload by tapping below"
                 )
             }
+            //This row calls photo carousel display funciton, passing an argument of the photocarousel onject created on this page
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.missing_image_filler),
-                    contentDescription = "A description of the image for accessibility",
-                    modifier = Modifier.size(300.dp)
-                )
 
+                    photoCarousel.displayCarousel(Modifier,photoCarousel)
 
             }
             Row(
@@ -443,7 +447,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                             PickVisualMediaRequest(
                                 ActivityResultContracts
                                     .PickVisualMedia.ImageOnly
-                            )                        )
+                            )
+                        )
+                        photoCarousel = PhotoCarousel(selectedPhotos)
                     }
                 ) {
                     Text("Add Images")
@@ -535,17 +541,21 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     }
                 }
                 //If there is na error in the info entered by the user, tells them
-                if( (error != "") ){
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "$error"
-                        )
-                    }
-                }
+
 
             }
+            if( (error != "") ){
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "$error"
+                    )
+                }
+            }
         }
+
+
     }
 }
