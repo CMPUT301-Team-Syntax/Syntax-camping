@@ -2,6 +2,7 @@ package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,16 +16,41 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteOwner
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CampsiteListScreen
 
 @Composable
 fun CampsiteOwnerHomeScreen (navController: NavController){
+    // dummy variable for now
+//    val name by remember { mutableStateOf("") }
+//    val location by remember { mutableStateOf("") }
+//    val userId by remember { mutableStateOf("") }
+//    val campsiteOwner = CampsiteOwner(name, location, userId)
+
+
+    // dummy data for now
+    val sampleCampsites = remember {
+        listOf(
+            Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf("Mountain", "Hiking"), 4.5),
+            Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf("Lake", "Fishing"), 4.8)
+        )
+    }
+    val campsiteOwner = remember {
+        CampsiteOwner("owner1", "John Doe", "Banff, AB").apply {
+            campsites.addAll(sampleCampsites)
+        }
+    }
     Scaffold(
 
         modifier = Modifier
@@ -35,7 +61,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(120.dp)
                     .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -61,7 +87,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ){
                     IconButton(onClick = {navController.navigate( "UpdateCamp")},
-                        modifier = Modifier.size(40 .dp)) {
+                        modifier = Modifier.size(30 .dp)) {
                         Icon(
                             painter = painterResource(id = R.drawable.add),
                             contentDescription = "notifications",
@@ -69,7 +95,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                         )
                     }
                     IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                        modifier = Modifier.size(100.dp)) {
+                        modifier = Modifier.size(40.dp)) {
                         Icon(
                             painter = painterResource(id = R.drawable.notification),
                             contentDescription = "notifications",
@@ -152,6 +178,13 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(modifier = Modifier.weight(1f)) {
+                if (campsiteOwner.campsites.isNotEmpty()  ) {
+                    CampsiteListScreen(campsiteOwner.campsites, onItemClick = {})
+                }
+
+
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth()
@@ -167,19 +200,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
 
 }
 
-@Composable
-fun CampRow(campsiteName: String, campsiteLocation: String, campsiteLotteryStatus: String){
-    Row(){
-        Text(text = campsiteName)
-    }
-    Row(){
-        Text(text = campsiteLocation,)
-    }
-    Row(){
-        Text(text = campsiteLotteryStatus,)
-    }
 
-}
 
 
 
