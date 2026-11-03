@@ -4,6 +4,9 @@ import android.content.Context
 import android.provider.Settings
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
+import com.example.syntax_camping.dataClasses.LotteryManager
+import com.google.firebase.functions.FirebaseFunctions
+import com.example.syntax_camping.dataClasses.LotteryEntry
 
 // class Database
 // author: Andrew
@@ -21,7 +24,8 @@ import kotlin.collections.joinToString
 class Database {
 
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
-
+    //This is to allow the use for certain firebase functions specifically fo rlottery timers
+    private val functions = FirebaseFunctions.getInstance()
     // userExistsByDeviceId
     // calls callback function if there is a document with matching document id to device id
 
@@ -47,7 +51,99 @@ class Database {
         ) ?: "unknown"
 
     }
+    //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int): String{
+        //The two following values allow firebase to generate a unique lottery id
+        val lotteryReference = db.collection("lotteries").document()
+        val lotteryId = lotteryReference.id
+        val data = mapOf(
 
+            "endTimeLottery" to endTimeLottery,
+            "endTimeBooking" to endTimeBooking,
+            "numberOfWinners" to numberOfWinners,
+            "status" to "initialAccepting"
+
+        )
+        lotteryReference.set(data)
+
+        return lotteryId
+    }
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry){
+        if(hasUserJoinedLottery(lotteryId,entry.userId)){
+            return
+        }
+        else {
+
+
+            val lottery = db.collection("lotteries")
+                .document(lotteryId)
+            lottery.get()
+                .addOnSuccessListener { lottery ->
+                    val currentTime = System.currentTimeMillis()
+                    val endTimeBooking = lottery.getLong("endTimeBooking")
+                    val endTimeLottery = lottery.getLong("endTimeLottery")
+                    val status = lottery.getString("status")
+                    val collectionName: String?
+                    if (status == "initialAccepting") {
+                        collectionName = "entries"
+                    } else if (status == "booking") {
+                        collectionName = "waitlist"
+                    } else {
+                        return@addOnSuccessListener
+                    }
+
+
+                    if (collectionName != null) {
+                        db.collection("lotteries")
+                            .document(lotteryId)
+                            .collection(collectionName)
+                            .document(entry.userId)
+                            .set(
+                                mapOf(
+                                    "userId" to entry.userId,
+                                    "joinedTimestamp" to entry.joined
+                                )
+                            )
+                    }
+                }
+        }
+    }
+    fun hasUserJoinedLottery(lotteryId: String, userId: String): Boolean{
+        var isPresent = false
+        val lottery = db.collection("lotteries")
+            .document(lotteryId)
+            lottery.collection("entries")
+                .document(userId)
+                .get()
+                .addOnSuccessListener{entry ->
+                    if (entry.exists()) {
+                        isPresent = true
+                        return@addOnSuccessListener
+                    }
+
+                }
+        lottery.collection("waitlist")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { waitlist ->
+                if (waitlist.exists()) {
+                    isPresent = true
+                    return@addOnSuccessListener
+                }
+
+            }
+        lottery.collection("winners")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { winner ->
+                if (winner.exists()) {
+                    isPresent = true
+                    return@addOnSuccessListener
+                }
+
+            }
+        return isPresent
+    }
     // updateUser
     // takes in a device id (this will be the document id)
     // and sets the field according to userDetails
