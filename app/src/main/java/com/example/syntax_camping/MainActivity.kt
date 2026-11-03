@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
-
+                //we need something to differentiate
                 val isCampsiteOwner = false // change this if you want to test a different screen
 
                 if (isCampsiteOwner) {
