@@ -112,7 +112,7 @@ class Database {
         var isPresent = false
         val lottery = db.collection("lotteries")
             .document(lotteryId)
-            lottery.collection("entries")
+        lottery.collection("entries")
                 .document(userId)
                 .get()
                 .addOnSuccessListener{entry ->
