@@ -54,6 +54,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.syntax_camping.PhotoCarousel
+import com.example.syntax_camping.screens.CustomOwnerBottomBar
+import com.example.syntax_camping.screens.OwnerTopBar
 
 //import androidx.compose.ui.Modifier
 
