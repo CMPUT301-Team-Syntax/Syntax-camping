@@ -21,6 +21,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.TopBar
 
 @Composable
 fun ReservationsScreen(navController: NavController) {
@@ -31,90 +33,15 @@ fun ReservationsScreen(navController: NavController) {
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.Unspecified
-                    )
-                }
-            }
+            TopBar(navController)
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                IconButton(onClick = { navController.navigate("Search") },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Reservations") },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.circle),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Profile") },
-                    modifier = Modifier.size(100.dp)
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Settings") },
-                    modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomBottomBar(
+                navController = navController,
+                currentRoute = "Reservations",
+                backgroundColor = Color(0xFF3E6B68)
+            )
         }
     ) { innerPadding ->
 

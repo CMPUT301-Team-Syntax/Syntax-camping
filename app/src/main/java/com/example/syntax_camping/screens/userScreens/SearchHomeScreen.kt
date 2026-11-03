@@ -39,104 +39,39 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreen
+import com.example.syntax_camping.screens.TopBar
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.remember
+import com.example.syntax_camping.screens.CustomBottomBar
 
 @Composable
 fun SearchHomeScreen(navController: NavController){
+
+    var realCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
     Scaffold(
 
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
-        topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.Unspecified
-                    )
-                }
-            }
+        topBar = {
+            TopBar(navController)
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                IconButton(onClick = { navController.navigate("Search") },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.search_tapped),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Reservations") },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.reservations),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Profile") },
-                    modifier = Modifier.size(100.dp)
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Settings") },
-                    modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomBottomBar(
+                navController = navController,
+                currentRoute = "Search",
+                backgroundColor = Color(0xFF3E6B68)
+            )
         }
     ) { innerPadding ->
-
-        //inside the scaffold, this would be the content of the screen, start editing screen content from in here
 
         Column(
             modifier = Modifier
@@ -147,14 +82,34 @@ fun SearchHomeScreen(navController: NavController){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            val sampleCampsites = listOf(
-                Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
-                Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
-            )
-            CampsiteListScreen(
-                campsiteList = sampleCampsites,
-                onItemClick = {}
-            )
+            LaunchedEffect(Unit) {
+                CampsiteRepository.refreshCampsiteCache { success ->
+                    if (success) {
+                        // If Firebase succeeded, grab the newly downloaded list
+                        realCampsites = CampsiteRepository.getCampsites().toList()
+                    }
+                    // Tell the UI to stop showing the loading spinner
+                    isLoading = false
+                }
+            }
+
+
+
+            if (isLoading) {
+                // Show a loading spinner while waiting for Firebase
+                CircularProgressIndicator()
+            } else if (realCampsites.isEmpty()) {
+                // Show this if the database is empty or failed to load
+                Text("No campsites found in database.")
+            } else {
+                // Show the actual list of cards!
+                CampsiteListScreen(
+                    campsiteList = realCampsites,
+                    onItemClick = { clickedId ->
+                        navController.navigate("campsiteDetails/$clickedId")
+                    }
+                )
+            }
 
         }
     }
