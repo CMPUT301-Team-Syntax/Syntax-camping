@@ -5,13 +5,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,16 +74,26 @@ fun SearchHomeScreen(navController: NavController){
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
             Row(){
 
                 TextField(
                     value = SearchInput,
                     onValueChange = { newValue -> SearchInput = newValue },
                     label = { Text("Type in the location or Campsite Name") },
+                    shape = RoundedCornerShape(30.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,   // Removes line when typing
+                        unfocusedIndicatorColor = Color.Transparent, // Removes line when idle
+                        disabledIndicatorColor = Color.Transparent   // Removes line if disabled
+                    ),
                     modifier = Modifier
-
+                        .weight(2f)
                         .padding(bottom = 16.dp)
                 )
+
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 LaunchedEffect(Unit) {
                     CampsiteRepository.refreshCampsiteCache { success ->
@@ -92,12 +107,14 @@ fun SearchHomeScreen(navController: NavController){
                     FlitteredCampsiteList = realCampsites.filter { campsite ->
                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                     }
+                },
+                    modifier = Modifier
+                        .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
 
-
-
-                }) {
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_search),
+
                         contentDescription = "Search",
                         tint = Color.Unspecified
                     )
@@ -108,13 +125,13 @@ fun SearchHomeScreen(navController: NavController){
 //realCampsites is the actual firebase list of campsites.
             Box(modifier = Modifier.weight(1f)) {
 
-                if (realCampsites.isEmpty()) {//database info
+                if (FlitteredCampsiteList.isEmpty()) {//database info
                     // Show this if the database is empty or failed to load
                     Text("No campsites found in database.")
                 } else {
                     // Show the actual list of cards!
                     CampsiteListScreen(
-                        campsiteList = realCampsites,
+                        campsiteList = FlitteredCampsiteList,
                         onItemClick = { clickedId ->
                             navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
                         }
