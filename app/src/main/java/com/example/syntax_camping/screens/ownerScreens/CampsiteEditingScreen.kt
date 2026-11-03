@@ -146,7 +146,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(100.dp)
                     .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -180,7 +180,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                         )
                     }
                     IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                        modifier = Modifier.size(100.dp)) {
+                        modifier = Modifier.size(40.dp)) {
                         Icon(
                             painter = painterResource(id = R.drawable.notification),
                             contentDescription = "notifications",

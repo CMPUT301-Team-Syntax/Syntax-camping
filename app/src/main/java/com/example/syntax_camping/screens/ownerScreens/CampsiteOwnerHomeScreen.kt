@@ -119,7 +119,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             ) {
 
 
-                IconButton(onClick = { navController.navigate("home") },
+                IconButton(onClick = { navController.navigate("campsiteOwner") },
                     modifier = Modifier.size(80.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.home),
@@ -128,7 +128,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("lottery") },
+                IconButton(onClick = { navController.navigate("campsiteLottery") },
                     modifier = Modifier.size(80.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.lottery),
@@ -137,7 +137,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("messenger") },
+                IconButton(onClick = { navController.navigate("campsiteMessages") },
                     modifier = Modifier.size(80.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.messenger),
@@ -146,7 +146,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Profile") },
+                IconButton(onClick = { navController.navigate("campsiteProfile") },
                     modifier = Modifier.size(80.dp)
                 ){
                     Icon(
@@ -156,7 +156,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     )
                 }
 
-                IconButton(onClick = { navController.navigate("Settings") },
+                IconButton(onClick = { navController.navigate("campsiteProfile") },
                     modifier = Modifier.size(80.dp)
                 ) {
                     Icon(
