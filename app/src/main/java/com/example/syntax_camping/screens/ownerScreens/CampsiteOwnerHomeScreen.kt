@@ -28,7 +28,10 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteOwner
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CustomOwnerBottomBar
+import com.example.syntax_camping.screens.OwnerTopBar
 import com.example.syntax_camping.screens.CampsiteListScreen
+
 
 @Composable
 fun CampsiteOwnerHomeScreen (navController: NavController){
@@ -58,115 +61,14 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ){
-                    IconButton(onClick = {navController.navigate( "UpdateCamp")},
-                        modifier = Modifier.size(30 .dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                        modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.notification),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
-                }
-
-            }
+            OwnerTopBar(
+                navController
+            )
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-
-                IconButton(onClick = { navController.navigate("campsiteOwner") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.home),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("campsiteLottery") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.lottery),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("campsiteMessages") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.messenger),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("campsiteProfile") },
-                    modifier = Modifier.size(80.dp)
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("campsiteProfile") },
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomOwnerBottomBar(navController,
+                "home")
         }
     ){ innerPadding ->
 
@@ -200,7 +102,19 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
 
 }
 
+@Composable
+fun CampRow(campsiteName: String, campsiteLocation: String, campsiteLotteryStatus: String){
+    Row(){
+        Text(text = campsiteName)
+    }
+    Row(){
+        Text(text = campsiteLocation,)
+    }
+    Row(){
+        Text(text = campsiteLotteryStatus,)
+    }
 
+}
 
 
 

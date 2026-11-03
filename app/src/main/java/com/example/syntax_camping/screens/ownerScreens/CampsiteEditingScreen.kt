@@ -143,117 +143,17 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFFE2AFAF)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.Unspecified  //without it the icon would be black
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ){
-                    IconButton(onClick = { /* TODO: Navigate to add */ },
-                        modifier = Modifier.size(40 .dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                        modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.notification),
-                            contentDescription = "notifications",
-                            tint = Color.Unspecified
-                        )
-                    }
-                }
-
-            }
+            OwnerTopBar(
+                navController
+            )
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFFE2AFAF))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-
-                IconButton(onClick = { navController.navigate("home") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.home),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("lottery") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.lottery),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("messenger") },
-                    modifier = Modifier.size(80.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.messenger),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Profile") },
-                    modifier = Modifier.size(80.dp)
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { navController.navigate("Settings") },
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomOwnerBottomBar(navController,
+                "add")
         }
-    ) { innerPadding ->
+    )
+    { innerPadding ->
 
         //inside the scaffold, this would be the content of the screen, start editing screen content from in here
         //THis column handles all of the main display stuff

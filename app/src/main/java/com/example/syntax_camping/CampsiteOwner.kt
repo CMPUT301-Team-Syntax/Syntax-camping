@@ -6,7 +6,7 @@ package com.example.syntax_camping
  *  Works in tandem with Luke's Campsite class.
 */
 class CampsiteOwner(
-    val userId: String,
+    val userId: String, //should there be a different way this is stored to get camsite owner?
     name:String,
     var location: String,
 ): User(name, 1) {
