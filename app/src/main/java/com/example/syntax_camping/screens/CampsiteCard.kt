@@ -79,21 +79,19 @@ fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {
                         painter = painterResource(id = R.drawable.location_on),
                         contentDescription = "location",
                         modifier = Modifier.size(16.dp),
-                        tint = Color.Gray // Change to Color.Gray to ensure visibility
+                        tint = Color.Black
                     )
-
-                    Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
                         text = campsite.location,
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = Color.Black
                     )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = R.drawable.location_on), // Double-check if this should be a different icon like group/person
+                        painter = painterResource(id = R.drawable.occupancy), // Double-check if this should be a different icon like group/person
                         contentDescription = "Capacity",
                         modifier = Modifier.size(16.dp),
                         tint = Color.Gray

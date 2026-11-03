@@ -10,22 +10,46 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.Rating
+import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun CampsiteDetailsScreen(navController: NavController){
-/*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
-    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
+fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
+
+    val allCampsites = CampsiteRepository.getCampsites()
+    val campsite = allCampsites.find { it.documentId == campsiteID }
+    val campsiteCarousel = remember(campsite) { PhotoCarousel(campsite?.images ?: emptyList() ) }
+    val scrollState = rememberScrollState()
+
+    if (campsite == null) {
+        //maybe a launched effect then a campsite not here, after 5 seconds back to home
+        return
+    }
+
     Scaffold(
 
         modifier = Modifier
@@ -33,90 +57,15 @@ fun CampsiteDetailsScreen(navController: NavController){
             .background(Color(0xFFF4E8D5)), // Set the background color to white
         containerColor = Color(0xFFF4E8D5),
         topBar = { // top bar with back button and notification icon
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFF3E6B68)), // sets the background color to pink lkie the figma mockups
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                //icon button for back button, template for adding icons
-                IconButton(
-
-                    onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp) // the size is defaulted to 44.dp which is pretty small so you can change this if needed for other icons
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "back button",
-                        tint = Color.White  //without it the icon would be black
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.notification),
-                        contentDescription = "notifications",
-                        tint = Color.White
-                    )
-                }
-            }
+            TopBar(navController)
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(Color(0xFF3E6B68))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                IconButton(onClick = { /* TODO: Navigate to Search */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
-                        contentDescription = "Search",
-                        tint = Color(0xFF3F6B68)
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Reservations */ },
-                    modifier = Modifier.size(100.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.reservations),
-                        contentDescription = "Reservations",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                    modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.account),
-                        contentDescription = "Account",
-                        tint = Color.Unspecified
-                    )
-                }
-
-                IconButton(onClick = { /* TODO: Navigate to Settings */ },
-                        modifier = Modifier.size(100.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Settings",
-                        tint = Color.Unspecified,
-                    )
-                }
-
-            }
+            CustomBottomBar(
+                navController = navController,
+                currentRoute = "CampsiteDetails",
+                backgroundColor = Color(0xFF3E6B68)
+            )
         }
     ) { innerPadding ->
 
@@ -126,18 +75,178 @@ fun CampsiteDetailsScreen(navController: NavController){
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(scrollState) // Makes the content scrollable, gemini prompted, doubt its necessary though
         ) {
+            // -- Photo Carousel Section --
+            campsiteCarousel.displayCarousel(
+                modifier = Modifier.fillMaxWidth(),
+                photoCarousel = campsiteCarousel
+            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
+                 Row(modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Rating(campsite.rating)
+                        Text(
+                            text = " ${campsite.rating} (${campsite.raters})", //rating
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                //campsite name
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = campsite.name,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2 grid information
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    // Left column
+                    Column (
+                        modifier = Modifier.weight(1f)
+                            .padding(end = 8.dp)
+                    ){
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top)
+                        {
+                            Icon(
+                                painter = painterResource(id = R.drawable.location_on),
+                                contentDescription = "location",
+                                tint = Color.Unspecified,)
+
+                            Text(text = " ${campsite.location}",
+                                fontSize = 16.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+
+                        Text(text = "💰 Rate: $25/n",
+                            fontSize = 16.sp,
+                        ) // Hardcoded price placeholder
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(text = "🏕️ Campsite Rules",
+                            fontSize = 16.sp,
+                            color = Color.Blue,
+                        )
+
+                    }
+
+
+                    // Right column
+                    Column(
+                        modifier = Modifier.weight(1f)
+                            .padding(start = 8.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically)
+                        {
+                            Icon(
+                                painter = painterResource(id = R.drawable.occupancy),
+                                contentDescription = "maxOccupancy",
+                                tint = Color.Unspecified,)
+
+                            Text(text = " Max Occupancy: ${campsite.maxOcc}",
+                                fontSize = 16.sp,
+                            )
+
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(text = "📜 Cancellation policy",
+                            fontSize = 16.sp,
+                            color = Color.Blue
+                        )
+                    }
+                }
+
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                // description dection
+                Text(
+                    text = "Description",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = if (campsite.description == "") {
+                            "Description is empty"
+                        } else {
+                            campsite.description
+                        },
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                // Lottery Waitlist Section
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Lottery Status: Ended",//No lottery thing implemented yet
+                        color = Color(0xFFA13F3F), // Dark red text
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { /* TODO: Implement Waitlist Logic */ },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF2C9C9) // button color
+                        ),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = "Click to join Waitlist!!",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "50+ people currently waiting\n5 days left", //nothing about lottery or waitlist implemented yet
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp)) // Extra padding at the bottom
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
