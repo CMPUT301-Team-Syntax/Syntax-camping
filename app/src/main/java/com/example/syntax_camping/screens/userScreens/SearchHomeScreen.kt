@@ -83,7 +83,6 @@ fun SearchHomeScreen(navController: NavController){
                 LaunchedEffect(Unit) {
                     CampsiteRepository.refreshCampsiteCache { success ->
                         if (success) {
-                            // If Firebase succeeded, grab the newly downloaded list
                             realCampsites = CampsiteRepository.getCampsites().toList()
                         }
                     }
@@ -106,10 +105,10 @@ fun SearchHomeScreen(navController: NavController){
             }
 
 
-//
+//realCampsites is the actual firebase list of campsites.
             Box(modifier = Modifier.weight(1f)) {
 
-                if (realCampsites.isEmpty()) {
+                if (realCampsites.isEmpty()) {//database info
                     // Show this if the database is empty or failed to load
                     Text("No campsites found in database.")
                 } else {
@@ -117,7 +116,7 @@ fun SearchHomeScreen(navController: NavController){
                     CampsiteListScreen(
                         campsiteList = realCampsites,
                         onItemClick = { clickedId ->
-                            navController.navigate("campsiteDetails/$clickedId")
+                            navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
                         }
                     )
                 }
