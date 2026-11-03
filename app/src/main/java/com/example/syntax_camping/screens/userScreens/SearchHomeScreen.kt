@@ -168,7 +168,8 @@ fun SearchHomeScreen(navController: NavController){
 
                 val sampleCampsites = listOf(
                     Campsite("1", "Pine Ridge Campground", "Banff, AB", "Beautiful mountain view site.", 4, mutableListOf(), 2.2),
-                    Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1)
+                    Campsite("2", "Lakeside Haven", "Jasper, AB", "Quiet site right next to the lake.", 6, mutableListOf(),1.1),
+                    Campsite("1", "Pine Ridge Campground", "caf, AB", "Beautiful sunny mountain view site.", 4, mutableListOf(), 2.2),
                 )
                 IconButton(onClick = {
                      FlitteredCampsiteList = sampleCampsites.filter { campsite ->
