@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.example.syntax_camping.dataClasses.EntrantData
+import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.dataClasses.UserType
 import com.example.syntax_camping.screens.CampsiteOwnerScreen
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
+import kotlin.collections.emptyList
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,7 +44,9 @@ class MainActivity : ComponentActivity() {
         val deviceId = db.getDeviceId(this)
 
         // For now, I just have a test user.
-        val testUser = User(deviceId, "HelloWorld", UserType.Entrant)
+        val testEntrantData = EntrantData(mutableListOf(), mutableListOf())
+        val testOwnerData = OwnerData(mutableListOf(), mutableListOf())
+        val testUser = User(deviceId, "HelloWorld", "sorachat@ualberta.ca", "7802349700", testEntrantData, testOwnerData)
 
         // See if user already has account (by deviceId), then create it if not.
         db.userExistsByDeviceId(deviceId) { exists ->

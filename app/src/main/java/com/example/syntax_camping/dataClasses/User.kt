@@ -13,13 +13,13 @@ package com.example.syntax_camping.dataClasses
  * Will be updated as user gets updated.
  */
 
-enum class UserType{
-    Entrant,
-    Owner
-}
+
 
 data class User(
     val userId: String,
     var name: String,
-    var userType: UserType
+    var email: String,
+    var phoneNumber: String,
+    val entrantData: EntrantData? = null,
+    val ownerData: OwnerData? = null
 )
