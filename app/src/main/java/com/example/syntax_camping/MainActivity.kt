@@ -11,7 +11,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.example.syntax_camping.screens.CampsiteOwnerScreen
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
@@ -59,21 +58,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             SyntaxcampingTheme {
                 //we need something to differentiate campsite user and campsite owner? we neeed a create account screen
-                val isCampsiteOwner = true // change this if you want to test a different screen
-
-                if (isCampsiteOwner) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        CampsiteOwnerScreen((Modifier.padding(innerPadding)))
-                    }
-                }
-
-                else {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        SyntaxCamping((Modifier.padding(innerPadding))) }
-                }
+                        SyntaxCamping((Modifier.padding(innerPadding)))
 
 
             }
         }
     }
+}
 }

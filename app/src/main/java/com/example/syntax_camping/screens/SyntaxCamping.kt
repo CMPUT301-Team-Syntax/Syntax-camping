@@ -1,22 +1,40 @@
 package com.example.syntax_camping.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
 import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.screens.CampsiteSummaryScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
+import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
 
 @Composable
 fun SyntaxCamping(
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
+    var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
+
+    var isLoading by remember { mutableStateOf(true) }
+    // var rp = CampsiteRepository()
+    var documentId = "Test12"
+    var selCampsite by remember { mutableStateOf<Campsite?>(null) }
+    //i changed the name from of sel to selected for readability
+
+
 
 //PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
     //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
@@ -26,7 +44,6 @@ fun SyntaxCamping(
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
-
             CampsiteDetailsScreen(navController, campsiteId)
         }
         composable("Settings") {
@@ -43,6 +60,27 @@ fun SyntaxCamping(
         }
         composable("home") {
             CampsiteSummaryScreen(navController)
+        }
+        composable("CampsiteOwnerHome"){
+            CampsiteOwnerHome(navController,
+                onEditCampsite = { campsiteToEdit ->
+                    selectedCampsite = campsiteToEdit
+                    navController.navigate("UpdateCamp")
+                })
+        }
+        composable("campsiteLottery"){
+            CampsiteDetailsLotteryScreen(navController)
+        }
+        composable("campsiteMessages"){
+            CampsiteMessagesScreen(navController)
+        }
+
+
+        composable( "UpdateCamp") {
+            CampsiteEditingScreen(
+                navController,
+                selectedCampsite)
+
         }
 
 

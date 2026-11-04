@@ -42,13 +42,26 @@ fun TopBar(navController: NavController){
             )
         }
 
-        IconButton(onClick = { /* TODO: Navigate to notifications */ },
-            modifier = Modifier.size(100.dp)) {
-            Icon(
-                painter = painterResource(id = R.drawable.notification),
-                contentDescription = "notifications",
-                tint = Color.Unspecified
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ){
+            IconButton(onClick = {navController.navigate( "campsiteMessages")},
+                modifier = Modifier.size(40 .dp)) {
+                Icon(
+                    painter = painterResource(id = R.drawable.messenger),
+                    contentDescription = "messages",
+                    tint = Color.Unspecified
+                )
+            }
+            IconButton(onClick = { /* TODO: Navigate to notifications */ },
+                modifier = Modifier.size(100.dp)) {
+                Icon(
+                    painter = painterResource(id = R.drawable.notification),
+                    contentDescription = "notifications",
+                    tint = Color.Unspecified
+                )
+            }
         }
     }
 }

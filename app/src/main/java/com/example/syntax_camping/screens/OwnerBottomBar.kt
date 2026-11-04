@@ -21,7 +21,7 @@ enum class OwnerBottomTab(//can replicate for campsite owner, just change the na
     Lottery("campsiteLottery", R.drawable.lottery), // Add a tapped version here if you make one
     Messages("campsiteMessages", R.drawable.messenger),                     // Add a tapped version here if you make one
     Profile("campsiteProfile", R.drawable.account),
-    Settings("CAMPSITESettings", R.drawable.ic_settings),
+    Settings("campsiteSettings", R.drawable.ic_settings),
 }
 
 
