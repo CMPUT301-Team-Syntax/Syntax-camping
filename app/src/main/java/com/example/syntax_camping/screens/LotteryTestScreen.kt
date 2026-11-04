@@ -18,7 +18,7 @@ import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.LotteryManager
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
-
+/*
 @Composable
 fun LotteryTestScreen(navController: NavController) {
     // Start date and time
@@ -263,3 +263,5 @@ fun LotteryTestScreen(navController: NavController) {
 
 
 }
+
+ */

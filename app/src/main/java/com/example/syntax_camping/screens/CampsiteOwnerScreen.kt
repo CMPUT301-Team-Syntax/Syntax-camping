@@ -19,8 +19,6 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHomeScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteSettingsScreen
 import androidx.compose.runtime.LaunchedEffect
-//LUKEDELETE
-import com.example.syntax_camping.LotteryTestScreen
 
 
 @Composable
@@ -50,17 +48,9 @@ fun CampsiteOwnerScreen(modifier: Modifier = Modifier) {
         composable("campsiteSettings") {
             CampsiteSettingsScreen(navController)
         }
+        composable( "UpdateCamp") {
 
-        composable( "UpdateCamp"){
 
-           //val selCampsite = Campsite("Test12", "Name", "Lop", "This is a description", 10, mutableListOf<String>())
-            /*LaunchedEffect(documentId) {
-                rp.getCampsite(documentId) { campsite ->
-                    selCampsite = campsite
-                }
-            }
-            //comment out the following line if you want to update a campsite, then update the document id above to matcht e campsite you want to update
-            selCampsite = null*/
 
 
            CampsiteEditingScreen(
