@@ -44,6 +44,7 @@ fun SearchHomeScreen(navController: NavController){
 
     var realCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var displayFillereted by remember { mutableStateOf(false) }
 
     Scaffold(
 
@@ -103,10 +104,14 @@ fun SearchHomeScreen(navController: NavController){
                     }
                 }
 
+
+
                 IconButton(onClick = {
+                    displayFillereted = true
                     FlitteredCampsiteList = realCampsites.filter { campsite ->
                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                     }
+                    displayFillereted = true
                 },
                     modifier = Modifier
                         .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
@@ -123,22 +128,43 @@ fun SearchHomeScreen(navController: NavController){
 
 
 //realCampsites is the actual firebase list of campsites.
-            Box(modifier = Modifier.weight(1f)) {
+            if (displayFillereted) {
+                Box(modifier = Modifier.weight(1f)) {
 
-                if (FlitteredCampsiteList.isEmpty()) {//database info
-                    // Show this if the database is empty or failed to load
-                    Text("No campsites found in database.")
-                } else {
-                    // Show the actual list of cards!
-                    CampsiteListScreen(
-                        campsiteList = FlitteredCampsiteList,
-                        onItemClick = { clickedId ->
-                            navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
-                        }
-                    )
+                    if (FlitteredCampsiteList.isEmpty()) {//database info
+                        // Show this if the database is empty or failed to load
+                        Text("No campsites found in database.")
+                    } else {
+                        // Show the actual list of cards!
+                        CampsiteListScreen(
+                            campsiteList = FlitteredCampsiteList,
+                            onItemClick = { clickedId ->
+                                navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
+                            }
+                        )
+                    }
+
                 }
-
             }
+            else{
+                Box(modifier = Modifier.weight(1f)) {
+
+                    if (realCampsites.isEmpty()) {//database info
+                        // Show this if the database is empty or failed to load
+                        Text("No campsites found in database.")
+                    } else {
+                        // Show the actual list of cards!
+                        CampsiteListScreen(
+                            campsiteList = realCampsites,
+                            onItemClick = { clickedId ->
+                                navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
+                            }
+                        )
+                    }
+
+                }
+            }
+
         }
     }
 }
