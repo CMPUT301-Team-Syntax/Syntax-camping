@@ -12,6 +12,10 @@ import com.example.syntax_camping.dataClasses.UserType
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.DocumentSnapshot
+import com.example.syntax_camping.dataClasses.LotteryManager
+import com.google.firebase.functions.FirebaseFunctions
 
 // class Database
 // author: Andrew
