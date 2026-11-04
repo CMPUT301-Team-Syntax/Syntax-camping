@@ -55,8 +55,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.syntax_camping.PhotoCarousel
-import com.example.syntax_camping.screens.CustomOwnerBottomBar
-import com.example.syntax_camping.screens.OwnerTopBar
+import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.TopBar
 
 //import androidx.compose.ui.Modifier
 
@@ -146,13 +146,13 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            OwnerTopBar(
+            TopBar(
                 navController
             )
         },
 
         bottomBar = {
-            CustomOwnerBottomBar(navController,
+            CustomBottomBar(navController,
                 "add")
         }
     )
@@ -375,7 +375,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                 error = ""
                                 if (intNewMaxOcc == null) {
                                     error = "Max Int must be a string"
-                                } else {
+                                }
+
+                                else {
                                     error = ""
                                     documentID = FirebaseFirestore.getInstance()
                                         .collection("campsites")
@@ -397,9 +399,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                             newCampsite.addImage(photo)
                                         }
                                     }
-
-
                                     db.createNewCampsite(newCampsite)
+                                    navController.popBackStack()
                                 }
                             }
                             else{
@@ -434,7 +435,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                             campsite.addImage(photo)
                                         }
                                     }
-
+                                    navController.popBackStack()
                                 }
                             }
                             else{

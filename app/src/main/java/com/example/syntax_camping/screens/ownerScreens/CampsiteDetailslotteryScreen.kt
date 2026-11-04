@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.syntax_camping.screens.CustomOwnerBottomBar
-import com.example.syntax_camping.screens.OwnerTopBar
+import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.TopBar
 
 @Composable
 fun CampsiteDetailsLotteryScreen (navController: NavController){
@@ -24,13 +24,13 @@ fun CampsiteDetailsLotteryScreen (navController: NavController){
             .background(Color.White), // Set the background color to white
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
-            OwnerTopBar(
+            TopBar(
                 navController
             )
         },
 
         bottomBar = {
-            CustomOwnerBottomBar(navController,
+            CustomBottomBar(navController,
                 "campsiteLottery")
         }
     ){innerPadding ->
