@@ -13,6 +13,7 @@ import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.User
 import com.example.syntax_camping.screens.CampsiteOwnerScreen
+import com.example.syntax_camping.dataClasses.UserType
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import kotlin.collections.emptyList
@@ -69,21 +70,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             SyntaxcampingTheme {
                 //we need something to differentiate campsite user and campsite owner? we neeed a create account screen
-                val isCampsiteOwner = true // change this if you want to test a different screen
-
-                if (isCampsiteOwner) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        CampsiteOwnerScreen((Modifier.padding(innerPadding)))
-                    }
-                }
-
-                else {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        SyntaxCamping((Modifier.padding(innerPadding))) }
-                }
+                        SyntaxCamping((Modifier.padding(innerPadding)))
 
 
             }
         }
     }
+}
 }

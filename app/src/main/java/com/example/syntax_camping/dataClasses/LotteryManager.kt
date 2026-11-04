@@ -31,23 +31,14 @@ class LotteryManager (
     private var entrantList = mutableListOf<LotteryEntry>()
     val functions = FirebaseFunctions.getInstance()
     val db = Database()
+
+
     //This function returns false if the timer fails to be created, usually due to user selecting a time in the past
 
 
-    fun addEntry(entry: LotteryEntry) {
-        entrantList.add(entry)
-        db.addLotteryEntry( lotteryId, entry)
-    }
 
-    //still implement TODO
-    fun removeEntry(entry: LotteryEntry) {
-        entrantList.remove(entry)
-    }
 
     //Will constantly randomize the winner out of the list (if possible) and send it to Reservation.
-    fun randomizeWinner() {
-        //TOdo
-    }
 
     fun updateLotteryDate(){
         //Todo
