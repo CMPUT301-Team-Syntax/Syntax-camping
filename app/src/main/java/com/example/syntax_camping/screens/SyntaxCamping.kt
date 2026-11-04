@@ -27,19 +27,14 @@ fun SyntaxCamping(
 ){
     val navController = rememberNavController()
     var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
+    //i changed the name from of sel to selected for readability
 
     var isLoading by remember { mutableStateOf(true) }
     // var rp = CampsiteRepository()
     var documentId = "Test12"
     var selCampsite by remember { mutableStateOf<Campsite?>(null) }
-    //i changed the name from of sel to selected for readability
 
-
-
-//PLEASE NOTE: CampsiteDetailsScreen IS THE CURRENT NON FUNCTIONAL TEMPLATE SCREEN FOR COPYING
-    //THE OTHER SCREENS ARE TO BE IMPLEMENT AS THE SCREEN NAME SUGGESTS AND THE USER STORIES
-//    androidx.navigation.NavHost(navController = navController, startDestination = "Search")
-    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+ NavHost(navController = navController, startDestination = "search", modifier = modifier) {
 
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
@@ -49,8 +44,15 @@ fun SyntaxCamping(
 
         composable("ownerCampsiteDetails/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
-            // Passed true = draws the Update button on top!
-            CampsiteDetailsScreen(navController, campsiteId, true)
+            CampsiteDetailsScreen(
+                navController = navController,
+                campsiteID = campsiteId,
+                update = true,
+                onEditCampsite = { campsiteToEdit ->
+                    selectedCampsite = campsiteToEdit
+                    navController.navigate("UpdateCamp")
+                }
+            )
         }
 
         composable("Settings") {

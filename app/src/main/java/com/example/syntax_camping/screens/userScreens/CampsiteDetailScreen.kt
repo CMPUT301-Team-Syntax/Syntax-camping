@@ -38,7 +38,10 @@ import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?, update: Boolean = false){
+fun CampsiteDetailsScreen(navController: NavController,
+                          campsiteID: String?,
+                          update: Boolean = false,
+                          onEditCampsite: ((Campsite?) -> Unit)? = null){
 
     val allCampsites = CampsiteRepository.getCampsites()
     val campsite = allCampsites.find { it.documentId == campsiteID }
@@ -81,7 +84,9 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?, upd
             if (update) {
                 Button(
                     onClick = {
-                        navController.navigate("UpdateCamp/${campsite.documentId}")
+                        if (onEditCampsite != null) {
+                            onEditCampsite(campsite)
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
