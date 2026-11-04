@@ -64,8 +64,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SyntaxcampingTheme {
-
-                val isCampsiteOwner = false // change this if you want to test a different screen
+                //we need something to differentiate campsite user and campsite owner? we neeed a create account screen
+                val isCampsiteOwner = true // change this if you want to test a different screen
 
                 if (isCampsiteOwner) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
