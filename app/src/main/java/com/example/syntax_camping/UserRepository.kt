@@ -1,7 +1,6 @@
 package com.example.syntax_camping
+import com.example.syntax_camping.dataClasses.User
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlin.collections.toMutableList
-import kotlin.text.split
 
 /** USER REPOSITORY FOR DATABASE
  *  Author: Sorachat Chaichana
@@ -22,7 +21,7 @@ class UserRepository {
 
     //Since I'm following Andrew's CampsiteRepository file, I'll private this for now too for the same reasons.
     //Also, this may mess with the database if handled in a composable. Maybe we could use this through a User superclass funciton instead?
-    private fun getUser(documentId: String, callback: (User?) -> Unit ) {
+    /**private fun getUser(documentId: String, callback: (User?) -> Unit ) {
         val db = FirebaseFirestore.getInstance()
 
         db.collection("users")
@@ -45,7 +44,7 @@ class UserRepository {
             .addOnFailureListener {
                 callback(null)
             }
-    }
+    } */
 
 
     // Clears all users in _users list and fetch all documentIds in users collection
@@ -53,7 +52,9 @@ class UserRepository {
     // As the name suggests, it acts as a literal refresh so that data gets constantly updated between screens.
     // At least I think that's what Andrew means :D
     //(callback: Boolean -> Unit = {}) is basically an empty function that returns true if it passed.
-    fun refreshUserCache(callback: (Boolean) -> Unit = {}) {
+
+   /** WILL HAVE TO BE REDONE
+    * fun refreshUserCache(callback: (Boolean) -> Unit = {}) {
         val db = FirebaseFirestore.getInstance()
 
         db.collection("users")
@@ -80,4 +81,5 @@ class UserRepository {
                 callback(false)
             }
     }
+   */
 }
