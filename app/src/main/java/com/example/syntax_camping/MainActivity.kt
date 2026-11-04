@@ -8,9 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.example.syntax_camping.dataClasses.User
+import com.example.syntax_camping.dataClasses.UserType
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
         val deviceId = db.getDeviceId(this)
 
         // For now, I just have a test user.
-        val testUser = User("HelloWorld", 0)
+        val testUser = User(deviceId, "HelloWorld", UserType.Entrant)
 
         // See if user already has account (by deviceId), then create it if not.
         db.userExistsByDeviceId(deviceId) { exists ->
@@ -49,7 +49,13 @@ class MainActivity : ComponentActivity() {
                 println("Welcome back, User!")
             }
             else {
-                db.createNewUser(deviceId, testUser)
+                db.createNewUser(deviceId, testUser) { result ->
+                    if (result.isSuccess) {
+                        println("User created!")
+                    } else {
+                        println("Error: ${result.exceptionOrNull()?.message}")
+                    }
+                }
             }
         }
 
