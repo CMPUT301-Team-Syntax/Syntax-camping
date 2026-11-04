@@ -34,6 +34,7 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreen
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.screens.CustomBottomBar
 
 @Composable
@@ -82,6 +83,7 @@ fun SearchHomeScreen(navController: NavController){
                     value = SearchInput,
                     onValueChange = { newValue -> SearchInput = newValue },
                     label = { Text("Type in the location or Campsite Name") },
+
                     shape = RoundedCornerShape(30.dp),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,   // Removes line when typing
@@ -90,6 +92,7 @@ fun SearchHomeScreen(navController: NavController){
                     ),
                     modifier = Modifier
                         .weight(2f)
+                        .testTag("search_input_field")
                         .padding(bottom = 16.dp)
                 )
 
@@ -115,6 +118,7 @@ fun SearchHomeScreen(navController: NavController){
                 },
                     modifier = Modifier
                         .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
+                        .testTag("search_icon")
 
                 ) {
                     Icon(
