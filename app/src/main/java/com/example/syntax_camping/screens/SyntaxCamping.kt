@@ -46,6 +46,13 @@ fun SyntaxCamping(
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
             CampsiteDetailsScreen(navController, campsiteId)
         }
+
+        composable("ownerCampsiteDetails/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId")
+            // Passed true = draws the Update button on top!
+            CampsiteDetailsScreen(navController, campsiteId, true)
+        }
+
         composable("Settings") {
             SettingsScreen(navController)
         }

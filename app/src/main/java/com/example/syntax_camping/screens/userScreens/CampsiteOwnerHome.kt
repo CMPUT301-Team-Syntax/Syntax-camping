@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -24,25 +25,47 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteOwner
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.dataClasses.User
+import com.example.syntax_camping.dataClasses.UserType
+import com.example.syntax_camping.dataClasses.OwnerData
+import com.example.syntax_camping.dataClasses.UserProfile
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 @Composable
 
 fun CampsiteOwnerHome(navController: NavController, onEditCampsite: (Campsite?) -> Unit){
 
-    val sampleCampsites = remember {
-        CampsiteRepository.getCampsites().toList()
-    }//this owner just owns all the campsites for testing
-    val campsiteOwner = remember {
-        CampsiteOwner("owner1", "John Doe", "Banff, AB").apply {
-            campsites.addAll(sampleCampsites)
+    var ownerProfile by remember { mutableStateOf<UserProfile?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    //this is to be a commented as an ai prompt request, about testing this creation when its a data class
+
+    //  Trigger a database refresh every time this screen appears
+    LaunchedEffect(Unit) {
+        isLoading = true
+        CampsiteRepository.refreshCampsiteCache { success ->
+            if (success) {
+                val updatedCampsites = CampsiteRepository.getCampsites().toList()
+
+                val baseUser = User(userId = "owner1", name = "John Doe", userType = UserType.Owner)
+                val ownerData = OwnerData(location = "Banff, AB", campsites = updatedCampsites.toMutableList())
+
+                ownerProfile = UserProfile(user = baseUser, ownerData = ownerData)
+            }
+            isLoading = false
         }
     }
+
+    // Extract the list safely so we can use it in the UI below
+    val ownerCampsites = ownerProfile?.ownerData?.campsites ?: emptyList()
     Scaffold(
 
         modifier = Modifier
@@ -85,23 +108,23 @@ fun CampsiteOwnerHome(navController: NavController, onEditCampsite: (Campsite?) 
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                if (campsiteOwner.campsites.isNotEmpty()) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))}
+
+                    else if (ownerCampsites.isNotEmpty()) {
                     CampsiteListScreenOwner(//owners version of list
-                        campsiteList = campsiteOwner.campsites,
+                        campsiteList = ownerCampsites,
                         onItemClick = { clickedId ->
-                            navController.navigate("campsiteDetails/$clickedId")
+                            navController.navigate("ownerCampsiteDetails/$clickedId")
                         },
                         onUpdateClick = { clickedId ->
-                            val clickedCamp = campsiteOwner.campsites.find { it.documentId == clickedId }
-                            onEditCampsite(clickedCamp)
-                        }
-                    )
+                            val clickedCamp = ownerCampsites.find { it.documentId == clickedId }
+                            onEditCampsite(clickedCamp)})
+                    }
+                else {
+                    Text("No campsites found.", modifier = Modifier.align(Alignment.Center))
+                }
                 }
             }
         }
     }
-
-    // displaying the camp
-
-}
-

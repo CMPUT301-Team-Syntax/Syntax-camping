@@ -374,7 +374,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                 error = ""
                                 if (intNewMaxOcc == null) {
                                     error = "Max Int must be a string"
-                                } else {
+                                }
+
+                                else {
                                     error = ""
                                     documentID = newCampName
 
@@ -394,9 +396,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                             newCampsite.addImage(photo)
                                         }
                                     }
-
-
                                     db.createNewCampsite(newCampsite)
+                                    navController.popBackStack()
                                 }
                             }
                             else{
@@ -431,7 +432,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                             campsite.addImage(photo)
                                         }
                                     }
-
+                                    navController.popBackStack()
                                 }
                             }
                             else{

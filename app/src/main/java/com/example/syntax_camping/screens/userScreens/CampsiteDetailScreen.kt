@@ -38,7 +38,7 @@ import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
+fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?, update: Boolean = false){
 
     val allCampsites = CampsiteRepository.getCampsites()
     val campsite = allCampsites.find { it.documentId == campsiteID }
@@ -77,6 +77,20 @@ fun CampsiteDetailsScreen(navController: NavController, campsiteID: String?){
                 .padding(innerPadding)
                 .verticalScroll(scrollState) // Makes the content scrollable, gemini prompted, doubt its necessary though
         ) {
+
+            if (update) {
+                Button(
+                    onClick = {
+                        navController.navigate("UpdateCamp/${campsite.documentId}")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                ) {
+                    Text("Update Campsite", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
             // -- Photo Carousel Section --
             campsiteCarousel.displayCarousel(
                 modifier = Modifier.fillMaxWidth(),

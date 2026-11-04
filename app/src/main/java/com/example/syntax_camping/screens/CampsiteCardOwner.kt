@@ -151,6 +151,13 @@ fun CampsiteCardOwner(campsite: Campsite,
                                 onUpdateClick()
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("Delete Campsite") },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateClick() //fake implementation
+                            }
+                        )
                     }
                 }
             }
