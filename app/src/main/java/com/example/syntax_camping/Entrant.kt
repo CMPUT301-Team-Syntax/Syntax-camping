@@ -4,6 +4,8 @@ import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.LotteryManager
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.WaitList
+import com.example.syntax_camping.dataClasses.User
+import com.example.syntax_camping.dataClasses.UserType
 
 /** Author: Sorachat Chaichana
  *  Entrant subclass of User superclass
@@ -14,10 +16,11 @@ import com.example.syntax_camping.dataClasses.WaitList
  *  For example, this file will already have entrant.deviceId, entrant.reservations, entrant.loteryEntries.
  *  It'll also inherit from User superclass and already have entrant.name, entrant.userType.
  */
+/*
 class Entrant(
     val deviceId: String,
     name: String
-): User(name, 0) {
+): User(deviceId, name, UserType.Entrant) {
 
     private var reservations = mutableListOf<Reservation>()
     private var lotteryEntries = mutableListOf<LotteryEntry>()  //Acts as the list to display user's lottery entries info.
@@ -92,4 +95,4 @@ class Entrant(
     }
 
 
-}
+}*/

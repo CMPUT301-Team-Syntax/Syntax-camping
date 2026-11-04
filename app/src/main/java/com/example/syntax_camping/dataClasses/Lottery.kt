@@ -2,7 +2,7 @@ package com.example.syntax_camping.dataClasses
 import android.icu.util.Calendar
 import android.icu.util.TimeZone
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteOwner
+
 import com.example.syntax_camping.Database
 import com.google.firebase.functions.FirebaseFunctions
 import java.lang.System.console
