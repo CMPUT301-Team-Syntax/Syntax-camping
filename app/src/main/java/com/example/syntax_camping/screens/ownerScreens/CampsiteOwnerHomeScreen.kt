@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.Campsite
 
 @Composable
 fun CampsiteOwnerHomeScreen (navController: NavController){
@@ -60,6 +61,8 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ){
+
+
                     IconButton(onClick = {navController.navigate( "UpdateCamp")},
                         modifier = Modifier.size(40 .dp)) {
                         Icon(

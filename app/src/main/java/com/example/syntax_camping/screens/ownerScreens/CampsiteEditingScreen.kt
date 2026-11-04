@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.firestore.FirebaseFirestore
 //TO be added to the correct Navigation calss (ie syntax camping
 /*
 At Top var selectedCampsite by remember {
@@ -474,8 +475,10 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     error = "Max Int must be a string"
                                 } else {
                                     error = ""
-                                    documentID = newCampName
-
+                                    documentID = FirebaseFirestore.getInstance()
+                                        .collection("campsites")
+                                        .document()
+                                        .id
 
                                     newCampsite = Campsite(
                                         documentID,

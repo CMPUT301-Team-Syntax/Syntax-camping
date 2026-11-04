@@ -28,12 +28,13 @@ class Entrant(
     }
 
     //Adds entrant's specific lottery Entry into chosen list. (Confusing, will be reworked.)
+    /*
     fun addLotteryEntry(campsiteLottery: LotteryManager, lotteryEntry: LotteryEntry){
         campsiteLottery.addEntry(lotteryEntry)  //Add entry into campsite's lottery manager.
         lotteryEntries.add(lotteryEntry)   //Add entry into Entrant's list of entries.
 
     }
-
+*/
     //Add entrant into a specific campsite's waitlist.
     fun addWaitList(waitlist: WaitList) {
         val entrant =
@@ -76,11 +77,11 @@ class Entrant(
             return null
         }
     }
-
+    /*
     fun leaveLottery(campsiteLottery: LotteryManager, lotteryEntry: LotteryEntry){
         campsiteLottery.removeEntry(lotteryEntry)   //Actually removes the entry from the lottery.
         lotteryEntries.remove(lotteryEntry)  //Remove it from entrant's list of lottery entries.
-    }
+    }*/
 
     fun leaveWaitlist(waitList: WaitList){
         waitList.removeUser(deviceId)
