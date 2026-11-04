@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -11,58 +12,36 @@ import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.R
 
 @Composable
-fun Rating(numRating: Double){
+fun Rating(numRating: Double) {
     Row(
 
-    ){
+    ) {
 
-        var myInt = numRating.toInt()
-        var decimalLeft = numRating - myInt
-        repeat(5) { index ->
-            if (myInt >= 1){
-                Icon(
-                    painter = painterResource(id = R.drawable.star),
-                    contentDescription = "star",
-                    modifier = Modifier.size(18.dp),
-                    tint = Color.Unspecified
-                )
-                myInt -= 1
+        val starIcons = remember(numRating) {
+            var myInt = numRating.toInt()
+            var decimalLeft = numRating - myInt
+            val list = mutableListOf<Int>()
+
+            repeat(5) {
+                if (myInt >= 1) {
+                    list.add(R.drawable.star)
+                    myInt -= 1
+                } else if (decimalLeft > 0.0) {
+                    if (decimalLeft < 0.5) list.add(R.drawable.star_less)
+                    else if (decimalLeft == 0.5) list.add(R.drawable.star_middle)
+                    else list.add(R.drawable.star_more)
+                    decimalLeft = 0.0
+                } else {
+                    list.add(R.drawable.star_empty)
+                }
             }
-            
-            else if (decimalLeft> 0.0){
-                if (decimalLeft < 0.5){
-                    Icon(
-                        painter = painterResource(id = R.drawable.star_less),
-                        contentDescription = "star",
-                        modifier = Modifier.size(18.dp),
-                        tint = Color.Unspecified
-                    )
-                }
+            list
+        }
 
-                else if (decimalLeft == 0.5){
-                    Icon(
-                        painter = painterResource(id = R.drawable.star_middle),
-                        contentDescription = "star",
-                        modifier = Modifier.size(18.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-
-                else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.star_more),
-                        contentDescription = "star",
-                        modifier = Modifier.size(18.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-
-                decimalLeft = 0.0
-            }
-
-            else {
+        Row {
+            starIcons.forEach { iconId ->
                 Icon(
-                    painter = painterResource(id = R.drawable.star_empty),
+                    painter = painterResource(id = iconId),
                     contentDescription = "star",
                     modifier = Modifier.size(18.dp),
                     tint = Color.Unspecified
