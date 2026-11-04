@@ -31,7 +31,10 @@ export const scheduleLotteryDraw = onDocumentCreated(
         const scheduleTime = new Date(endTimeLottery);//converts kotlin long to java date
 
         const queue = getFunctions().taskQueue(
-            "locations/northamerica-northeast1/functions/runLotteryDraw")
+            'projects/syntaxcamping/locations/northamerica-northeast1/functions/runLotteryDraw')
+        console.log("In here?");
+        console.log(scheduleTime)
+
 
         //
         await queue.enqueue(//Schedules this operation for when the time specified(endtime) while await makes sure the draw happens before firestores triggers finish
@@ -42,12 +45,12 @@ export const scheduleLotteryDraw = onDocumentCreated(
             }
         );
     const closingQueue = getFunctions().taskQueue(
-        "location/northamerica-northeast1/functions/closeLotteryBooking");
+        "projects/syntaxcamping/locations/northamerica-northeast1/functions/closeLotteryBooking");
         const endTimeBooking = lottery.endTimeBooking;
         await closingQueue.enqueue(
             {lotteryId},
             {
-                    scheduleTime:new Date(bookingEndDate),
+                    scheduleTime:new Date(endTimeBooking),
                     dispatchDeadlineSeconds: 60*5
                     }
                 );

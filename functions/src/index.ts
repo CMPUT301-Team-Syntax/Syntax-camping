@@ -21,7 +21,8 @@ export {
     scheduleLotteryDraw,
     runLotteryDraw} from "./lottery";
    export {
-       handleWinnerStatusChange
+       handleWinnerStatusChange,
+       onWaitlistEntryCreated
    } from "./winner";
 export{
     closeLotteryBooking
