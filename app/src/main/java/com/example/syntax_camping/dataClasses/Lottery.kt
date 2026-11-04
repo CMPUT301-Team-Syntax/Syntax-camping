@@ -1,11 +1,10 @@
 package com.example.syntax_camping.dataClasses
 import android.icu.util.Calendar
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteOwner
 import com.example.syntax_camping.Database
 import com.google.firebase.functions.FirebaseFunctions
 
-class Lottery(owner: CampsiteOwner, campsites: MutableList<Campsite>, winners: Int) {
+class Lottery(owner: User, campsites: MutableList<Campsite>, winners: Int) {
     var lotteryId = ""
     val functions = FirebaseFunctions.getInstance()
     val campsites = campsites

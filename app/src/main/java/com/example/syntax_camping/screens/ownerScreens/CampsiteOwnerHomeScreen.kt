@@ -26,7 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteOwner
+import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CustomOwnerBottomBar
 import com.example.syntax_camping.screens.OwnerTopBar
@@ -39,7 +39,6 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
 //    val name by remember { mutableStateOf("") }
 //    val location by remember { mutableStateOf("") }
 //    val userId by remember { mutableStateOf("") }
-//    val campsiteOwner = CampsiteOwner(name, location, userId)
 
 
     // dummy data for now
@@ -50,9 +49,7 @@ fun CampsiteOwnerHomeScreen (navController: NavController){
         )
     }
     val campsiteOwner = remember {
-        CampsiteOwner("owner1", "John Doe", "Banff, AB").apply {
-            campsites.addAll(sampleCampsites)
-        }
+        OwnerData(location = "Banff, AB", campsites = sampleCampsites.toMutableList())
     }
     Scaffold(
 
