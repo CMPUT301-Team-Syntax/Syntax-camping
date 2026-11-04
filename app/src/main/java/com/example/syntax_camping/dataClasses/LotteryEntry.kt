@@ -8,5 +8,6 @@ import com.google.firebase.Timestamp
 //Works with Entrant class.
 data class LotteryEntry(
     val userId: String,
+
     val joined: Timestamp
 ) {}

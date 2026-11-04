@@ -62,97 +62,162 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int): String{
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>): String{
         //The two following values allow firebase to generate a unique lottery id
+        println("inhere")
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
+        for (campsite in campsites){
+            campsite.updateLotteryId(lotteryId)
+        }
         val data = mapOf(
 
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
-            "status" to "initialAccepting"
+            "status" to "initialAccepting",
+            "campsites" to campsites
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry){
-        if(hasUserJoinedLottery(lotteryId,entry.userId)){
-            return
-        }
-        else {
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>, lotteryId: String){
+        //The two following values allow firebase to generate a unique lottery id
 
+        val lotteryReference = db.collection("lotteries").document(lotteryId)
+        val lotteryId = lotteryReference.id
+        for (campsite in campsites){
+            campsite.updateLotteryId(lotteryId)
+        }
+        val data = mapOf(
+
+            "endTimeLottery" to endTimeLottery,
+            "endTimeBooking" to endTimeBooking,
+            "numberOfWinners" to numberOfWinners,
+            "status" to "initialAccepting",
+            "campsites" to campsites
+
+        )
+        lotteryReference.update(data)
+
+
+    }
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry) {
+        // 1. Wait for hasUserJoinedLottery to check the database via callback
+        hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
+
+            // If the user has already joined, stop here and don't add them again
+            if (hasJoined) {
+                return@hasUserJoinedLottery
+            }
 
             val lottery = db.collection("lotteries")
                 .document(lotteryId)
+
+            // 2. Fetch the lottery document to check its status
             lottery.get()
-                .addOnSuccessListener { lottery ->
+                .addOnSuccessListener { lotterySnapshot ->
                     val currentTime = System.currentTimeMillis()
-                    val endTimeBooking = lottery.getLong("endTimeBooking")
-                    val endTimeLottery = lottery.getLong("endTimeLottery")
-                    val status = lottery.getString("status")
-                    val collectionName: String?
-                    if (status == "initialAccepting") {
-                        collectionName = "entries"
-                    } else if (status == "booking") {
-                        collectionName = "waitlist"
-                    } else {
-                        return@addOnSuccessListener
+                    val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
+                    val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
+                    val status = lotterySnapshot.getString("status")
+
+                    val collectionName: String? = when (status) {
+                        "initialAccepting" -> "entries"
+                        "booking" -> "waitlist"
+                        else -> null
                     }
 
-
+                    // 3. Add the user to the correct collection
                     if (collectionName != null) {
-                        db.collection("lotteries")
-                            .document(lotteryId)
-                            .collection(collectionName)
+                        lottery.collection(collectionName)
                             .document(entry.userId)
                             .set(
                                 mapOf(
                                     "userId" to entry.userId,
-                                    "joinedTimestamp" to entry.joined
+                                    "joinedTimestamp" to entry.joined,
+                                    "status" to "waiting"
                                 )
                             )
+                            .addOnSuccessListener {
+                                // Successfully added entry!
+                            }
+                            .addOnFailureListener { e ->
+                                // Handle failure if needed
+                            }
                     }
                 }
         }
     }
-    fun hasUserJoinedLottery(lotteryId: String, userId: String): Boolean{
-        var isPresent = false
-        val lottery = db.collection("lotteries")
-            .document(lotteryId)
-        lottery.collection("entries")
-                .document(userId)
+    fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry){
+
+        hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
+            if (!hasJoined) {
+                return@hasUserJoinedLottery
+            }
+
+            val lotteryRef = db.collection("lotteries").document(lotteryId)
+
+
+            lotteryRef.collection("winners")
+                .document(entry.userId)
                 .get()
-                .addOnSuccessListener{entry ->
-                    if (entry.exists()) {
-                        isPresent = true
+                .addOnSuccessListener { winnerSnapshot ->
+
+                    // If they are a winner, stop here and do not delete
+                    if (winnerSnapshot.exists()) {
                         return@addOnSuccessListener
                     }
 
+
+                    lotteryRef.get()
+                        .addOnSuccessListener { lotterySnapshot ->
+                            val status = lotterySnapshot.getString("status")
+
+                            val collectionName = when (status) {
+                                "initialAccepting" -> "entries"
+                                "booking" -> "waitlist"
+                                else -> null
+                            }
+
+
+                            if (collectionName != null) {
+                                lotteryRef.collection(collectionName)
+                                    .document(entry.userId)
+                                    .delete()
+                                    .addOnSuccessListener {
+
+                                    }
+                                    .addOnFailureListener { e ->
+
+                                    }
+                            }
+                        }
                 }
-        lottery.collection("waitlist")
-            .document(userId)
-            .get()
-            .addOnSuccessListener { waitlist ->
+        }
+    }
+    fun hasUserJoinedLottery(lotteryId: String, userId: String, onResult: (Boolean) -> Unit) {
+        val lotteryRef = db.collection("lotteries").document(lotteryId)
+
+        lotteryRef.collection("entries").document(userId).get().addOnSuccessListener { entry ->
+            if (entry.exists()) {
+                onResult(true)
+                return@addOnSuccessListener
+            }
+
+            lotteryRef.collection("waitlist").document(userId).get().addOnSuccessListener { waitlist ->
                 if (waitlist.exists()) {
-                    isPresent = true
+                    onResult(true)
                     return@addOnSuccessListener
                 }
 
-            }
-        lottery.collection("winners")
-            .document(userId)
-            .get()
-            .addOnSuccessListener { winner ->
-                if (winner.exists()) {
-                    isPresent = true
-                    return@addOnSuccessListener
+                lotteryRef.collection("winners").document(userId).get().addOnSuccessListener { winner ->
+                    onResult(winner.exists())
                 }
-
             }
-        return isPresent
+        }
     }
     // updateUser
     // takes in a device id (this will be the document id), the userDetails (to store userType), and the userProfile (actually stores entrant/owner info).
