@@ -15,11 +15,12 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
-import com.example.syntax_camping.screens.CampsiteSummaryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
+import com.example.syntax_camping.dataClasses.Lottery
 
 @Composable
 fun SyntaxCamping(
@@ -34,7 +35,9 @@ fun SyntaxCamping(
     var documentId = "Test12"
     var selCampsite by remember { mutableStateOf<Campsite?>(null) }
 
- NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+    var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
+
+    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
 
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
@@ -75,7 +78,8 @@ fun SyntaxCamping(
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
                     navController.navigate("UpdateCamp")
-                })
+                }
+            )
         }
         composable("campsiteLottery"){
             CampsiteDetailsLotteryScreen(navController)
@@ -83,7 +87,10 @@ fun SyntaxCamping(
         composable("campsiteMessages"){
             CampsiteMessagesScreen(navController)
         }
-
+        composable("CreateLottery"){
+         LotteryEditScreen(navController,
+             )
+        }
 
         composable( "UpdateCamp") {
             CampsiteEditingScreen(
