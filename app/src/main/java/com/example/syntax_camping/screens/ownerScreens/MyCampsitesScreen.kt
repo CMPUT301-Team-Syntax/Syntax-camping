@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -47,8 +49,8 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.OwnerTopBar
-import com.example.syntax_camping.screens.CustomOwnerBottomBar
+import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.CustomBottomBar
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -59,6 +61,7 @@ fun MyCampsitesScreen(
     navController: NavController,
     campsites: List<Campsite>,
     onCampsiteClick: (Campsite) -> Unit,
+    onAddCampsite: (() -> Unit)? = null,
     isLoading: Boolean = false,
     errorMessage: String? = null,
     onRetry: (() -> Unit)? = null
@@ -69,6 +72,16 @@ fun MyCampsitesScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (onAddCampsite != null) {
+                item {
+                    Button(
+                        onClick = onAddCampsite,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text("Add campsite")
+                    }
+                }
+            }
             if (!isLoading && errorMessage == null && onRetry != null) {
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -245,9 +258,9 @@ internal fun OwnerPagesLayout(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.White,
         contentColor = Color.Black,
-        topBar = { OwnerTopBar(navController) },
+        topBar = { TopBar(navController) },
         bottomBar = {
-            CustomOwnerBottomBar(navController, currentRoute = "campsiteOwner")
+            CustomBottomBar(navController, currentRoute = "CampsiteOwnerHome")
         },
         content = content
     )

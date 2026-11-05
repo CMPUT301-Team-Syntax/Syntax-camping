@@ -38,7 +38,7 @@ fun CampsiteSummaryScreen(navController: NavController){
             .background(Color(0xFFF4E8D5)), // Set the background color to white
         containerColor = Color(0xFFF4E8D5),
         topBar = {
-            OwnerTopBar(navController)
+            TopBar(navController)
         },
 
         bottomBar = {

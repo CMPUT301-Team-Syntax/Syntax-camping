@@ -34,6 +34,7 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CampsiteListScreen
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.screens.CustomBottomBar
 
 @Composable
@@ -44,6 +45,7 @@ fun SearchHomeScreen(navController: NavController){
 
     var realCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var displayFillereted by remember { mutableStateOf(false) }
 
     Scaffold(
 
@@ -81,6 +83,7 @@ fun SearchHomeScreen(navController: NavController){
                     value = SearchInput,
                     onValueChange = { newValue -> SearchInput = newValue },
                     label = { Text("Type in the location or Campsite Name") },
+
                     shape = RoundedCornerShape(30.dp),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,   // Removes line when typing
@@ -89,6 +92,7 @@ fun SearchHomeScreen(navController: NavController){
                     ),
                     modifier = Modifier
                         .weight(2f)
+                        .testTag("search_input_field")
                         .padding(bottom = 16.dp)
                 )
 
@@ -103,13 +107,18 @@ fun SearchHomeScreen(navController: NavController){
                     }
                 }
 
+
+
                 IconButton(onClick = {
+                    displayFillereted = true
                     FlitteredCampsiteList = realCampsites.filter { campsite ->
                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                     }
+                    displayFillereted = true
                 },
                     modifier = Modifier
                         .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
+                        .testTag("search_icon")
 
                 ) {
                     Icon(
@@ -123,22 +132,45 @@ fun SearchHomeScreen(navController: NavController){
 
 
 //realCampsites is the actual firebase list of campsites.
-            Box(modifier = Modifier.weight(1f)) {
+            if (displayFillereted) {
+                Box(modifier = Modifier.weight(1f)) {
 
-                if (FlitteredCampsiteList.isEmpty()) {//database info
-                    // Show this if the database is empty or failed to load
-                    Text("No campsites found in database.")
-                } else {
-                    // Show the actual list of cards!
-                    CampsiteListScreen(
-                        campsiteList = FlitteredCampsiteList,
-                        onItemClick = { clickedId ->
-                            navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
-                        }
-                    )
+                    if (FlitteredCampsiteList.isEmpty()) {//database info
+                        // Show this if the database is empty or failed to load
+                        Text("No campsites found in database.")
+                    } else {
+                        // Show the actual list of cards!
+                        CampsiteListScreen(
+                            campsiteList = FlitteredCampsiteList,
+                            onItemClick = { clickedId ->
+                                navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
+                            }
+                        )
+                    }
+
                 }
-
             }
+            else{
+                Box(modifier = Modifier.weight(1f)) {
+
+                    if (realCampsites.isEmpty()) {//database info
+                        // Show this if the database is empty or failed to load
+                        Text("No campsites found in database.")
+                    } else {
+                        // Show the actual list of cards!
+                        CampsiteListScreen(
+                            campsiteList = realCampsites,
+                            onItemClick = { clickedId ->
+                                navController.navigate("campsiteDetails/$clickedId") //navigates to the campsite details information for the card clicked
+                            }
+                        )
+                    }
+
+                }
+            }
+
         }
     }
 }
+
+/// hello

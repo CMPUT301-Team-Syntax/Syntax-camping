@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.example.syntax_camping.screens.OwnerCampsitesNavigation
+import com.example.syntax_camping.screens.SyntaxCamping
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -25,7 +25,9 @@ class OwnerCampsiteDataRenderingTest {
             campsite("second", "Second live campsite", "Original description")
         ))
         val loader: suspend () -> List<Campsite> = { backend.get() }
-        compose.setContent { OwnerCampsitesNavigation(loadCampsites = loader) }
+        compose.setContent {
+            SyntaxCamping(startDestination = "CampsiteOwnerHome", loadOwnerCampsites = loader)
+        }
         compose.onNodeWithText("First live campsite").assertIsDisplayed()
         compose.onNodeWithText("Second live campsite").assertIsDisplayed()
 
@@ -49,7 +51,9 @@ class OwnerCampsiteDataRenderingTest {
             if (attempts.incrementAndGet() == 1) throw IOException("Offline test")
             listOf(campsite("recovered", "Recovered campsite", "Loaded after retry"))
         }
-        compose.setContent { OwnerCampsitesNavigation(loadCampsites = loader) }
+        compose.setContent {
+            SyntaxCamping(startDestination = "CampsiteOwnerHome", loadOwnerCampsites = loader)
+        }
         compose.onNodeWithText("Offline test").assertIsDisplayed()
         compose.onNodeWithText("Retry").performClick()
         compose.onNodeWithText("Recovered campsite").assertIsDisplayed()
@@ -59,7 +63,9 @@ class OwnerCampsiteDataRenderingTest {
     fun refreshReplacesAnEmptyListWithNewBackendData() {
         val backend = AtomicReference<List<Campsite>>(emptyList())
         val loader: suspend () -> List<Campsite> = { backend.get() }
-        compose.setContent { OwnerCampsitesNavigation(loadCampsites = loader) }
+        compose.setContent {
+            SyntaxCamping(startDestination = "CampsiteOwnerHome", loadOwnerCampsites = loader)
+        }
         compose.onNodeWithText("No campsites available.").assertIsDisplayed()
 
         backend.set(listOf(campsite("new", "New database campsite", "New description")))
