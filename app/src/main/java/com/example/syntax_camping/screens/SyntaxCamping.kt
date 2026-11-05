@@ -102,6 +102,10 @@ fun SyntaxCamping(
              )
         }
 
+        composable ("LotteryDetailsScreen"){
+
+        }
+
         composable( "UpdateCamp") {
             CampsiteEditingScreen(
                 navController,

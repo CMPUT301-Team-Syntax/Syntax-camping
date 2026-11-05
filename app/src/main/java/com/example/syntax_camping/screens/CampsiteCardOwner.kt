@@ -39,8 +39,7 @@ import androidx.compose.runtime.setValue
 @Composable
 fun CampsiteCardOwner(campsite: Campsite,
                       onClick:() -> Unit,
-                      onUpdateClick: (() -> Unit)? = null,
-                      onCreateLotteryClick: (() -> Unit)? = null) {
+                      onUpdateClick: (() -> Unit)? = null) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

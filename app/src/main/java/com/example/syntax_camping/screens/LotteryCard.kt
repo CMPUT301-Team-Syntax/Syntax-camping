@@ -1,37 +1,37 @@
 package com.example.syntax_camping.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.R
 import com.example.syntax_camping.dataClasses.Lottery
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
-fun LotteryCard(lottery: Lottery, onClick:() -> Unit) {
+fun LotteryCard(lottery: Lottery,
+                onClick: () -> Unit) {
+    // Format the timestamp for display
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    val drawDateStr = dateFormat.format(lottery.getReadableLotteryEndTime())
+    val bookDateStr = dateFormat.format(lottery.getReadableBookingEndTime())
+
+    // Calculate days left until the draw
+    val daysLeft = ((lottery.endTimeLottery - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceAtLeast(0)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -44,71 +44,41 @@ fun LotteryCard(lottery: Lottery, onClick:() -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
-        )
-
-        {
+        ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            )
-            {
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Title
                 Text(
-                    text = lottery.name,
+                    text = "Lottery: ${lottery.lotteryId.takeIf { it.isNotBlank() } ?: "Pending ID"}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.location_on),
-                        contentDescription = "location",
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.Black
-                    )
-
-                    Text(
-                        text = campsite.location,
-                        fontSize = 12.sp,
-                        color = Color.Black
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.occupancy), // Double-check if this should be a different icon like group/person
-                        contentDescription = "Capacity",
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${campsite.maxOcc} people max",
-                        fontSize = 12.sp,
-                        color = Color.Black
-                    )
-                }
-
+                // Dates
                 Text(
-                    text = "304 people currently waiting",
-                    fontSize = 12.sp,
+                    text = "Draws on: $drawDateStr",
+                    fontSize = 14.sp,
+                    color = Color.DarkGray
+                )
+                Text(
+                    text = "Must book by: $bookDateStr",
+                    fontSize = 14.sp,
                     color = Color.DarkGray
                 )
 
+                // Winners & Countdown
                 Text(
-                    text = "$5 days left",
-                    fontSize = 12.sp,
-                    color = Color.DarkGray
+                    text = "${lottery.numWinners} winners • $daysLeft days left",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF3E6B68) // Matches your custom green theme
                 )
-
-                Rating(numRating = campsite.rating)
             }
-
         }
     }
 }

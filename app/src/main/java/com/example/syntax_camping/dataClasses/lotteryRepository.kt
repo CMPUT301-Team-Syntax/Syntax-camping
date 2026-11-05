@@ -6,7 +6,7 @@ import com.google.firebase.Timestamp
 import kotlin.collections.mutableListOf
 
 class lotteryRepository {
-    private fun getLottery(lotteryId: String, callback: (Lottery?)->Unit){
+    fun getLottery(lotteryId: String, callback: (Lottery?)->Unit){
         val db = FirebaseFirestore.getInstance()
         var lottery: Lottery?
         lottery = null
@@ -36,7 +36,9 @@ class lotteryRepository {
                         endTimeBooking = document.getLong("endTimeBooking")?.toLong() ?: 0,
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
                         campsites
-                    )
+                    ).apply {
+                        this.lotteryId = document.id
+                    }
 
                 callback(lottery)
             }
