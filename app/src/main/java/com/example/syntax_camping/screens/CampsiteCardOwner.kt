@@ -158,6 +158,14 @@ fun CampsiteCardOwner(campsite: Campsite,
                                 onUpdateClick() //fake implementation
                             }
                         )
+
+                        DropdownMenuItem(
+                            text = { Text("View Lotteries") },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateClick() //fake implementation
+                            }
+                        )
                     }
                 }
             }
