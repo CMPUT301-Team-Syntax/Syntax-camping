@@ -1,6 +1,7 @@
 package com.example.syntax_camping.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,14 +17,12 @@ import com.example.syntax_camping.Campsite
 fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
                             onItemClick: (String) -> Unit,
                             onUpdateClick: ((String) -> Unit)? = null){
-    Scaffold { innerPadding ->
-        LazyColumn(Modifier
+        Column(Modifier
             .fillMaxSize()
-            .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
+            .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ){
-            itemsIndexed(campsiteList) { index, camp ->
+            campsiteList.forEach {camp ->
                 CampsiteCardOwner(//owners version of card
                     campsite = camp,
                     onClick = { onItemClick(camp.documentId)},
@@ -36,4 +35,3 @@ fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
 
             }
         }
-    }
