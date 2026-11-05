@@ -5,7 +5,6 @@ import com.example.syntax_camping.dataClasses.LotteryManager
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.WaitList
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.dataClasses.UserType
 
 /** Author: Sorachat Chaichana
  *  Entrant subclass of User superclass
