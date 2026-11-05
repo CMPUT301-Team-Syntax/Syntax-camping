@@ -6,7 +6,8 @@ import com.google.firebase.Timestamp
  * Reservation data class that goes with Campsites.
  */
 data class Reservation (
-    val time: Timestamp,
+    val documentId: String,
+    val time: Int,
     val location: String,
     val confirmed: Boolean,
 ) {}

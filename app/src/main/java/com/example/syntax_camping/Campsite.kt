@@ -5,7 +5,7 @@ import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
 import androidx.core.net.toUri
-
+import com.example.syntax_camping.dataClasses.LotteryManager
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
@@ -14,6 +14,7 @@ import androidx.core.net.toUri
 class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String> = mutableListOf<String>(), /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
+    private var _lotteryId: String? = null
     private var _currImageIndex = 0
     private var _name = name
     private var _location = location
@@ -45,7 +46,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _rating
     val raters: Int
         get() = _raters
-
+    val lotteryId: String?
+        get() = _lotteryId
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
@@ -102,7 +104,9 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     // Database stores images as a list of string.
     // On init, we must parse these strings as Uris
-
+    fun updateLotteryId(newLotteryId: String?){
+        _lotteryId= newLotteryId
+    }
     init {
 
         for (image in images) {
@@ -114,51 +118,5 @@ class Campsite(documentId: String, name: String, location: String, description: 
     }
 
 
-    //returns the next phot in the list, loops back to the start if it can, and if there is no images returns no image found
-    /* this is being moved out of Campsite into image carousel handling, leaving the functions though incase someone wants to reuse them
-     //returns the current photo, checking first to make sure na image exists
-    /*
-    fun getCurrPhoto(): String{
-        if(_images.size == 0)
-            return "No image Found"
-        else
-            return _images[_currImageIndex].getUrl()
-    }
-    */
 
-    fun getNextPhoto():String{
-        if(_images.size == 0) {
-            return "No image Found"
-        }
-        else if(_currImageIndex == (_images.size-1)){
-            _currImageIndex = 0
-            return _images[_currImageIndex].getUrl()
-
-        }
-        else {
-            _currImageIndex += 1
-            return _images[_currImageIndex].getUrl()
-        }
-    }
-    fun getPreviousPhoto():String{
-        if(_images.size == 0) {
-            return "No image Found"
-        }
-        else if(_currImageIndex == (0)){
-            _currImageIndex = _images.size - 1
-            return _images[_currImageIndex].getUrl()
-
-        }
-        else {
-            _currImageIndex -= 1
-        }
-
-        return _images[_currImageIndex].getUrl()
-
-    }
-    //resets the photo index, should be called each time you leavve a page with an image caraousel
-    fun resetIndex(){
-        _currImageIndex = 0
-    }
-*/
 }

@@ -1,8 +1,17 @@
 package com.example.syntax_camping.dataClasses
 
+import android.icu.util.Calendar
 import com.example.syntax_camping.Campsite
 import java.sql.Time
 import java.sql.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.firestore.FieldValue
+import java.util.Collections
+import kotlin.math.absoluteValue
+import kotlin.random.Random
+import android.util.Log
+import com.example.syntax_camping.Database
 
 /**
  * WORK IN PROGRESS
@@ -10,25 +19,26 @@ import java.sql.Timestamp
  * Works only with campsite class & LotteryEntry class.
  * Each lottery manager objects should have its own associated campsite and capacity.
  */
+
+
 class LotteryManager (
     val campsite: Campsite,
+    val lotteryId: String,
     var capacity: Int,
 ) {
     //Private list
+
     private var entrantList = mutableListOf<LotteryEntry>()
+    val functions = FirebaseFunctions.getInstance()
+    val db = Database()
 
-    fun addEntry(entry: LotteryEntry) {
-        entrantList.add(entry)
-    }
 
-    fun removeEntry(entry: LotteryEntry) {
-        entrantList.remove(entry)
-    }
+    //This function returns false if the timer fails to be created, usually due to user selecting a time in the past
+
+
+
 
     //Will constantly randomize the winner out of the list (if possible) and send it to Reservation.
-    fun randomizeWinner() {
-        //TOdo
-    }
 
     fun updateLotteryDate(){
         //Todo

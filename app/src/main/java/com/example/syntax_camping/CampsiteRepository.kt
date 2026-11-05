@@ -78,6 +78,7 @@ object CampsiteRepository {
                     tags = (document.getString("tags") ?: "").split(",").toMutableList(),
                     document.getDouble("rating") ?: 0.00,
                     images = (document.getString("images") ?: "").split(",").toMutableList()
+
                 )
 
                 callback(campsite)

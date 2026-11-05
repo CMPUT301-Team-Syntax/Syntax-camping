@@ -4,6 +4,7 @@ import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.LotteryManager
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.WaitList
+import com.example.syntax_camping.dataClasses.User
 
 /** Author: Sorachat Chaichana
  *  Entrant subclass of User superclass
@@ -14,10 +15,11 @@ import com.example.syntax_camping.dataClasses.WaitList
  *  For example, this file will already have entrant.deviceId, entrant.reservations, entrant.loteryEntries.
  *  It'll also inherit from User superclass and already have entrant.name, entrant.userType.
  */
+/*
 class Entrant(
     val deviceId: String,
     name: String
-): User(name, 0) {
+): User(deviceId, name, UserType.Entrant) {
 
     private var reservations = mutableListOf<Reservation>()
     private var lotteryEntries = mutableListOf<LotteryEntry>()  //Acts as the list to display user's lottery entries info.
@@ -28,12 +30,13 @@ class Entrant(
     }
 
     //Adds entrant's specific lottery Entry into chosen list. (Confusing, will be reworked.)
+    /*
     fun addLotteryEntry(campsiteLottery: LotteryManager, lotteryEntry: LotteryEntry){
         campsiteLottery.addEntry(lotteryEntry)  //Add entry into campsite's lottery manager.
         lotteryEntries.add(lotteryEntry)   //Add entry into Entrant's list of entries.
 
     }
-
+*/
     //Add entrant into a specific campsite's waitlist.
     fun addWaitList(waitlist: WaitList) {
         val entrant =
@@ -76,11 +79,11 @@ class Entrant(
             return null
         }
     }
-
+    /*
     fun leaveLottery(campsiteLottery: LotteryManager, lotteryEntry: LotteryEntry){
         campsiteLottery.removeEntry(lotteryEntry)   //Actually removes the entry from the lottery.
         lotteryEntries.remove(lotteryEntry)  //Remove it from entrant's list of lottery entries.
-    }
+    }*/
 
     fun leaveWaitlist(waitList: WaitList){
         waitList.removeUser(deviceId)
@@ -91,4 +94,4 @@ class Entrant(
     }
 
 
-}
+}*/
