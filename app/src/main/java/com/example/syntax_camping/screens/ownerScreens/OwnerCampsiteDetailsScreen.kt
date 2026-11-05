@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,30 +42,51 @@ import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
 
-/** US 02.01.04: displays the selected owner's campsite in one scrollable page. */
+/** US 02.01.04: renders the selected database campsite in one scrollable page. */
 @Composable
 fun OwnerCampsiteDetailsScreen(
     navController: NavController,
     campsite: Campsite?,
     onEditCampsite: (Campsite) -> Unit,
-    onNotificationsClick: () -> Unit = {}
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     val pink = Color(0xFFEBC3C3)
-    OwnerPagesLayout(
-        navController = navController,
-        onNotificationsClick = onNotificationsClick,
-        onEditCampsite = campsite?.let { selected ->
-            { onEditCampsite(selected) }
-        }
-    ) { innerPadding ->
-        if (campsite == null) {
-            Text("Select a campsite first.", Modifier.padding(innerPadding).padding(16.dp))
+    OwnerPagesLayout(navController) { innerPadding ->
+        if (isLoading || errorMessage != null || campsite == null) {
+            Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                OwnerDataMessage(
+                    message = when {
+                        isLoading -> "Loading campsite…"
+                        errorMessage != null -> errorMessage
+                        else -> "This campsite is no longer available."
+                    },
+                    loading = isLoading,
+                    onRetry = onRetry
+                )
+            }
         } else {
             Column(
                 modifier = Modifier.fillMaxSize().padding(innerPadding)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                Button(
+                    onClick = { onEditCampsite(campsite) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3E6B68),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Update Campsite")
+                }
+                if (onRetry != null) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onRetry) { Text("Refresh") }
+                    }
+                }
                 OwnerPhotoSection(campsite)
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
@@ -86,10 +109,11 @@ fun OwnerCampsiteDetailsScreen(
                             .horizontalScroll(rememberScrollState()).padding(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (campsite.tags.isEmpty()) {
+                        val tags = campsite.tags.filter { it.isNotBlank() }
+                        if (tags.isEmpty()) {
                             Text("No tags yet.")
                         } else {
-                            campsite.tags.forEach { tag -> Text("#$tag") }
+                            tags.forEach { tag -> Text("#$tag") }
                         }
                     }
                     OwnerDetailRow("Maximum occupants", campsite.maxOcc.toString())
@@ -120,8 +144,9 @@ fun OwnerCampsiteDetailsScreen(
 
 @Composable
 private fun OwnerPhotoSection(campsite: Campsite) {
+    val photos = campsite.images.filter { it.toString().isNotBlank() }
     // Reset when the number of photos changes, keeping the selected index valid.
-    var photoIndex by remember(campsite.documentId, campsite.images.size) { mutableIntStateOf(0) }
+    var photoIndex by remember(campsite.documentId, photos) { mutableIntStateOf(0) }
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             .background(Color(0xFFE6E6E6), RoundedCornerShape(10.dp))
@@ -132,7 +157,7 @@ private fun OwnerPhotoSection(campsite: Campsite) {
             modifier = Modifier.fillMaxWidth().height(220.dp),
             contentAlignment = Alignment.Center
         ) {
-            val photo = campsite.images.getOrNull(photoIndex)
+            val photo = photos.getOrNull(photoIndex)
             if (photo == null) {
                 Image(
                     painter = painterResource(R.drawable.missing_image_filler),
@@ -144,21 +169,23 @@ private fun OwnerPhotoSection(campsite: Campsite) {
                 AsyncImage(
                     model = photo,
                     contentDescription = "Campsite photo ${photoIndex + 1}",
+                    placeholder = painterResource(R.drawable.missing_image_filler),
+                    error = painterResource(R.drawable.missing_image_filler),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
         }
-        if (campsite.images.size > 1) {
+        if (photos.size > 1) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TextButton(onClick = {
-                    photoIndex = (photoIndex - 1 + campsite.images.size) % campsite.images.size
+                    photoIndex = (photoIndex - 1 + photos.size) % photos.size
                 }) { Text("Previous") }
                 TextButton(onClick = {
-                    photoIndex = (photoIndex + 1) % campsite.images.size
+                    photoIndex = (photoIndex + 1) % photos.size
                 }) { Text("Next") }
             }
         }
@@ -166,7 +193,7 @@ private fun OwnerPhotoSection(campsite: Campsite) {
             modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            repeat(campsite.images.size.coerceAtLeast(1)) { index ->
+            repeat(photos.size.coerceAtLeast(1)) { index ->
                 Box(
                     Modifier.size(6.dp).background(
                         if (index == photoIndex) Color.DarkGray else Color.LightGray,

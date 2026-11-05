@@ -11,20 +11,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,7 +38,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,36 +49,73 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.CustomBottomBar
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** US 02.03.01: displays the owner's campsites using the owner storyboard layout. */
+/** US 02.03.01: renders the supplied database campsites in the owner layout. */
 @Composable
 fun MyCampsitesScreen(
     navController: NavController,
     campsites: List<Campsite>,
     onCampsiteClick: (Campsite) -> Unit,
-    onAddCampsite: () -> Unit,
-    onNotificationsClick: () -> Unit = {}
+    onAddCampsite: (() -> Unit)? = null,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    onRetry: (() -> Unit)? = null
 ) {
-    OwnerPagesLayout(
-        navController = navController,
-        showAddButton = true,
-        onAddCampsite = onAddCampsite,
-        onNotificationsClick = onNotificationsClick
-    ) { innerPadding ->
+    OwnerPagesLayout(navController) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (campsites.isEmpty()) {
-                item { Text("No campsites yet. Tap + to add one.") }
+            if (onAddCampsite != null) {
+                item {
+                    Button(
+                        onClick = onAddCampsite,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text("Add campsite")
+                    }
+                }
             }
-            items(campsites, key = { it.documentId }) { campsite ->
-                OwnerCampsiteCard(campsite) { onCampsiteClick(campsite) }
+            if (!isLoading && errorMessage == null && onRetry != null) {
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onRetry) { Text("Refresh") }
+                    }
+                }
             }
+            when {
+                isLoading -> item { OwnerDataMessage("Loading campsites…", loading = true) }
+                errorMessage != null -> item { OwnerDataMessage(errorMessage, onRetry = onRetry) }
+                campsites.isEmpty() -> item { Text("No campsites available.") }
+                else -> items(campsites, key = { it.documentId }) { campsite ->
+                    OwnerCampsiteCard(campsite) { onCampsiteClick(campsite) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun OwnerDataMessage(
+    message: String,
+    loading: Boolean = false,
+    onRetry: (() -> Unit)? = null
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (loading) CircularProgressIndicator()
+        Text(message, textAlign = TextAlign.Center)
+        if (!loading && onRetry != null) {
+            TextButton(onClick = onRetry) { Text("Retry") }
         }
     }
 }
@@ -107,7 +140,7 @@ private fun OwnerCampsiteCard(campsite: Campsite, onClick: () -> Unit) {
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                val photo = campsite.images.firstOrNull()
+                val photo = campsite.images.firstOrNull { it.toString().isNotBlank() }
                 if (photo == null) {
                     Image(
                         painter = placeholder,
@@ -215,130 +248,22 @@ internal fun OwnerCardStars(
     }
 }
 
-// Used only by Zelin's list and details screens.
+/** Uses the same header and navigation bar as the team's other owner pages. */
 @Composable
 internal fun OwnerPagesLayout(
     navController: NavController,
-    showAddButton: Boolean = false,
-    onAddCampsite: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {},
-    onEditCampsite: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val pink = Color(0xFFE2AFAF)
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.White,
         contentColor = Color.Black,
-        topBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .background(pink)
-                    .statusBarsPadding()
-                    .height(64.dp)
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Syntax\nCamping",
-                    modifier = Modifier.weight(1f),
-                    fontFamily = FontFamily.Cursive,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    lineHeight = 20.sp
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (onEditCampsite != null) {
-                        TextButton(
-                            onClick = onEditCampsite,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.textButtonColors(
-                                containerColor = Color(0xFFF3C7C7),
-                                contentColor = Color.Black
-                            )
-                        ) {
-                            Text(
-                                "Update\nDetails",
-                                textAlign = TextAlign.Center,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                    if (showAddButton) {
-                        OwnerTemplateIcon(R.drawable.add, "Add campsite", onClick = onAddCampsite)
-                    }
-                    OwnerTemplateIcon(
-                        R.drawable.notification, "Notifications", onClick = onNotificationsClick
-                    )
-                }
-            }
-        },
+        topBar = { TopBar(navController) },
         bottomBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .background(pink)
-                    .navigationBarsPadding()
-                    .height(72.dp)
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Each destination gets one fifth of the available width.
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    OwnerTemplateIcon(R.drawable.home, "My Campsites", circular = true) {
-                        navController.navigate("campsiteOwner") { launchSingleTop = true }
-                    }
-                }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    OwnerTemplateIcon(R.drawable.lottery, "Lotteries", circular = true) {
-                        navController.navigate("campsiteLottery") { launchSingleTop = true }
-                    }
-                }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    OwnerTemplateIcon(R.drawable.messenger, "Messages", circular = true) {
-                        navController.navigate("campsiteMessages") { launchSingleTop = true }
-                    }
-                }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    OwnerTemplateIcon(R.drawable.account, "Profile", circular = true) {
-                        navController.navigate("campsiteProfile") { launchSingleTop = true }
-                    }
-                }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    OwnerTemplateIcon(R.drawable.ic_settings, "Settings", circular = true) {
-                        navController.navigate("campsiteSettings") { launchSingleTop = true }
-                    }
-                }
-            }
+            CustomBottomBar(navController, currentRoute = "CampsiteOwnerHome")
         },
         content = content
     )
-}
-
-@Composable
-private fun OwnerTemplateIcon(
-    icon: Int,
-    label: String,
-    circular: Boolean = false,
-    onClick: () -> Unit
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(48.dp).then(
-            if (circular) Modifier.background(Color(0xFFF3C7C7), CircleShape)
-            else Modifier
-        )
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = label,
-            modifier = Modifier.size(26.dp),
-            tint = Color.Unspecified
-        )
-    }
 }
 
 // Sample data is only used by Android Studio Preview.
@@ -358,8 +283,7 @@ private fun MyCampsitesPreview() {
     MyCampsitesScreen(
         navController = rememberNavController(),
         campsites = campsites,
-        onCampsiteClick = {},
-        onAddCampsite = {}
+        onCampsiteClick = {}
     )
 }
 
@@ -369,7 +293,6 @@ private fun EmptyMyCampsitesPreview() {
     MyCampsitesScreen(
         navController = rememberNavController(),
         campsites = emptyList(),
-        onCampsiteClick = {},
-        onAddCampsite = {}
+        onCampsiteClick = {}
     )
 }
