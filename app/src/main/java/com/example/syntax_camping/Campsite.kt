@@ -14,7 +14,7 @@ import com.example.syntax_camping.dataClasses.LotteryManager
 class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String> = mutableListOf<String>(), /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
-    private lateinit var _lotteryId: String
+    private var _lotteryId: String? = null
     private var _currImageIndex = 0
     private var _name = name
     private var _location = location
@@ -46,7 +46,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _rating
     val raters: Int
         get() = _raters
-    val lotteryId: String
+    val lotteryId: String?
         get() = _lotteryId
     /*
     * These functions for QR code are just filler until QR code is fully implemented
@@ -104,7 +104,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     // Database stores images as a list of string.
     // On init, we must parse these strings as Uris
-    fun updateLotteryId(newLotteryId: String){
+    fun updateLotteryId(newLotteryId: String?){
         _lotteryId= newLotteryId
     }
     init {
