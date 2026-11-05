@@ -499,11 +499,22 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
+                    "images" to campsite.getImagesAsStrs().joinToString(separator = ","),    // same with images
+                    "lotteryId" to ""
                 )
             )
     }
-
+    fun updateCampsiteLotteryId(documentId: String,lotteryId:String){
+        db.collection("campsites")
+            .document(documentId)
+            .update("lotteryId", lotteryId)
+            .addOnSuccessListener {
+                // Optional: Successfully updated
+            }
+            .addOnFailureListener { e ->
+                // Optional: Handle the error
+            }
+    }
     fun updateCampsite(campsite: Campsite) {
         db.collection("campsites")
             .document(campsite.documentId)
