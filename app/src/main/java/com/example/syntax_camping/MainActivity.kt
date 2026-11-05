@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
 
         val db = Database()
         val deviceId = db.getDeviceId(this)
+        CurrentUser.setDeviceId(deviceId)  //Set current user's device id.
 
 
         // For now, I just have a test user.
