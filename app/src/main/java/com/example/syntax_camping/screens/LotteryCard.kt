@@ -19,13 +19,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.dataClasses.Lottery
 import java.text.SimpleDateFormat
-import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun LotteryCard(lottery: Lottery,
                 onClick: () -> Unit) {
     // Format the timestamp for display
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", LocalLocale.current.platformLocale)
     val drawDateStr = dateFormat.format(lottery.getReadableLotteryEndTime())
     val bookDateStr = dateFormat.format(lottery.getReadableBookingEndTime())
 
@@ -51,15 +51,12 @@ fun LotteryCard(lottery: Lottery,
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Title
                 Text(
                     text = "Lottery: ${lottery.lotteryId.takeIf { it.isNotBlank() } ?: "Pending ID"}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-
-                // Dates
                 Text(
                     text = "Draws on: $drawDateStr",
                     fontSize = 14.sp,
@@ -71,12 +68,11 @@ fun LotteryCard(lottery: Lottery,
                     color = Color.DarkGray
                 )
 
-                // Winners & Countdown
                 Text(
                     text = "${lottery.numWinners} winners • $daysLeft days left",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF3E6B68) // Matches your custom green theme
+                    color = Color(0xFF3E6B68)
                 )
             }
         }

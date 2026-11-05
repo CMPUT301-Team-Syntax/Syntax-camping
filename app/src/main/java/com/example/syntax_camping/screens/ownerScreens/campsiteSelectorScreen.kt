@@ -37,12 +37,10 @@ fun CampsiteSelectorDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    // Only campsites that are NOT already in a lottery, and NOT currently selected in the UI
     val availableCampsites = myOwnedCampsites.filter { campsite ->
         campsite.lotteryId == null && !selectedCampsites.contains(campsite)
     }
 
-    // Outer container styled to look like an OutlinedTextField
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -60,8 +58,6 @@ fun CampsiteSelectorDropdown(
             color = Color.Black
         )
 
-        // 1. Display currently selected campsites with a remove button
-        // (Removed the isNotEmpty check - if empty, the forEach just skips)
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -90,7 +86,6 @@ fun CampsiteSelectorDropdown(
             }
         }
 
-        // 2. The button/row to add MORE campsites
         Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
@@ -125,7 +120,6 @@ fun CampsiteSelectorDropdown(
                 }
             }
 
-            // 3. Dropdown Menu
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },

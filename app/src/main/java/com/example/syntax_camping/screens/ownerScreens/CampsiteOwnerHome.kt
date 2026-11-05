@@ -78,35 +78,13 @@ fun CampsiteOwnerHome(
 
                 ownerProfile = UserProfile(user = baseUser, ownerData = ownerData)
 
-                // Safely grab whatever lotteries happen to be attached to the campsites
-                val activeLotteryIds = updatedCampsites.mapNotNull { it.lotteryId }.distinct()
-                lotteriesOwned.clear()
-
-                val repo = lotteryRepository()
-
-                if (activeLotteryIds.isEmpty()) {
-                    isLoading = false
-                } else {
-                    var fetchCount = 0
-                    activeLotteryIds.forEach { lotId ->
-                        repo.getLottery(lotId) { fetchedLottery ->
-                            if (fetchedLottery != null && !lotteriesOwned.any { it.lotteryId == lotId }) {
-                                lotteriesOwned.add(fetchedLottery)
-                            }
-                            fetchCount++
-                            if (fetchCount == activeLotteryIds.size) {
-                                isLoading = false
-                            }
-                        }
-                    }
-                }
-            } else {
-                isLoading = false
+                //guys ive tried my best to get the lotteries to test how they look as a screen
             }
+
+            isLoading = false
         }
     }
 
-    // Extract the list safely so we can use it in the UI below
     val ownerCampsites = ownerProfile?.ownerData?.campsites ?: emptyList()
 
     var filteredCampsiteList = ownerCampsites.filter { campsite ->
