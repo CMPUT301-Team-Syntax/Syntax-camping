@@ -5,7 +5,7 @@ import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
 import androidx.core.net.toUri
-import com.example.syntax_camping.dataClasses.LotteryManager
+
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
@@ -106,6 +106,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
     // On init, we must parse these strings as Uris
     fun updateLotteryId(newLotteryId: String?){
         _lotteryId= newLotteryId
+
+
     }
     init {
 
@@ -117,6 +119,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     }
 
+//val lottery = Lottery(yeah)
+    // lottery.createLottery(
 
 
 }

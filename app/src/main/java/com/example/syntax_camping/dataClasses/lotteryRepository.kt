@@ -130,3 +130,18 @@ class lotteryRepository {
 
     }
 }
+
+/*
+lr = lotteryRepository()
+val lottery = lr.getLottery(campsite.lotteryId)
+* if (lottery != null){
+    lottery.name
+    lottery.status (can be "initialBooking"(first joining, no names yet), status "booking" (names/winners drawn. wailist), "complete"
+    lottery.getReadableEndLotteryTime
+    lottery..getReadableBookingTime
+
+}
+
+*
+* */
+

@@ -1,7 +1,7 @@
 package com.example.syntax_camping
 
 import com.example.syntax_camping.dataClasses.LotteryEntry
-import com.example.syntax_camping.dataClasses.LotteryManager
+
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.WaitList
 import com.example.syntax_camping.dataClasses.User
