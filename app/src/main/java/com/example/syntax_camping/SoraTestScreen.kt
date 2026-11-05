@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.dataClasses.LotteryEntry
-import com.example.syntax_camping.dataClasses.LotteryManager
+
 
 
 // Luke you were right why does this waste so much time
