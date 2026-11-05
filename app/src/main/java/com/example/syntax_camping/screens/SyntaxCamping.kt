@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
@@ -104,8 +105,9 @@ fun SyntaxCamping(
              )
         }
 
-        composable ("LotteryDetailsScreen"){
-
+        composable ("LotteryDetailsScreen"){backStackEntry ->
+            val lotteryId = backStackEntry.arguments?.getString("lotteryId")
+            // Call your future Lottery Info View here and pass the lotteryId!
         }
 
         composable( "UpdateCamp") {
