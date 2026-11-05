@@ -63,7 +63,7 @@ fun ProfileScreen(navController: NavController) {
         }
     ) { innerPadding ->
 
-        user = User()
+
         //inside the scaffold, this would be the content of the screen, start editing screen content from in here
 
         Column(
