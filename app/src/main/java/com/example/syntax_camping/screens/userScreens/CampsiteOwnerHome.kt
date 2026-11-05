@@ -58,7 +58,7 @@ fun CampsiteOwnerHome(navController: NavController, onEditCampsite: (Campsite?) 
                 val baseUser = User(userId = "owner1", name = "John Doe", userType = UserType.Owner)
                 val ownerData = OwnerData(location = "Banff, AB", campsites = updatedCampsites.toMutableList())
 
-                ownerProfile = UserProfile(user = baseUser, ownerData = ownerData)
+                ownerProfile = User(user = baseUser, ownerData = ownerData)
             }
             isLoading = false
         }

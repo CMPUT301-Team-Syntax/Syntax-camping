@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.dataClasses.User
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
@@ -62,6 +63,7 @@ fun ProfileScreen(navController: NavController) {
         }
     ) { innerPadding ->
 
+        user = User()
         //inside the scaffold, this would be the content of the screen, start editing screen content from in here
 
         Column(
