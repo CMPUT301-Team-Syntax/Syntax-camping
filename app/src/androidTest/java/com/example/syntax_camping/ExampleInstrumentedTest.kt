@@ -20,12 +20,11 @@ import org.junit.runner.RunWith
 import org.junit.Assert.*
 
 /**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
+ * Instrumented test for from onwercamspitesdetailsscreenUI components.
+ * Will execute on an Android device.
  */
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
+class OwnerCampsiteUITest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -46,7 +45,8 @@ class ExampleInstrumentedTest {
             description = "A campsite beside the river.",
             maxOcc = 4,
             tags = mutableListOf("River"),
-            rating = 3.5
+            rating = 3.5,
+            images = mutableListOf() // Fixed compile error
         )
         val second = Campsite(
             documentId = "list-second",
@@ -55,7 +55,8 @@ class ExampleInstrumentedTest {
             description = "A campsite near the mountains.",
             maxOcc = 6,
             tags = mutableListOf("Hiking"),
-            rating = 4.2
+            rating = 4.2,
+            images = mutableListOf() // Fixed compile error
         )
         val selected = AtomicReference<Campsite?>(null)
 
@@ -88,7 +89,8 @@ class ExampleInstrumentedTest {
             description = "A quiet campsite with picnic tables and walking trails.",
             maxOcc = 8,
             tags = mutableListOf("Forest", "Picnic tables"),
-            rating = 4.6
+            rating = 4.6,
+            images = mutableListOf() // Fixed compile error
         )
         val edited = AtomicReference<Campsite?>(null)
 
