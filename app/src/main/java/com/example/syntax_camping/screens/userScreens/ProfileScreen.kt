@@ -144,7 +144,9 @@ fun ProfileScreen(navController: NavController) {
 
             ListItem(
                 headlineContent = { Text(text = "Edit Personal information") },
-                modifier = Modifier.clickable { }
+                modifier = Modifier.clickable {
+                    navController.navigate("UpdateProfile")
+                }
             )
             ListItem(
                 headlineContent = { Text(text = "Security and Sign in") },

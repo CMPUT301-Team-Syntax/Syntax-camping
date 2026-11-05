@@ -20,6 +20,7 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScr
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 
 @Composable
 fun SyntaxCamping(
@@ -91,6 +92,10 @@ fun SyntaxCamping(
                 selectedCampsite)
 
         }
+        composable("UpdateProfile"){
+            UpdateProfileScreen(navController, modifier = Modifier)
+        }
+
 
 
     }
