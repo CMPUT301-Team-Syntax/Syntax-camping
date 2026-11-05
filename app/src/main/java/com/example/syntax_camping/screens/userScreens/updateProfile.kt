@@ -124,7 +124,7 @@ fun UpdateProfileScreen(navController: NavController, modifier: Modifier = Modif
 
         CustomUnderlineField(
             value = locationValue,
-            onValueChange = { phoneValue = it },
+            onValueChange = { locationValue = it },
             placeholder = "Location"
         )
 
