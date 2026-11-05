@@ -15,6 +15,7 @@ import com.example.syntax_camping.dataClasses.User
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import kotlin.collections.emptyList
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,10 +68,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val userViewModel: UserViewModel = viewModel()
+            Log.d("UserDebug", "User saved in view model: ${userViewModel.deviceId}")
+
             SyntaxcampingTheme {
                 //we need something to differentiate campsite user and campsite owner? we neeed a create account screen
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        SyntaxCamping((Modifier.padding(innerPadding)))
+                        SyntaxCamping(
+                            (Modifier.padding(innerPadding)),
+                            userViewModel
+                        )
 
 
             }

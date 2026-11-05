@@ -30,11 +30,13 @@ import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.syntax_camping.UserViewModel
 
 
 @Composable
 fun LotteryEditScreen(
     navController: NavController,
+    userViewModel: UserViewModel,
     myOwnedCampsites: List<Campsite>,
     editingLottery: Lottery?
 ) {

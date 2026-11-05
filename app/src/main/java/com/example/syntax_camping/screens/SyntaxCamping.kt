@@ -1,5 +1,6 @@
 package com.example.syntax_camping.screens
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +18,7 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
@@ -28,7 +30,8 @@ import com.example.syntax_camping.dataClasses.Lottery
 
 @Composable
 fun SyntaxCamping(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userViewModel: UserViewModel
 ){
     val navController = rememberNavController()
     var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
@@ -42,11 +45,11 @@ fun SyntaxCamping(
     var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
 
     NavHost(navController = navController, startDestination = "search", modifier = modifier) {
-
+        Log.d("UserDebug", "Current User: ${userViewModel.deviceId}")
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
-            CampsiteDetailsScreen(navController, campsiteId)
+            CampsiteDetailsScreen(navController, campsiteId, userViewModel)
         }
 
         composable("ownerCampsiteDetails/{campsiteId}") { backStackEntry ->
@@ -54,6 +57,7 @@ fun SyntaxCamping(
             CampsiteDetailsScreen(
                 navController = navController,
                 campsiteID = campsiteId,
+                userViewModel = userViewModel,
                 update = true,
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
@@ -63,23 +67,24 @@ fun SyntaxCamping(
         }
 
         composable("Settings") {
-            SettingsScreen(navController)
+            SettingsScreen(navController, userViewModel)
         }
         composable("Search") {
-            SearchHomeScreen(navController)
+            SearchHomeScreen(navController, userViewModel)
         }
         composable("Reservations") {
-            ReservationsScreen(navController)
+            ReservationsScreen(navController, userViewModel)
         }
         composable("Profile") {
-            ProfileScreen(navController)
+            ProfileScreen(navController, userViewModel)
         }
         composable("home") {
-            CampsiteSummaryScreen(navController)
+            CampsiteSummaryScreen(navController, userViewModel)
         }
         composable("CampsiteOwnerHome"){
             CampsiteOwnerHome(
                 navController,
+                userViewModel,
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
                     navController.navigate("UpdateCamp")
@@ -91,15 +96,16 @@ fun SyntaxCamping(
             )
         }
         composable("campsiteLottery"){
-            CampsiteDetailsLotteryScreen(navController)
+            CampsiteDetailsLotteryScreen(navController, userViewModel)
         }
         composable("campsiteMessages"){
-            CampsiteMessagesScreen(navController)
+            CampsiteMessagesScreen(navController, userViewModel)
         }
         composable("CreateLottery"){
             val myOwnedCampsites = CampsiteRepository.getCampsites().toList()
          LotteryEditScreen(
              navController,
+             userViewModel,
              myOwnedCampsites,
              selectedLottery
              )
@@ -113,11 +119,12 @@ fun SyntaxCamping(
         composable( "UpdateCamp") {
             CampsiteEditingScreen(
                 navController,
+                userViewModel,
                 selectedCampsite)
 
         }
         composable("UpdateProfile"){
-            UpdateProfileScreen(navController, modifier = Modifier)
+            UpdateProfileScreen(navController, userViewModel, modifier = Modifier)
         }
 
 
