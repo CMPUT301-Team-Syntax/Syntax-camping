@@ -31,9 +31,7 @@ import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.dataClasses.UserType
 import com.example.syntax_camping.dataClasses.OwnerData
-import com.example.syntax_camping.dataClasses.UserProfile
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +41,8 @@ import androidx.compose.runtime.setValue
 
 fun CampsiteOwnerHome(navController: NavController, onEditCampsite: (Campsite?) -> Unit){
 
-    var ownerProfile by remember { mutableStateOf<UserProfile?>(null) }
+
+    var ownerCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     //this is to be a commented as an ai prompt request, about testing this creation when its a data class
@@ -53,19 +52,12 @@ fun CampsiteOwnerHome(navController: NavController, onEditCampsite: (Campsite?) 
         isLoading = true
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
-                val updatedCampsites = CampsiteRepository.getCampsites().toList()
-
-                val baseUser = User(userId = "owner1", name = "John Doe", userType = UserType.Owner)
-                val ownerData = OwnerData(location = "Banff, AB", campsites = updatedCampsites.toMutableList())
-
-                ownerProfile = UserProfile(user = baseUser, ownerData = ownerData)
+                ownerCampsites = CampsiteRepository.getCampsites().toList()
             }
             isLoading = false
         }
     }
 
-    // Extract the list safely so we can use it in the UI below
-    val ownerCampsites = ownerProfile?.ownerData?.campsites ?: emptyList()
     Scaffold(
 
         modifier = Modifier

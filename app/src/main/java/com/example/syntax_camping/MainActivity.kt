@@ -12,8 +12,6 @@ import androidx.compose.ui.Modifier
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.screens.CampsiteOwnerScreen
-import com.example.syntax_camping.dataClasses.UserType
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import kotlin.collections.emptyList
