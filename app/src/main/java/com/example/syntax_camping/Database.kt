@@ -7,8 +7,6 @@ import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.dataClasses.UserProfile
-import com.example.syntax_camping.dataClasses.UserType
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
@@ -33,8 +31,14 @@ import com.google.firebase.functions.FirebaseFunctions
 class Database {
 
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
-    //This is to allow the use for certain firebase functions specifically fo rlottery timers
+    //This is to allow the use for certain firebase functions specifically fo lottery timers
     private val functions = FirebaseFunctions.getInstance()
+
+    //This is for userCache related things.
+    private var _users: MutableList<User> = mutableListOf()
+    val users: List<User>
+        get() = _users
+
     // userExistsByDeviceId
     // calls callback function if there is a document with matching document id to device id
 
@@ -221,304 +225,266 @@ class Database {
     }
     // updateUser
     // takes in a device id (this will be the document id), the userDetails (to store userType), and the userProfile (actually stores entrant/owner info).
-    // Sets the field according to the new userDetails, and updates the user's respective entrant/owner info.
-
-    fun updateUser(devId: String, userDetails: User, userProfile: UserProfile, callback:(Result<Unit>) -> Unit) {
+    // Gives back a result of either true or false.
+    // Update the new user details.
+    // Depending on if entrant data or owner data exists or not, update those too.
+    fun updateUser(devId: String, userDetails: User, callback:(Result<Unit>) -> Unit) {
         db.collection("users")
             .document(devId)
             .update(
                 mapOf(
                     "displayName" to userDetails.name,
-                    "userType" to when (userDetails.userType) {
-                        UserType.Entrant -> 0
-                        UserType.Owner -> 1
-                    }
+                    "displayEmail" to userDetails.email,
+                    "displayPhoneNumber" to userDetails.phoneNumber,
                 )
             )
             .addOnSuccessListener {
-                when (userDetails.userType) {
-                    UserType.Entrant -> {
-                        db.collection("entrantData")
-                            .document(devId)
-                            .update(
-                                mapOf(
-                                    "entrantReservationIds" to userProfile.entrantData?.reservations?.map { it.documentId },
-                                    "entrantLotteryEntryIds" to userProfile.entrantData?.lotteryEntries?.map { it.userId }
-                                )
-                            )
-                            .addOnSuccessListener { callback(Result.success(Unit)) }
-                            .addOnFailureListener { error ->
-                                callback(Result.failure(error))
-                            }
-                    }
 
-                    UserType.Owner -> {
+                //Inside function that updates owner data.
+                //This can happen independently of its own, or it can happen after entrant successfully updates.
+                fun updateOwnerData() {
+                    //Update owner data if it exists.
+                    val ownerData = userDetails.ownerData
+                    if (ownerData != null) {
                         db.collection("ownerData")
                             .document(devId)
                             .update(
                                 mapOf(
-                                    "location" to userProfile.ownerData?.location,
-                                    "campsiteIds" to (userProfile.ownerData?.campsites?.map { it.documentId })
+                                    "lotteryIds" to userDetails.ownerData.lotteryIds,
+                                    "ownerCampsiteIds" to userDetails.ownerData.campsiteIds
                                 )
                             )
-                            .addOnSuccessListener { callback(Result.success(Unit)) }
+                            .addOnSuccessListener {
+                                callback(Result.success(Unit))
+                            }
                             .addOnFailureListener { error ->
+                                println("Error updating owner data: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
+                    else {
+                        callback(Result.success(Unit))
+                    }
+                }
+
+                //Update entrant data if it exists.
+                val entrantData = userDetails.entrantData
+                if (entrantData != null) {
+                    db.collection("entrantData")
+                        .document(devId)
+                        .update(
+                            mapOf(
+                                "entrantReservationIds" to userDetails.entrantData.reservationIds,
+                                "entrantLotteryEntryIds" to userDetails.entrantData.lotteryEntryIds
+                            )
+                        )
+                        .addOnSuccessListener {
+                            updateOwnerData()   //Update owner data after entrant succeeds updating.
+                        }
+                        .addOnFailureListener { error ->
+                            println("Error updating entrant data: ${error.message}")
+                            callback(Result.failure(error))
+                        }
+                }
+                else {
+                    updateOwnerData()   //In case the entrant data doesn't exist, try updating owner data.
                 }
             }
             .addOnFailureListener { error ->
-                callback(Result.failure(error) )
+                println("Error updating user: ${error.message}")
+                callback(Result.failure(error))
             }
     }
 
     // createNewUser
-    // takes a device id, creates new document with document id equal to device id
-    // sets fields equal to userDetails
-    //Looks at user type afterward and add info into either entrantData or ownerData
-    //Returns true or error.
-
+    //Takes a device id, then first creates the user document for it.
+    //If that succeeds, then it creates the entrantData document for that user.
+    //If all previous steps succeed, it creates the ownerData document for that user.
     fun createNewUser(devId: String, user: User, callback: (Result<Unit>) -> Unit) {
         db.collection("users")
             .document(devId)
             .set(
                 mapOf(
                     "displayName" to user.name,
-                    "userType" to when (user.userType) {
-                        UserType.Entrant -> 0
-                        UserType.Owner -> 1
-                    }
+                    "displayEmail" to user.email,
+                    "displayPhoneNumber" to user.phoneNumber,
                 )
-
             )
-
-            //If it succeeds, add details for specific user type.
+            //If it succeeds, initialize details for specific user type in their own collections.
             .addOnSuccessListener {
-                when (user.userType) {
-                    //For entrants
-                    UserType.Entrant -> {
-                        val entrantData = mapOf(
+                //Save initial document of entrantData
+                db.collection("entrantData")
+                    .document(devId)
+                    .set(
+                        mapOf(
                             "entrantReservationIds" to emptyList<String>(),
                             "entrantLotteryEntryIds" to emptyList<String>()
                         )
-
-                        //Save initial document of entrantData
-                        db.collection("entrantData")
-                            .document(devId)
-                            .set(entrantData)
-                            .addOnSuccessListener {
-                                callback(Result.success(Unit)) }
-                            .addOnFailureListener { error ->
-                                callback(Result.failure(error))
-                            }
-
-                    }
-                    //For campsite owners
-                    UserType.Owner -> {
-                        val ownerData = mapOf(
-                            "location" to "",
-                            "ownerCampsiteIds" to emptyList<Campsite>())
-
+                    )
+                    .addOnSuccessListener {
+                        //Initialize campsite owner's data.
                         db.collection("ownerData")
                             .document(devId)
-                            .set(ownerData)
-                            .addOnSuccessListener { callback(Result.success(Unit)) }
+                            .set(
+                                mapOf(
+                                    "lotteryIds" to emptyList<String>(),
+                                    "ownerCampsiteIds" to emptyList<String>()
+                                )
+                            )
+                            .addOnSuccessListener {
+                                //All documents successfully created!
+                                callback(Result.success(Unit))
+                            }
                             .addOnFailureListener { error ->
+                                println("Error creating document for campsite owner: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
-                }
-
-                //Success!
-                callback(Result.success(Unit)) }
-
-            //Fail case
+                    .addOnFailureListener { error ->
+                        println("Error creating document for entrant: ${error.message}")
+                        callback(Result.failure(error))
+                    }
+            }
             .addOnFailureListener { error ->
-                callback(Result.failure(error)) }
+                println("Error creating document for user: ${error.message}")
+                callback(Result.failure(error))
+            }
     }
 
-    // fetchUserDetailsByDeviceId
-    //Literally just getUser
-    // calls callback function when a matching document is found.
+    // fetchUserDetails
+    // Gets user details including the user's entrant or owner data.
+    // Returns a callback of user on success if it works.
+    // Returns a callback of a failed result if it fails.
 
-    fun fetchUserDetailsByDeviceId(devId: String, callback: (Result<UserProfile?>) -> Unit) {
+    fun fetchUserDetails(devId: String, callback: (Result<User?>) -> Unit) {
         db.collection("users")
             .document(devId)
             .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-
-                    //Determine User's role
-                    val userTypeValue = document.getLong("userType")?.toInt()
-                        ?: run {   //User type is missing, exit function.
-                            callback(Result.failure(IllegalStateException("Missing user type.")))
-                            return@addOnSuccessListener
-                        }
-
-
-                    val userType = when (userTypeValue) {
-                        0 -> UserType.Entrant
-                        1 -> UserType.Owner
-                        else -> { callback( Result.failure(
-                                IllegalStateException("Invalid user type")
-                        ))
-                            return@addOnSuccessListener   //Get out of this function.
-                        }
-                    }
-
-                    //Construct user object
-                    val user = User(
-                        userId = devId,
-                        name = document.getString("displayName") ?: "New User",
-                        userType = userType
-                    )
-
-                    //Retrieve role specific data.
-                    when (userType) {
-
-                        //Constructs profile with entrant data and returns it.
-                        UserType.Entrant -> {
-                            db.collection("entrantData")
-                                .document(devId)
-                                .get()
-                                .addOnSuccessListener { entrantDocuments ->
-
-                                    //What will be returned in profile.
-                                    val retrievedReservations = mutableListOf<Reservation>()
-                                    val retrievedLotteryEntries = mutableListOf<LotteryEntry>()
-
-                                    //Get initial list data from Firestore
-                                    val reservationIds = entrantDocuments.get("entrantReservationIds") as? List<String> ?: emptyList()
-                                    val lotteryEntryIds = entrantDocuments.get("entrantLotteryEntryIds") as? List<String> ?: emptyList()
-
-                                    //For each reservation in the list, rebuild and put into the new list as a Reservation object.
-                                    reservationIds.forEach { reservationId ->   //first method of calling stuff from firebase (forEach)
-                                        db.collection("reservations")
-                                            .document(reservationId)
-                                            .get()
-                                            .addOnSuccessListener {reservationDocument ->
-
-                                                //If it doesn't exist quit this loop.
-                                                if (!reservationDocument.exists()) return@addOnSuccessListener
-
-                                                val reservation = Reservation(
-                                                    documentId = reservationId,
-                                                    time = reservationDocument.getLong("time")?.toInt() ?: 0,
-                                                    location = reservationDocument.getString("location") ?: "",
-                                                    confirmed = reservationDocument.getBoolean("confirmed") ?: false
-                                                )
-
-                                                retrievedReservations.add(reservation)  //Adds restructered reservation into list.
-                                            }
-                                    }
-
-                                    //For each entry in the list, rebuild and put into the new list as a reservation object.
-                                    lotteryEntryIds.forEach { lotteryEntryId ->
-                                        db.collection("lotteryEntries")
-                                            .document(lotteryEntryId)
-                                            .get()
-                                            .addOnSuccessListener { entryDocument ->
-                                                //If it doesn't exist quit this loop.
-                                                if (!entryDocument.exists()) return@addOnSuccessListener
-
-                                                val lotteryEntry = LotteryEntry(
-                                                    userId = entryDocument.getString("userId") ?: "",
-                                                    joined = entryDocument.getTimestamp("joined") ?: Timestamp.now()
-                                                )
-
-                                                retrievedLotteryEntries.add(lotteryEntry)
-                                            }
-                                    }
-
-                                    //Reconstruct the chosen profile and return.
-                                    val profile = UserProfile(
-                                        user = user,
-                                        entrantData = EntrantData(
-                                            reservations = retrievedReservations,
-                                            lotteryEntries = retrievedLotteryEntries)
-                                        )
-                                    callback(Result.success(profile))
-                                }
-                                //If this fails, send back an error
-                                .addOnFailureListener { error ->
-                                    callback(Result.failure(error))
-                                }
-                        }  //End of entrant type
-
-                        //Constructs profiles with owner's data and returns it.
-                        UserType.Owner -> {
-                            db.collection("ownerData")
-                                .document(devId)
-                                .get()
-                                .addOnSuccessListener { ownerDocument ->
-
-                                    val retrievedLocation = ownerDocument.getString("location") ?: ""
-                                    val retrievedCampsites = mutableListOf<Campsite>()
-
-
-                                    //Retrieve campsites from Firestore document as a list (safe cast).
-                                    val campsiteIds = (ownerDocument.get("ownerCampsiteIds") as? List<String>) ?: emptyList()
-
-                                    //Requests all campsite in the list.
-                                    val campsiteRequests = campsiteIds.map { campsiteId ->
-                                        db.collection("campsites")
-                                            .document(campsiteId)
-                                            .get()
-                                    }
-
-                                    //When the campsite requests finishes loading, recreate each campsite.  (Method2 of calling stuff from Firebase?)
-                                    Tasks.whenAllSuccess<DocumentSnapshot>(campsiteRequests)
-                                        .addOnSuccessListener { campsiteDocuments ->
-
-                                            for (campsiteDocument in campsiteDocuments) {
-                                                //If this fails, exit the loop.
-                                                if (!campsiteDocument.exists()) continue
-
-                                                val campsite = Campsite(
-                                                    documentId = campsiteDocument.id,
-                                                    name = campsiteDocument.getString("name") ?: "",
-                                                    location = campsiteDocument.getString("location") ?: "",
-                                                    description = campsiteDocument.getString("description") ?: "",
-                                                    maxOcc = campsiteDocument.getLong("maxOccupancy")?.toInt() ?: 0,
-                                                    tags = (campsiteDocument.getString("tags") ?: "").split(",").toMutableList(),
-                                                    rating = campsiteDocument.getDouble("rating") ?: 0.00,
-                                                    images = (campsiteDocument.getString("images") ?: "").split(",").toMutableList()
-                                                )
-
-                                                retrievedCampsites.add(campsite)
-                                            }
-
-                                            val profile = UserProfile(
-                                                user = user,
-                                                ownerData = OwnerData(
-                                                    location = retrievedLocation,
-                                                    campsites = retrievedCampsites
-                                                )
-                                            )
-
-                                            callback(Result.success(profile))
-
-                                        }
-                                }
-                                //Fail
-                                .addOnFailureListener { error ->
-                                    callback(Result.failure(error))
-                                }
-                        }  //End of owner type
-
-                    }  //end of UserType
-
+            .addOnSuccessListener { userDocument ->
+                if (!userDocument.exists()) {
+                    callback(Result.success(null))
+                    return@addOnSuccessListener
                 }
 
-                //Document does not exist
-                else {
-                    callback(Result.success(null))
+                //Retrieve shared user info.
+                val name = userDocument.get("displayName") as? String ?: ""
+                val email = userDocument.get("displayEmail") as? String ?: ""
+                val phoneNumber = userDocument.get("displayPhoneNumber") as? String ?: ""
+                var fetchedEntrantData: EntrantData? = null
+                var fetchedOwnerData: OwnerData? = null
+
+                //Reconstruct the entrant and campsite owner's info.
+                db.collection("entrantData")
+                    .document(devId)
+                    .get()
+                    .addOnSuccessListener { entrantDocument ->
+
+                        if (entrantDocument.exists()) {
+                            val reservationIds =
+                                entrantDocument.get("entrantReservationIds") as? List<String>
+                                    ?: emptyList()
+                            val lotteryEntryIds =
+                                entrantDocument.get("entrantLotteryEntryIds") as? List<String>
+                                    ?: emptyList()
+                            fetchedEntrantData = EntrantData(
+                                reservationIds.toMutableList(),
+                                lotteryEntryIds.toMutableList()
+                            )
+                        }
+
+                        //Reconstructs campsite owner's info.
+                        db.collection("ownerData")
+                            .document(devId)
+                            .get()
+                            .addOnSuccessListener { ownerDocument ->
+
+                                if (ownerDocument.exists()) {
+                                    val lotteryIds =
+                                        ownerDocument.get("lotteryIds") as? List<String>
+                                            ?: emptyList()
+                                    val campsiteIds =
+                                        ownerDocument.get("ownerCampsiteIds") as? List<String>
+                                            ?: emptyList()
+                                    fetchedOwnerData = OwnerData(
+                                        lotteryIds.toMutableList(),
+                                        campsiteIds.toMutableList()
+                                    )
+                                }
+
+                                //Recreate user.
+                                val fetchedUser = User(
+                                    devId,
+                                    name,
+                                    email,
+                                    phoneNumber,
+                                    fetchedEntrantData,
+                                    fetchedOwnerData
+                                )
+                                callback(Result.success(fetchedUser))
+                            }
+                            .addOnFailureListener { error ->
+                                println("Error fetching campsite owner data: ${error.message}")
+                                callback(Result.failure(error))
+                            }
+                    }
+                    .addOnFailureListener { error ->
+                        println("Error fetching entrant data: ${error.message}")
+                        callback(Result.failure(error))
+                    }
+            }
+            .addOnFailureListener { error ->
+                println("Error fetching user details: ${error.message}")
+                callback(Result.failure(error))   //Database request failed to retrieve user.
+            }
+    }
+
+    // Refreshes the user cache by retrieving the latest user data from Firestore.
+    // Reuses fetchUserDetails to constantly fetch every user in the whole collection.
+    // Returns a callback of true if _user list is successfully refreshed.
+    // Returns a callback of false if it fails.
+    fun refreshUserCache(callback: (Boolean) -> Unit = {}) {
+        db.collection("users")
+            .get()
+            .addOnSuccessListener { result ->
+                val loadedUsers = mutableListOf<User>()
+                var completedRequests = 0
+                var successful = true
+
+                //empty collection
+                if (result.isEmpty) {
+                    _users.clear()
+                    callback(true)
+                    return@addOnSuccessListener
+                }
+
+                //For every document, retrieve its user.
+                for (document in result) {
+                    val devId = document.id
+                    fetchUserDetails(devId) {fetchResult ->
+                        fetchResult.onSuccess {user ->
+                            if (user != null) {
+                                loadedUsers.add(user)
+                            }
+                        }.onFailure {
+                            successful = false
+                        }
+                        completedRequests++   //Adds a count into completed requests.
+
+                        //If everything completed successfully, add all loaded Users into _users.
+                        if (completedRequests == result.size()) {
+                            if (successful) {
+                                _users.clear()
+                                _users.addAll(loadedUsers)
+                            }
+
+                            callback(successful)
+                        }
+                    }
                 }
             }
             .addOnFailureListener { error ->
-                println("Error fetching user from database")
-                callback(Result.failure(error))   //Database request failed to retrieve user.
+                println("Error refreshing user cache: ${error.message}")
+                callback(false)
             }
     }
 
