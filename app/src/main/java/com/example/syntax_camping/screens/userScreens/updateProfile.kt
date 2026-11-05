@@ -36,10 +36,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.syntax_camping.UserViewModel
+import okhttp3.internal.userAgent
 
 
 @Composable
-fun UpdateProfileScreen(navController: NavController, modifier: Modifier = Modifier) {
+fun UpdateProfileScreen(navController: NavController, userViewModel: UserViewModel, modifier: Modifier = Modifier) {
     var nameValue by remember { mutableStateOf("") }
     var emailValue by remember { mutableStateOf("") }
     var phoneValue by remember { mutableStateOf("") }
@@ -180,6 +182,7 @@ fun CustomUnderlineField(
 fun UpdateProfilePreview() {
     UpdateProfileScreen(
         navController = TODO(),
+        userViewModel = TODO(),
         modifier = TODO()
     )
 }

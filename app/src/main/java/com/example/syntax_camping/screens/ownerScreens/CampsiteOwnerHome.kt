@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
@@ -49,6 +50,7 @@ import com.example.syntax_camping.screens.TopBar
 @Composable
 fun CampsiteOwnerHome(
     navController: NavController,
+    userViewModel: UserViewModel,
     onEditCampsite: (Campsite?) -> Unit,
     onEditLottery: (Lottery?) -> Unit,
 ) {

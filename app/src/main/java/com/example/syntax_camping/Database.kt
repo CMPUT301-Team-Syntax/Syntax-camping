@@ -2,6 +2,7 @@ package com.example.syntax_camping
 
 import android.content.Context
 import android.provider.Settings
+import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.OwnerData
@@ -50,7 +51,7 @@ class Database {
                 callback(document.exists())   //User exists & firebase is working
             }
             .addOnFailureListener { error ->
-                println("Error checking user: ${error.message}")   //Returns an error message (aka user does not exist).
+                Log.d("UserDebug", "Error checking user: ${error.message}")   //Returns an error message (aka user does not exist).
                 callback(false)   //Returns either user failure / database failure
             }
     }
@@ -258,7 +259,7 @@ class Database {
                                 callback(Result.success(Unit))
                             }
                             .addOnFailureListener { error ->
-                                println("Error updating owner data: ${error.message}")
+                                Log.d("UserDebug", "Error updating owner data: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
@@ -282,7 +283,7 @@ class Database {
                             updateOwnerData()   //Update owner data after entrant succeeds updating.
                         }
                         .addOnFailureListener { error ->
-                            println("Error updating entrant data: ${error.message}")
+                            Log.d("UserDebug", "Error updating entrant data: ${error.message}")
                             callback(Result.failure(error))
                         }
                 }
@@ -291,7 +292,7 @@ class Database {
                 }
             }
             .addOnFailureListener { error ->
-                println("Error updating user: ${error.message}")
+                Log.d("UserDebug", "Error updating user: ${error.message}")
                 callback(Result.failure(error))
             }
     }
@@ -333,20 +334,21 @@ class Database {
                             )
                             .addOnSuccessListener {
                                 //All documents successfully created!
+                                Log.d("UserDebug", "User Created in Firebase")
                                 callback(Result.success(Unit))
                             }
                             .addOnFailureListener { error ->
-                                println("Error creating document for campsite owner: ${error.message}")
+                                Log.d("UserDebug", "Error creating document for campsite owner: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
                     .addOnFailureListener { error ->
-                        println("Error creating document for entrant: ${error.message}")
+                        Log.d("UserDebug", "Error creating document for entrant: ${error.message}")
                         callback(Result.failure(error))
                     }
             }
             .addOnFailureListener { error ->
-                println("Error creating document for user: ${error.message}")
+                Log.d("UserDebug", "Error creating document for user: ${error.message}")
                 callback(Result.failure(error))
             }
     }
@@ -423,17 +425,17 @@ class Database {
                                 callback(Result.success(fetchedUser))
                             }
                             .addOnFailureListener { error ->
-                                println("Error fetching campsite owner data: ${error.message}")
+                                Log.d("UserDebug", "Error fetching campsite owner data: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
                     .addOnFailureListener { error ->
-                        println("Error fetching entrant data: ${error.message}")
+                        Log.d("UserDebug", "Error fetching entrant data: ${error.message}")
                         callback(Result.failure(error))
                     }
             }
             .addOnFailureListener { error ->
-                println("Error fetching user details: ${error.message}")
+                Log.d("UserDebug", "Error fetching user details: ${error.message}")
                 callback(Result.failure(error))   //Database request failed to retrieve user.
             }
     }
@@ -483,7 +485,7 @@ class Database {
                 }
             }
             .addOnFailureListener { error ->
-                println("Error refreshing user cache: ${error.message}")
+                Log.d("UserDebug", "Error refreshing user cache: ${error.message}")
                 callback(false)
             }
     }

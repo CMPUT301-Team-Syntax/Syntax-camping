@@ -21,11 +21,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun SettingsScreen(navController: NavController){
+fun SettingsScreen(navController: NavController, userViewModel: UserViewModel){
     Scaffold(
 
         modifier = Modifier

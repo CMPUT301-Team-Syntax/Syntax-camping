@@ -36,10 +36,12 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.UserViewModel
 
 @Composable
 fun CampsiteDetailsScreen(navController: NavController,
                           campsiteID: String?,
+                          userViewModel: UserViewModel,
                           update: Boolean = false,
                           onEditCampsite: ((Campsite?) -> Unit)? = null){
 

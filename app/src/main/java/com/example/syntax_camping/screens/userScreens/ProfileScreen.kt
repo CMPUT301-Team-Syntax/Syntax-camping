@@ -36,13 +36,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.User
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
 
     Scaffold(
 
