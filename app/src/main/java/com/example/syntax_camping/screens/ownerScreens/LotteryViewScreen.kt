@@ -19,7 +19,7 @@ fun validateAndCreateLottery(
     finalHour: String,
     finalMinute: String,
     numWinnersText: String,
-    campsites: MutableList<Campsite>
+    selectedCampsites: MutableList<Campsite>
 
 ): Pair<Boolean, String>
 
@@ -41,13 +41,18 @@ fun validateAndCreateLottery(
 
     // 1. Check for empty or non-numeric inputs
     if (sDay == null || sMonth == null || sYear == null || sHour == null || sMin == null ||
-        fDay == null || fMonth == null || fYear == null || fHour == null || fMin == null || parsedWinners == null
+        fDay == null || fMonth == null || fYear == null || fHour == null || fMin == null ||
+        parsedWinners == null
     ) {
         return Pair(false, "All date and winner fields must be valid numbers")
     }
 
     if (parsedWinners <= 0) {
         return Pair(false, "Number of winners must be greater than 0")
+    }
+
+    if (selectedCampsites.isEmpty()){
+        return Pair(false, "There are no campsites in the lottery")
     }
 
     // 2. Process timestamp conversion using your date converters
@@ -60,12 +65,16 @@ fun validateAndCreateLottery(
         endTimeLottery = endTimeLottery,
         endTimeBooking = endTimeBooking,
         numWinners = parsedWinners,
-        campsites = campsites
+        campsites = selectedCampsites
     )
 
     val success = newLottery.createLotteryTimer()
     if (!success) {
         return Pair(false, "Invalid dates: times cannot be in the past or close dates overlap")
+    }
+
+    selectedCampsites.forEach { campsite ->
+        campsite.updateLotteryId(newLottery.lotteryId)
     }
 
     return Pair(true, "")

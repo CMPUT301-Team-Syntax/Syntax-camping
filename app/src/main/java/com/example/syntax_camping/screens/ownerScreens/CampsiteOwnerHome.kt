@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -18,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,11 +42,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.syntax_camping.dataClasses.Lottery
 
 @Composable
 
 fun CampsiteOwnerHome(navController: NavController,
-                      onEditCampsite: (Campsite?) -> Unit){
+                      onEditCampsite: (Campsite?) -> Unit,
+                      onEditLottery:(Lottery?)-> Unit){
 
     var ownerProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -69,8 +73,14 @@ fun CampsiteOwnerHome(navController: NavController,
 
     var isMenuExpanded by remember { mutableStateOf(false) }
 
+    var filteredCampsiteList = ownerCampsites.filter { campsite ->
+        campsite.lotteryId == null
+    }
 
-
+    var lotterycampsites = ownerCampsites.filter { campsite ->
+        campsite.lotteryId != null
+    }
+    var noLotteryAvailable by remember { mutableStateOf(false) }
 
 
     Scaffold(
@@ -99,18 +109,13 @@ fun CampsiteOwnerHome(navController: NavController,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-
-
-
-
-
             Box(modifier = Modifier.weight(1f)) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))}
 
                     else if (ownerCampsites.isNotEmpty()) {
 
-                    Column(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.fillMaxSize()) {
 
                         Row(
                             modifier = Modifier
@@ -120,7 +125,7 @@ fun CampsiteOwnerHome(navController: NavController,
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Your Campsites Info")
+                            Text("Your Campsites ")
 
                             Box (contentAlignment = Alignment.TopEnd){
                                 IconButton(onClick = {isMenuExpanded = true},
@@ -164,15 +169,45 @@ fun CampsiteOwnerHome(navController: NavController,
                                             )
                                         },
                                         onClick = {
+                                            if (filteredCampsiteList.isNotEmpty()){
                                             isMenuExpanded = false
-                                            navController.navigate("createLottery") // Routes directly to your lottery configuration screen
+                                            onEditLottery(null) // Routes directly to your lottery configuration screen
+                                            }
+                                            else{
+                                                noLotteryAvailable = true
+                                            }
+
+                                            //i want a popup that says no lottery slot available, all your cmapsutes already are in lotteries
                                         }
                                     )
                                 }
                             }
                         }
 
-                        Text("Your Campsites")
+                        Text("Your Lotteries")
+
+                            if (lotterycampsites.isEmpty()){
+                                Column(){
+                                    Row(modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                        ){
+                                        Text("No running Lotteries")
+                                     }
+                                    IconButton(onClick = {onEditLottery(null)},
+                                        modifier = Modifier.size(40 .dp)) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.add),
+                                            contentDescription = "add Lottery",
+                                            tint = Color.Unspecified
+                                        )
+                                    }
+                                }
+                            }
+
+                            else {
+                                Column(){
+                            }
 
                         Box(modifier = Modifier.weight(1f)) {
 
@@ -212,5 +247,24 @@ fun CampsiteOwnerHome(navController: NavController,
                 }
                 }
             }
+
+        if (noLotteryAvailable) {
+            AlertDialog(
+                onDismissRequest = { noLotteryAvailable = false },
+                title = {
+                    Text(text = "No Lottery Slot Available")
+                },
+                text = {
+                    Text(text = "All your campsites are already in lotteries.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = { noLotteryAvailable = false }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
+}

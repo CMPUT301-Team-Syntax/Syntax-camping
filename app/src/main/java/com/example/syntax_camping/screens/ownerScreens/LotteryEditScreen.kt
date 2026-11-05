@@ -22,52 +22,69 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
+import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 @Composable
-fun LotteryEditScreen(navController: NavController) {
+fun LotteryEditScreen(
+    navController: NavController,
+    myOwnedCampsites: List<Campsite>,
+    editingLottery: Lottery?
+) {
     var startDay by remember { mutableStateOf("") }
     var startMonth by remember { mutableStateOf("") }
     var startYear by remember { mutableStateOf("") }
     var startHour by remember { mutableStateOf("") }
     var startMinute by remember { mutableStateOf("") }
-
     var finalDay by remember { mutableStateOf("") }
     var finalMonth by remember { mutableStateOf("") }
     var finalYear by remember { mutableStateOf("") }
     var finalHour by remember { mutableStateOf("") }
     var finalMinute by remember { mutableStateOf("") }
     var numWinners by remember { mutableStateOf("") }
-
     var errorMessage by remember { mutableStateOf("") }
+    val selectedCampsites = remember { mutableStateListOf<Campsite>() }
 
-    val testCamp = remember {
-        Campsite(
-            "Test12",
-            "Name",
-            "Lop",
-            "This is a description",
-            10,
-            mutableListOf(),
-            rating = 4.5
-        )
+    LaunchedEffect(editingLottery?.lotteryId) {
+        if (editingLottery != null) {
+            numWinners = editingLottery.numWinners.toString()
+
+            val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
+            startMonth = (startCal.get(java.util.Calendar.MONTH) + 1).toString()
+            startYear = startCal.get(java.util.Calendar.YEAR).toString()
+            startHour = startCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
+            startMinute = startCal.get(java.util.Calendar.MINUTE).toString()
+
+            val finalCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
+            finalDay = finalCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
+            finalMonth = (finalCal.get(java.util.Calendar.MONTH) + 1).toString()
+            finalYear = finalCal.get(java.util.Calendar.YEAR).toString()
+            finalHour = finalCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
+            finalMinute = finalCal.get(java.util.Calendar.MINUTE).toString()
+
+            selectedCampsites.clear()
+            selectedCampsites.addAll(editingLottery.campsites)
+        } else {
+            selectedCampsites.clear()
+        }
     }
 
-    val campsites = remember { mutableListOf<Campsite>(testCamp) }
-
     Scaffold(
-
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF4E8D5)), // Set the background color to white
+            .background(Color(0xFFF4E8D5)),
         containerColor = Color(0xFFF4E8D5),
-        topBar = { // top bar with back button and notification icon
+        topBar = {
             TopBar(navController)
         },
-
         bottomBar = {
             CustomBottomBar(
                 navController = navController,
@@ -76,138 +93,145 @@ fun LotteryEditScreen(navController: NavController) {
             )
         }
     ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
 
-    Column (
-        modifier = Modifier
-            .fillMaxSize().padding(16.dp)
-            .padding(innerPadding),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        if (errorMessage.isNotEmpty()) {
-            Text(text = errorMessage,
-                color = androidx.compose.ui.graphics.Color.Red)
-        }
-
-        // --- Start Date Sections ---
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Start Date and Time")
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = startDay,
-                    onValueChange = { startDay = it },
-                    label = { Text("Day") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = startMonth,
-                    onValueChange = { startMonth = it },
-                    label = { Text("Month") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-
-                TextField(
-                    value = startYear,
-                    onValueChange = { startYear = it },
-                    label = { Text("Year") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
-                TextField(
-                    value = startHour,
-                    onValueChange = { startHour = it },
-                    label = { Text("Hour") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = startMinute,
-                    onValueChange = { startMinute = it },
-                    label = { Text("Minute") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-
-            }
-        }
-
-        // --- Final Date Sections ---
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Final Date and Time")
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = finalDay,
-                    onValueChange = { finalDay = it },
-                    label = { Text("Day") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = finalMonth,
-                    onValueChange = { finalMonth = it },
-                    label = { Text("Month") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = finalYear,
-                    onValueChange = { finalYear = it },
-                    label = { Text("Year") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = finalHour,
-                    onValueChange = { finalHour = it },
-                    label = { Text("Hour") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = finalMinute,
-                    onValueChange = { finalMinute = it },
-                    label = { Text("Minute") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-
-            TextField(
-                value = numWinners,
-                onValueChange = { numWinners = it },
-                label = { Text("Number of Winners/Spots Available") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
-
-        Button(
-            onClick = {
-                // Call your separated functional validator!
-                val (isSuccess, errorText) = validateAndCreateLottery(
-                    startDay, startMonth, startYear, startHour, startMinute,
-                    finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,
-                    campsites
-                )
-
-                if (isSuccess) {
-                    errorMessage = ""
-                    navController.popBackStack() // Smooth navigation fallback
-                } else {
-                    errorMessage = errorText // Surface error message safely to UI
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Create Lottery")
+            // --- Start Date Sections ---
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Start Date and Time")
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = startDay,
+                        onValueChange = { startDay = it },
+                        label = { Text("Day") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    TextField(
+                        value = startMonth,
+                        onValueChange = { startMonth = it },
+                        label = { Text("Month") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    TextField(
+                        value = startYear,
+                        onValueChange = { startYear = it },
+                        label = { Text("Year") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = startHour,
+                        onValueChange = { startHour = it },
+                        label = { Text("Hour") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    TextField(
+                        value = startMinute,
+                        onValueChange = { startMinute = it },
+                        label = { Text("Minute") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+            }
+
+            // --- Final Date Sections ---
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Final Date and Time")
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = finalDay,
+                        onValueChange = { finalDay = it },
+                        label = { Text("Day") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    TextField(
+                        value = finalMonth,
+                        onValueChange = { finalMonth = it },
+                        label = { Text("Month") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    TextField(
+                        value = finalYear,
+                        onValueChange = { finalYear = it },
+                        label = { Text("Year") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = finalHour,
+                        onValueChange = { finalHour = it },
+                        label = { Text("Hour") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    TextField(
+                        value = finalMinute,
+                        onValueChange = { finalMinute = it },
+                        label = { Text("Minute") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+
+                TextField(
+                    value = numWinners,
+                    onValueChange = { numWinners = it },
+                    label = { Text("Number of Winners/Spots Available") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+
+            CampsiteSelectorDropdown(
+                myOwnedCampsites = myOwnedCampsites,
+                selectedCampsites = selectedCampsites
+            )
+
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red
+                )
+            }
+
+            Button(
+                onClick = {
+                    val (isSuccess, errorText) = validateAndCreateLottery(
+                        startDay, startMonth, startYear, startHour, startMinute,
+                        finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,
+                        selectedCampsites
+                    )
+
+                    if (isSuccess) {
+                        errorMessage = ""
+                        navController.popBackStack()
+                    } else {
+                        errorMessage = errorText
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Create Lottery")
+            }
         }
     }
 }
-}
-

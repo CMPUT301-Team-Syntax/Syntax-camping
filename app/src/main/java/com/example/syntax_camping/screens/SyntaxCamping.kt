@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
 import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
@@ -74,10 +75,15 @@ fun SyntaxCamping(
             CampsiteSummaryScreen(navController)
         }
         composable("CampsiteOwnerHome"){
-            CampsiteOwnerHome(navController,
+            CampsiteOwnerHome(
+                navController,
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
                     navController.navigate("UpdateCamp")
+                },
+                onEditLottery = { lotteryToEdit ->
+                    selectedLottery = lotteryToEdit
+                    navController.navigate("CreateLottery")
                 }
             )
         }
@@ -88,7 +94,11 @@ fun SyntaxCamping(
             CampsiteMessagesScreen(navController)
         }
         composable("CreateLottery"){
-         LotteryEditScreen(navController,
+            val myOwnedCampsites = CampsiteRepository.getCampsites().toList()
+         LotteryEditScreen(
+             navController,
+             myOwnedCampsites,
+             selectedLottery
              )
         }
 
