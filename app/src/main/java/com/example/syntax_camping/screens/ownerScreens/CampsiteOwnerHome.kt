@@ -41,11 +41,6 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.dataClasses.OwnerData
-import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.dataClasses.UserProfile
-import com.example.syntax_camping.dataClasses.UserType
-import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.LotteryListScreenOwner
@@ -57,35 +52,24 @@ fun CampsiteOwnerHome(
     onEditCampsite: (Campsite?) -> Unit,
     onEditLottery: (Lottery?) -> Unit,
 ) {
-
-    var ownerProfile by remember { mutableStateOf<UserProfile?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
     var isMenuExpanded by remember { mutableStateOf(false) }
     var noLotteryAvailable by remember { mutableStateOf(false) }
-
     var lotteriesOwned = remember { mutableStateListOf<Lottery>() }
+    var ownerCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    //this is to be a commented as an ai prompt request, about testing this creation when its a data class
 
     //  Trigger a database refresh every time this screen appears
     LaunchedEffect(Unit) {
         isLoading = true
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
-                val updatedCampsites = CampsiteRepository.getCampsites().toList()
-
-                val baseUser = User(userId = "owner1", name = "John Doe", userType = UserType.Owner)
-                val ownerData = OwnerData(location = "Banff, AB", campsites = updatedCampsites.toMutableList())
-
-                ownerProfile = UserProfile(user = baseUser, ownerData = ownerData)
-
-                //guys ive tried my best to get the lotteries to test how they look as a screen
+                ownerCampsites = CampsiteRepository.getCampsites().toList()
             }
-
             isLoading = false
         }
     }
-
-    val ownerCampsites = ownerProfile?.ownerData?.campsites ?: emptyList()
 
     var filteredCampsiteList = ownerCampsites.filter { campsite ->
         campsite.lotteryId == null
