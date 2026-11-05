@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         val db = Database()
         val deviceId = db.getDeviceId(this)
 
+
         // For now, I just have a test user.
         val testEntrantData = EntrantData(mutableListOf(), mutableListOf())
         val testOwnerData = OwnerData(mutableListOf(), mutableListOf())

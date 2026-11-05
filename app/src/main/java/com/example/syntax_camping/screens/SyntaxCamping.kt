@@ -19,6 +19,8 @@ import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
+import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.dataClasses.Lottery
@@ -112,6 +114,10 @@ fun SyntaxCamping(
                 selectedCampsite)
 
         }
+        composable("UpdateProfile"){
+            UpdateProfileScreen(navController, modifier = Modifier)
+        }
+
 
 
     }

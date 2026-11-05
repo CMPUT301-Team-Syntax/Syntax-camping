@@ -1,4 +1,4 @@
-//package com.example.syntax_camping
+package com.example.syntax_camping//package com.example.syntax_camping
 //
 //import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 //import androidx.compose.ui.test.onNodeWithTag
