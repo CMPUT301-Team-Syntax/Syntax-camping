@@ -16,10 +16,11 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
+import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
+import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
@@ -40,7 +41,7 @@ fun SyntaxCamping(
 
     var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
 
-    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+    NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
 
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
@@ -63,6 +64,9 @@ fun SyntaxCamping(
 
         composable("Settings") {
             SettingsScreen(navController)
+        }
+        composable(APP_GUIDELINES_ROUTE) {
+            AppGuidelinesScreen(navController)
         }
         composable("Search") {
             SearchHomeScreen(navController)
