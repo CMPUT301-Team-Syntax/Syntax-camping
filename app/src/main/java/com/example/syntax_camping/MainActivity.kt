@@ -8,6 +8,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.OwnerData
@@ -45,8 +49,8 @@ class MainActivity : ComponentActivity() {
 
 
         // For now, I just have a test user.
-        val testEntrantData = EntrantData(mutableListOf(), mutableListOf())
-        val testOwnerData = OwnerData(mutableListOf(), mutableListOf())
+        val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"))
+        val testOwnerData = OwnerData(mutableListOf("lotteryid1"), mutableListOf("campsiteid2"))
         val testUser = User(deviceId, "HelloWorld", "sorachat@ualberta.ca", "7802349700", testEntrantData, testOwnerData)
 
         // See if user already has account (by deviceId), then create it if not.
