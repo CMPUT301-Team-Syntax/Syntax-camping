@@ -45,7 +45,8 @@ class lotteryRepository {
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
                         campsites = campsites,
                         capacity = capacity,
-                        name = document.getString("name") ?: ""
+                        name = document.getString("name") ?: "",
+                        status = document.getString("status")?: ""
                     ).apply {
                         this.lotteryId = document.id
                     }
@@ -95,7 +96,8 @@ class lotteryRepository {
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
                         campsites,
                         capacity = capacity,
-                        name= document.getString("name")?: ""
+                        name= document.getString("name")?: "",
+                        status = document.getString("status")?: ""
                     ).apply {
                         this.lotteryId = document.id
                     }
