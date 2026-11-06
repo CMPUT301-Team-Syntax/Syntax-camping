@@ -245,6 +245,9 @@ fun CampsiteOwnerHome(
                                     val clickedCamp =
                                         ownerCampsites.find { it.documentId == clickedId }
                                     onEditCampsite(clickedCamp)
+                                },
+                                onViewLotClick = { lotteryId ->
+                                    navController.navigate("LotteryDetailsScreen/$lotteryId")
                                 }
                             )
                         }

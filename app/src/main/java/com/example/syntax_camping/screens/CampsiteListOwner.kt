@@ -16,7 +16,8 @@ import com.example.syntax_camping.Campsite
 @Composable
 fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
                             onItemClick: (String) -> Unit,
-                            onUpdateClick: ((String) -> Unit)? = null){
+                            onUpdateClick: ((String) -> Unit)? = null,
+                            onViewLotClick: ((String) -> Unit)? = null){
         Column(Modifier
             .fillMaxSize()
             .padding(16.dp),
@@ -29,7 +30,8 @@ fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
 
                     onUpdateClick = if (onUpdateClick != null) {
                         { onUpdateClick(camp.documentId) }
-                    } else null
+                    } else null,
+                    onViewLotClick = onViewLotClick
                 )
             }
 
