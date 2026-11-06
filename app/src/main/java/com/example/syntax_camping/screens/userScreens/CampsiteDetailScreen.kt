@@ -20,7 +20,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,29 +35,50 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.LotteryEntry
+import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.LotteryJoinState
+import com.example.syntax_camping.screens.lotteryJoinState
+import com.google.firebase.Timestamp
+import kotlin.time.Clock
 
 @Composable
 fun CampsiteDetailsScreen(navController: NavController,
                           campsiteID: String?,
                           userViewModel: UserViewModel,
                           update: Boolean = false,
-                          onEditCampsite: ((Campsite?) -> Unit)? = null){
+                          onEditCampsite: ((Campsite?) -> Unit)? = null,
+                          onEditLottery: ((Campsite?) -> Unit)? = null){
 
     val allCampsites = CampsiteRepository.getCampsites()
     val campsite = allCampsites.find { it.documentId == campsiteID }
     val campsiteCarousel = remember(campsite) { PhotoCarousel(campsite?.images ?: emptyList() ) }
     val scrollState = rememberScrollState()
-
+    val lotteryFolder = lotteryRepository()
+    var lotteryState by remember { mutableStateOf<Lottery?>(null) }
     if (campsite == null) {
         //maybe a launched effect then a campsite not here, after 5 seconds back to home
         return
     }
+
+    campsite.lotteryId?.takeIf { it.isNotBlank() }?.let { nonNullId ->   // CHANGED: a blank id is treated as "no lottery", so getLottery("") is never called
+        LaunchedEffect(nonNullId) {
+            lotteryFolder.getLottery(nonNullId) { fetchedLottery ->
+                // This is the callback! Firebase drops the result right here.
+                lotteryState = fetchedLottery
+            }
+        }
+    }
+    val currentLottery = lotteryState
+    val db = Database()
 
     Scaffold(
 
@@ -233,41 +258,99 @@ fun CampsiteDetailsScreen(navController: NavController,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Lottery Status: Ended",//No lottery thing implemented yet
-                        color = Color(0xFFA13F3F), // Dark red text
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = { /* TODO: Implement Waitlist Logic */ },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF2C9C9) // button color
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    ) {
+                    if (currentLottery == null) {
                         Text(
-                            text = "Click to join Waitlist!!",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Medium
+                            text = "No lotteries available",
+                            color = Color(0xFFA13F3F),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
                         )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    } else {
+                        // Kotlin smart-casts currentLottery to non-null here!
+                        Row( horizontalArrangement = Arrangement.SpaceBetween ) {
 
-                    Text(
-                        text = "50+ people currently waiting\n5 days left", //nothing about lottery or waitlist implemented yet
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                            Text(
+                                text = "Lottery Status: ",
+                                color = Color(0xFFA13F3F),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            currentLottery.status?.let {
+                                Text(
+                                    text = it, // Fixed: No error, no !!
+                                    color = Color(0xFFA13F3F),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                    if (!update) {
+                        // CHANGED: the lottery's status decides what the visitor sees (replaces the never-set isAvailable)
+                        val joinState = lotteryJoinState(currentLottery?.status)
+                        when (joinState) {
+                            LotteryJoinState.ENDED -> {
+                                Text(
+                                    text = "Lottery ended",
+                                    color = Color(0xFFA13F3F),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
+                            LotteryJoinState.CAN_ENTER_LOTTERY, LotteryJoinState.CAN_JOIN_WAITLIST -> {
+                                Button(
+                                    onClick = { campsite.lotteryId?.let { nonNullLotteryId ->
+                                        db.addLotteryEntry(lotteryId = nonNullLotteryId, LotteryEntry(userId = userViewModel.deviceId, Timestamp.now())) }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFF2C9C9) // button color
+                                    ),
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        // CHANGED: text depends on the state
+                                        text = if (joinState == LotteryJoinState.CAN_JOIN_WAITLIST) "Click to join waitlist!!" else "Click to enter lottery!!",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "50+ people currently waiting\n5 days left", // unchanged placeholder
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            LotteryJoinState.NONE -> { }   // no lottery or unknown status: nothing extra
+                        }
+                    }
+
+                    else {
+
+                        Button(
+                            onClick = {
+                                onEditLottery?.invoke(campsite)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("Add Lottery", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp)) // Extra padding at the bottom
             }
         }
 
-        }
-    }
+}
+

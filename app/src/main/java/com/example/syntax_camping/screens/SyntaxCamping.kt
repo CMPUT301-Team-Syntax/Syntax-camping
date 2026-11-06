@@ -22,7 +22,6 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
@@ -44,7 +43,7 @@ fun SyntaxCamping(
 
     var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
 
-    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+    NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
         Log.d("UserDebug", "Current User: ${userViewModel.deviceId}")
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
@@ -62,6 +61,11 @@ fun SyntaxCamping(
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
                     navController.navigate("UpdateCamp")
+                },
+                onEditLottery = { campsiteForLottery ->
+                    selCampsite = campsiteForLottery   // CHANGED: remember which campsite this lottery is for (selCampsite was unused until now)
+                    selectedLottery = null             // a new lottery, not editing an existing one
+                    navController.navigate("CreateLottery")
                 }
             )
         }
@@ -90,6 +94,7 @@ fun SyntaxCamping(
                     navController.navigate("UpdateCamp")
                 },
                 onEditLottery = { lotteryToEdit ->
+                    selCampsite = null
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
@@ -106,9 +111,9 @@ fun SyntaxCamping(
          LotteryEditScreen(
              navController,
              userViewModel,
-             myOwnedCampsites,
-             selectedLottery
-             )
+             selectedLottery,
+             preselectedCampsite = selCampsite
+         )
         }
 
         composable ("LotteryDetailsScreen"){backStackEntry ->

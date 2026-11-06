@@ -56,6 +56,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 
@@ -400,8 +401,25 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                             newCampsite.addImage(photo)
                                         }
                                     }
-                                    db.createNewCampsite(newCampsite)
-                                    navController.popBackStack()
+                                    val user = userViewModel.currentUser
+                                    if (user == null) {
+                                        // The user document hasn't loaded yet. Stop here so we never create a campsite nobody owns.
+                                        error = "Your account hasn't loaded yet. Please try again."
+                                    } else {
+                                        db.createNewCampsite(newCampsite)
+                                        val oldOwnerData = user.ownerData ?: OwnerData()
+                                        // Builds a new list instead of changing currentUser's list in place
+                                        val updatedUser = user.copy(
+                                            ownerData = oldOwnerData.copy(
+                                                campsiteIds = (oldOwnerData.campsiteIds + newCampsite.documentId).toMutableList()
+                                            )
+                                        )
+                                        db.updateUser(userViewModel.deviceId, updatedUser) { result ->
+                                            // Reload the user so currentUser includes the new campsite id
+                                            result.onSuccess { userViewModel.refreshCurrentUser() }
+                                        }
+                                        navController.popBackStack()
+                                    }
                                 }
                             }
                             else{
