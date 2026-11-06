@@ -82,7 +82,9 @@ object CampsiteRepository {
                         ?.toMutableList()
                         ?: mutableListOf()
 
+
                 )
+                campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
 
                 callback(campsite)
             }
@@ -125,6 +127,7 @@ object CampsiteRepository {
                             ?.toMutableList()
                             ?: mutableListOf()
                     )
+                    campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
 
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
 
