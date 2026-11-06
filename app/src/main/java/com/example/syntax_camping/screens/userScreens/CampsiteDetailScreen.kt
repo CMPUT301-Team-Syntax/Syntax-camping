@@ -20,7 +20,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +41,8 @@ import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.lotteryRepository
 
 @Composable
 fun CampsiteDetailsScreen(navController: NavController,
@@ -49,11 +55,22 @@ fun CampsiteDetailsScreen(navController: NavController,
     val campsite = allCampsites.find { it.documentId == campsiteID }
     val campsiteCarousel = remember(campsite) { PhotoCarousel(campsite?.images ?: emptyList() ) }
     val scrollState = rememberScrollState()
-
+    val lotteryFolder = lotteryRepository()
+    var lotteryState by remember { mutableStateOf<Lottery?>(null) }
     if (campsite == null) {
         //maybe a launched effect then a campsite not here, after 5 seconds back to home
         return
     }
+
+    campsite.lotteryId?.let { nonNullId ->
+        LaunchedEffect(nonNullId) {
+            lotteryFolder.getLottery(nonNullId) { fetchedLottery ->
+                // This is the callback! Firebase drops the result right here.
+                lotteryState = fetchedLottery
+            }
+        }
+    }
+    val currentLottery = lotteryState
 
     Scaffold(
 
@@ -233,41 +250,63 @@ fun CampsiteDetailsScreen(navController: NavController,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Lottery Status: Ended",//No lottery thing implemented yet
-                        color = Color(0xFFA13F3F), // Dark red text
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = { /* TODO: Implement Waitlist Logic */ },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF2C9C9) // button color
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    ) {
+                    if (currentLottery == null) {
                         Text(
-                            text = "Click to join Waitlist!!",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Medium
+                            text = "No lotteries available",
+                            color = Color(0xFFA13F3F),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    } else {
+                        // Kotlin smart-casts currentLottery to non-null here!
+                        Row( horizontalArrangement = Arrangement.SpaceBetween ) {
+
+                            Text(
+                                text = "Lottery Status: ",
+                                color = Color(0xFFA13F3F),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            Text(
+                                text = currentLottery.name, // Fixed: No error, no !!
+                                color = Color(0xFFA13F3F),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { /* TODO: Implement Waitlist Logic */ },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF2C9C9) // button color
+                            ),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text(
+                                text = "Click to join Waitlist!!",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "50+ people currently waiting\n5 days left", //nothing about lottery or waitlist implemented yet
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "50+ people currently waiting\n5 days left", //nothing about lottery or waitlist implemented yet
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp)) // Extra padding at the bottom
             }
         }
 
-        }
-    }
+}
+

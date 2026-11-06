@@ -22,7 +22,6 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
