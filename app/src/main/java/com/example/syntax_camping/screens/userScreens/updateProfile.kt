@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.UserViewModel
-import okhttp3.internal.userAgent
+import android.util.Log
+import com.example.syntax_camping.Database
 
 
 @Composable
@@ -45,10 +47,20 @@ fun UpdateProfileScreen(navController: NavController, userViewModel: UserViewMod
     var nameValue by remember { mutableStateOf("") }
     var emailValue by remember { mutableStateOf("") }
     var phoneValue by remember { mutableStateOf("") }
-    var locationValue by remember { mutableStateOf("") }
 
+    //Makes name, email, and phone display their previous setting
+    val currentUser = userViewModel.currentUser
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
+            nameValue = user.name
+            emailValue = user.email
+            phoneValue = user.phoneNumber
+        }
+    }
 
-
+    //Saving logic initialization
+    val database = remember { Database() }
+    var isSaving by remember { mutableStateOf(false) }
 
 
     Column(
@@ -122,23 +134,44 @@ fun UpdateProfileScreen(navController: NavController, userViewModel: UserViewMod
             placeholder = "Phone Number"
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CustomUnderlineField(
-            value = locationValue,
-            onValueChange = { locationValue = it },
-            placeholder = "Location"
-        )
-
         Spacer(modifier = Modifier.height(150.dp))
 
-        Button(
-            onClick = { /* Handle save button click */ },
 
+        Button(
+
+            //Saves the updated fields.
+            onClick = {
+                currentUser?.let {user ->
+                    val updatedUser = user.copy(    //Make a copy of the user (we'll use this to update)
+                        name = nameValue,
+                        email = emailValue,
+                        phoneNumber = phoneValue
+                    )
+
+                    isSaving = true   //Prevents you from spamming the save button.
+
+                    //Saving logic block.
+                    database.updateUser(userViewModel.deviceId, updatedUser) { result ->
+                        isSaving = false
+
+                        result.onSuccess {
+                            Log.d("UserDebug", "Profile updated successfully!")
+                            userViewModel.refreshCurrentUser()  //Refresh current user's data.
+                            navController.popBackStack() //Go back a page.
+                        }.onFailure { error ->
+                            Log.e("UserDebug", "Failed to update profile", error)
+                        }
+                    }
+                }
+            },
+
+            enabled = currentUser!= null && !isSaving,  //Button is disabled when its saving.
             shape = RoundedCornerShape(33.dp),
             contentPadding = PaddingValues(vertical = 4.dp, horizontal = 7.dp)
         ) {
-            Text(text = "Save", fontWeight = FontWeight.Bold)
+            Text(
+                text = if (isSaving) "Saving..." else "Save",
+                fontWeight = FontWeight.Bold)
         }
 
     }
