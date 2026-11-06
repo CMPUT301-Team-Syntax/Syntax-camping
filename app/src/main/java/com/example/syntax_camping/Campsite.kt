@@ -14,6 +14,7 @@ import androidx.core.net.toUri
 class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String> = mutableListOf<String>(), /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
+    val db = Database()
     private var _lotteryId: String? = null
     private var _currImageIndex = 0
     private var _name = name
@@ -24,6 +25,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
     private var _rating =  rating
+    private var _ratings = mutableListOf<Double>()
     private var _raters = 0 //number of people that have rated
 
     val name: String
@@ -38,6 +40,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _tags
     val images: MutableList<Uri>
         get() = _images
+    val ratings: MutableList<Double>
+        get() = _ratings
     val documentId: String
         get() = _documentId
     val hasQRCode: Boolean
@@ -53,10 +57,19 @@ class Campsite(documentId: String, name: String, location: String, description: 
     * */
     //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
     fun updateRating(number: Double){
+        db.updateCampsiteRating(_documentId, number)
+        _ratings.add(number)
+        _rating = 0.0
 
-        _rating = (_rating*_raters) + number
-        _raters += 1
-        _rating /= _raters
+        for (rating in _ratings){
+            _rating+= rating
+
+        }
+        _rating= _rating/(_ratings.size)
+
+    }
+    fun updateRaterList(raters: MutableList<Double>){
+        _ratings = raters
     }
     //Not currently implemented
     fun generateQRcode(){

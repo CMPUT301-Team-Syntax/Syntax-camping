@@ -77,9 +77,14 @@ object CampsiteRepository {
                     maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
                     tags = (document.getString("tags") ?: "").split(",").toMutableList(),
                     document.getDouble("rating") ?: 0.00,
-                    images = (document.getString("images") ?: "").split(",").toMutableList()
+                    images = (document.get("images") as? List<*>)
+                        ?.filterIsInstance<String>()
+                        ?.toMutableList()
+                        ?: mutableListOf()
+
 
                 )
+                campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
 
                 callback(campsite)
             }
@@ -117,8 +122,12 @@ object CampsiteRepository {
                         maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
                         tags = (document.getString("tags") ?: "").split(",").toMutableList(),
                         rating = document.getDouble("rating") ?: 0.00,
-                        images = (document.getString("images") ?: "").split(",").toMutableList()
+                        images = (document.get("images") as? List<*>)
+                            ?.filterIsInstance<String>()
+                            ?.toMutableList()
+                            ?: mutableListOf()
                     )
+                    campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
 
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
 
