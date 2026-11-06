@@ -117,8 +117,11 @@ class Database {
 
 
     }
+    /*
+    * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
+    * */
     fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean)->Unit){
-        // 1. Wait for hasUserJoinedLottery to check the database via callback
+
 
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
 
@@ -135,7 +138,7 @@ class Database {
                 val lottery = db.collection("lotteries")
                     .document(lotteryId)
 
-                // 2. Fetch the lottery document to check its status
+
                 lottery.get()
                     .addOnSuccessListener { lotterySnapshot ->
                         val currentTime = System.currentTimeMillis()
@@ -148,8 +151,7 @@ class Database {
                             "booking" -> "waitlist"
                             else -> null
                         }
-
-                        // 3. Add the user to the correct collection
+                        //If a collection name was actually found, huzzah, add the user to that collection
                         if (collectionName != null) {
 
                             lottery.collection(collectionName)
@@ -179,6 +181,10 @@ class Database {
         }
 
     }
+    /*
+    * Works with the firebase and lotteris to remove a user either from the waitlist or entries list attacehd to a lottery
+    * as well as the has joined function to make sure the user is actually in there before we try to delete them
+    * */
     fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean) -> Unit){
 
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
@@ -195,7 +201,7 @@ class Database {
                 .get()
                 .addOnSuccessListener { winnerSnapshot ->
 
-                    // If they are a winner, stop here and do not delete
+                    // If they are a winner, stop here and do not delete(since they leave as a winner by rejecting their reservation
                     if (winnerSnapshot.exists()) {
                         onComplete(false) // Trigger callback
                         return@addOnSuccessListener
@@ -218,11 +224,11 @@ class Database {
                                     .document(entry.userId)
                                     .delete()
                                     .addOnSuccessListener {
-                                        onComplete(true) // SUCCESS! Tell the UI.
+                                        onComplete(true)
 
                                     }
                                     .addOnFailureListener { e ->
-                                        onComplete(false) // FAILED! Tell the UI
+                                        onComplete(false)
 
                                     }
                             }
@@ -233,6 +239,10 @@ class Database {
                 }
         }
     }
+    /*
+    * Works with both add and delete to make sure a user is in the database/not in before adding or deleting
+    *
+    * */
     fun hasUserJoinedLottery(lotteryId: String, userId: String, onResult: (Boolean) -> Unit) {
         val lotteryRef = db.collection("lotteries").document(lotteryId)
 
@@ -254,6 +264,9 @@ class Database {
             }
         }
     }
+    /*
+    * works with adding an entry to make sure user is not already a winner/entry/waitlist before ltting them join(they can't join more than once)
+    * */
     fun hasLotteryHitCapacity(lotteryId: String, onResult: (Boolean) -> Unit) {
         val lotteryRef = db.collection("lotteries").document(lotteryId)
 
@@ -261,7 +274,7 @@ class Database {
             .document(lotteryId)
             .get()
             .addOnSuccessListener { lotterySnapshot ->
-                // Adjust "capacity" to match whatever field name you use in Firestore (e.g., "maxCapacity", "capacity", etc.)
+
                 val status = lotterySnapshot.getString("status")
                 var listWeAreChecking = ""
                 if(status == "initialAccepting") {
@@ -286,13 +299,13 @@ class Database {
                     .addOnSuccessListener { entriesSnapshot ->
                         val currentCount = entriesSnapshot.size()
 
-                        // 3. Compare current count to capacity
+
                         val isFull = if(capacity!= null) {
                             currentCount >= capacity
                         }else{
                             false
                             }
-                        // Pass back the results
+
                         onResult(isFull)
                     }
                     .addOnFailureListener {
@@ -617,6 +630,9 @@ class Database {
                     )
             )
     }
+    /*
+    * Updates a campsites ratings list every tiem a new review is added(to make sure it saves)
+    * */
     fun updateCampsiteRating(documentId: String, rating: Double) {
         db.collection("campsites").document(documentId)
             .update("ratings", FieldValue.arrayUnion(rating))

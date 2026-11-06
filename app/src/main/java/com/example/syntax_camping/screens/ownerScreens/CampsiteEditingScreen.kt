@@ -62,11 +62,14 @@ import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 
 //import androidx.compose.ui.Modifier
-
+/*
+* This screen is called when the plus to add campsite is pressed in the my campsites page, or when
+*Teh update campsite button is pressed in CampsiteOwnerDetails or campsite owner campsiteview, three dot drop down.
+*It works with the database to add a campsite to the database, or update one
+* */
 @Composable
 fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewModel, campsite: Campsite?){
-    /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
-    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
+
     //Note that campsite inof has two variable representations, one is for the labels of text fields and is labelled as display before what it displays, the others are for actually storing and changing what that variable display
     //ie newCampName stores the new name that will be passed when the camp is updated/created, while displayName is fo rthe text field label and determines what it displays(As it may be please enter name here or the old name)
     //A
