@@ -479,18 +479,10 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                     campsite.updateDescription(newCampDescription)
                                     campsite.updateMaxOcc(intNewMaxOcc!!)
                                     campsite.updateTag(newTags)
+                                    db.updateCampsite(campsite)
                                     if (selectedPhotos.isNotEmpty()){
                                         for (photo in selectedPhotos) {
                                             campsite.addImage(photo)
-                                        }
-                                    }
-                                    //New updateCampsite logic.
-                                    db.updateCampsite(campsite) {result ->
-                                        result.onSuccess {
-                                            navController.popBackStack()
-                                        }
-                                        result.onFailure { exception ->
-                                            error = "Failed to update campsite: ${exception.message}"
                                         }
                                     }
                                 }
