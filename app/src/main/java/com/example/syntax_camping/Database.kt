@@ -105,7 +105,8 @@ class Database {
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity
+            "capacity" to capacity,
+
 
         )
         lotteryReference.update(data)
@@ -244,7 +245,7 @@ class Database {
                 // Adjust "capacity" to match whatever field name you use in Firestore (e.g., "maxCapacity", "capacity", etc.)
                 val status = lotterySnapshot.getString("status")
                 var listWeAreChecking = ""
-                if(status == "initialBooking") {
+                if(status == "initialAccepting") {
                     listWeAreChecking = "entries"
                 }
                 else if(status == "Booking") {
