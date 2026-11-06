@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -155,7 +156,10 @@ fun CampsiteOwnerHome(
                                     onClick = { isMenuExpanded = true },
                                     modifier = Modifier
                                         .width(160.dp)
-                                        .height(44.dp),
+                                        .height(44.dp)
+                                        .testTag("owner_three_dots_menu")
+                                    ,
+
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.more_vertical),
@@ -170,6 +174,7 @@ fun CampsiteOwnerHome(
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Add Campsite") },
+                                        modifier = Modifier.testTag("add_campsite_menu_item"),
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.location_on),
@@ -185,6 +190,7 @@ fun CampsiteOwnerHome(
 
                                     DropdownMenuItem(
                                         text = { Text("Add Lottery") },
+
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.lottery),
@@ -252,12 +258,19 @@ fun CampsiteOwnerHome(
                         Text("Add new Campsite")
 
                         IconButton(onClick = { onEditCampsite(null) },
-                            modifier = Modifier.size(40.dp)) {
+                            modifier = Modifier.
+                            size(40.dp)
+                                .testTag("add_campsite_button")
+
+                        )
+
+
+                        {
                             Icon(
                                 painter = painterResource(id = R.drawable.add),
                                 contentDescription = "add campsite",
-                                tint = Color.Unspecified
-                            )
+                                tint = Color.Unspecified,
+                                )
                         }
                     }
                     Text("No campsites found.", modifier = Modifier.align(Alignment.Center))
