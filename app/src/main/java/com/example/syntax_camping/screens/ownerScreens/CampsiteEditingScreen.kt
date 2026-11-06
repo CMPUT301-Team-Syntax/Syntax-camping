@@ -54,21 +54,27 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.PhotoCarousel
+import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 
 //import androidx.compose.ui.Modifier
-
+/*
+* This screen is called when the plus to add campsite is pressed in the my campsites page, or when
+*Teh update campsite button is pressed in CampsiteOwnerDetails or campsite owner campsiteview, three dot drop down.
+*It works with the database to add a campsite to the database, or update one
+* */
 @Composable
-fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
-    /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
-    /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
+fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewModel, campsite: Campsite?){
+
     //Note that campsite inof has two variable representations, one is for the labels of text fields and is labelled as display before what it displays, the others are for actually storing and changing what that variable display
     //ie newCampName stores the new name that will be passed when the camp is updated/created, while displayName is fo rthe text field label and determines what it displays(As it may be please enter name here or the old name)
     //A
     val db = Database()
-    var newCampsite: Campsite
+    //var newCampsite: Campsite
     var documentID: String
     var qrCodeChecked = false
     var nameDisplay by remember { mutableStateOf("") }
@@ -85,20 +91,21 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
-
+    var currImage: Uri?
+    currImage = null
 
     //Note the following is a list of selected photos, initialized as empty
-    var  selectedPhotos by remember {
-        mutableStateOf<List<Uri>>(emptyList())
-    }
+   // var  selectedPhotos by remember {
+    //    mutableStateOf<List<Uri>>(emptyList())
+   // }
     //Note this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
     val launcher =  rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     )
     { uris ->
-        selectedPhotos = uris
+        newPhotos.addAll(uris.filter {it !in newPhotos })
     }
-    var photoCarousel = PhotoCarousel(selectedPhotos)
+    var photoCarousel = PhotoCarousel(newPhotos)
     //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
     //edit text fields since they ckept getting reset to campsite name values)
     LaunchedEffect(campsite?.documentId){
@@ -124,19 +131,62 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
             qrCodeChecked = campsite.hasQRCode
 
 
-            for (item in (campsite.images)){
-                newPhotos.add(item)
-            }
+            newPhotos.clear()
+            newPhotos.addAll(campsite.images)
 
-            for (item in (campsite.tags)){
-                newTags.add(item)
-            }
-
+            newTags.clear()
+            newTags.addAll(campsite.tags)
 
         }
     }
+    /**
+     * Accepts the images the user wants to keep.
+     * Determines which images are new.
+     * Uploads new images to Firebase Storage.
+     * Waits for every upload to finish.
+     * Returns the complete list of download URL strings, including existing images.
+     */
+    fun uploadNewImages(
+        campsiteId: String,
+        originalImages: List<Uri>,
+        imagesToSave: List<Uri>,
+        callback: (Result<List<String>>) -> Unit
+    ) {
+        val newImages = imagesToSave.filter { it !in originalImages }
 
+        if (newImages.isEmpty()) {
+            callback(Result.success(imagesToSave.map { it.toString() }))
+            return
+        }
 
+        val uploadedUrls = mutableMapOf<Uri, String>()
+        var completedUploads = 0
+        var uploadFailed = false
+
+        for (image in newImages) {
+            db.uploadCampsiteImage(campsiteId, image) { result ->
+                if (!uploadFailed) {
+                    result.onSuccess { downloadUrl ->
+                        uploadedUrls[image] = downloadUrl
+                        completedUploads++
+
+                        if (completedUploads == newImages.size) {
+                            val finalUrls = imagesToSave.map { uri ->
+                                uploadedUrls[uri] ?: uri.toString()
+                            }
+
+                            callback(Result.success(finalUrls))
+                        }
+                    }
+
+                    result.onFailure { exception ->
+                        uploadFailed = true
+                        callback(Result.failure(exception))
+                    }
+                }
+            }
+        }
+    }
 
     //var displayTag by remember{mutableStateOf(newTags.joinToString())}
     Scaffold(
@@ -163,8 +213,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
                 .padding(innerPadding)
+                .verticalScroll(scrollState)
+
                 .padding(16.dp),
 
             verticalArrangement = Arrangement.Top,
@@ -179,7 +230,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     value = newCampName,
                     onValueChange = { newCampName = it },
                     label = { Text(nameDisplay) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag("campsite_name_input")
                 )
                 //THIS WILL CHANGE WITH MAP IMPLEMENTATION SLIGHTLY AS IT NEEDS TO ALSO RECIEVE POTENTIAL STRINGS FORM THE MAP/TODO
                 Spacer(modifier = Modifier.width(8.dp))
@@ -187,7 +238,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     value = newCampLocation,
                     onValueChange = { newCampLocation = it },
                     label = { Text(locationDisplay) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag("campsite_location_input")
                 )
             }
 
@@ -214,7 +265,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                             value = newMaxOcc ,
                             onValueChange = { newMaxOcc = it },
                             label = { Text(maxOccDisplay) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).testTag("campsite_MaximumOccupant_input")
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         //A filler Image for map until map is updated later down the road
@@ -256,6 +307,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                         .heightIn(min = 350.dp, max = 350.dp)
                         // Enables the vertical scroll behavior inside the text box
                         .verticalScroll(rememberScrollState())
+                        .testTag("campsite_description_input")
+
                 )
             }
             //THe following few rows handle tags, displaying current tags and letting users add and remove tags at their whim
@@ -286,7 +339,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                     value = newTag,
                     onValueChange = { newTag = it },
                     label = { Text("Enter a tag") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag("campsite_Tag_input")
 
                 )
             }
@@ -295,7 +348,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
 
             ) {
                 Button(
-                    modifier = Modifier.padding(vertical = 12.dp),
+                    modifier = Modifier.padding(vertical = 12.dp).testTag("add_tag_button"),
                     onClick = {
                         if (newTag.isNotBlank() and (newTag !in newTags)) {
                             newTags.add(newTag)
@@ -308,7 +361,8 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    modifier = Modifier.padding(vertical = 12.dp),
+                    modifier = Modifier.padding(vertical = 12.dp)
+                        ,
                     onClick = {
                         if (newTag.isNotBlank() and (newTag in newTags)) {
                             newTags.remove(newTag)
@@ -320,7 +374,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 }
             }
             //The following will Handle images
-            //TODO
+
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -334,7 +388,7 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                 horizontalArrangement = Arrangement.Center
             ) {
 
-                    photoCarousel.displayCarousel(Modifier,photoCarousel)
+                 currImage =   photoCarousel.displayCarousel(Modifier,photoCarousel)
 
             }
             Row(
@@ -352,10 +406,29 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     .PickVisualMedia.ImageOnly
                             )
                         )
-                        photoCarousel = PhotoCarousel(selectedPhotos)
+
+
                     }
                 ) {
                     Text("Add Images")
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+
+            ) {
+                Button(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    //This onclick handles the launcher for Android's built in image selector.
+                    onClick = {
+                        if((newPhotos.isNotEmpty()) && (currImage != null)){
+                            newPhotos.remove(currImage)
+                            photoCarousel = PhotoCarousel(newPhotos)
+                        }
+                    }
+                ) {
+                    Text("Remove Image")
                 }
             }
             //The following is to handle updating/creating the cmapsite
@@ -368,7 +441,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
 
 
                     Button(
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        modifier = Modifier.padding(vertical = 12.dp)
+                            .testTag("create_campsite_button")
+                        ,
                         onClick = {
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
                                 val intNewMaxOcc = newMaxOcc.toIntOrNull()
@@ -384,23 +459,66 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                         .document()
                                         .id
 
-                                    newCampsite = Campsite(
-                                        documentID,
-                                        newCampName,
-                                        newCampLocation,
-                                        newCampDescription,
-                                        intNewMaxOcc,
-                                        newTags,
-                                        0.0
-                                    )
-                                    //Addds images to Photos. Deleting images will be handled with the carousel, to be implemented TODO
-                                    if (selectedPhotos.isNotEmpty()){
-                                        for (photo in selectedPhotos) {
-                                            newCampsite.addImage(photo)
+
+                                    val user = userViewModel.currentUser
+
+                                    if (user == null) {
+                                        error = "Your account hasn't loaded yet. Please try again."
+                                    } else {
+                                        uploadNewImages(
+                                            campsiteId = documentID,
+                                            originalImages = emptyList(),
+                                            imagesToSave = newPhotos.toList()
+                                        ) { result ->
+
+                                            result.onSuccess { imageUrls ->
+                                                val newCampsite = Campsite(
+                                                    documentId = documentID,
+                                                    name = newCampName,
+                                                    location = newCampLocation,
+                                                    description = newCampDescription,
+                                                    maxOcc = intNewMaxOcc,
+                                                    tags = newTags.toMutableList(),
+                                                    rating = 0.0,
+                                                    images = imageUrls.toMutableList()
+                                                )
+
+                                                db.createNewCampsite(newCampsite)
+
+                                                val oldOwnerData = user.ownerData ?: OwnerData()
+
+                                                val updatedUser = user.copy(
+                                                    ownerData = oldOwnerData.copy(
+                                                        campsiteIds = (
+                                                                oldOwnerData.campsiteIds +
+                                                                        newCampsite.documentId
+                                                                ).toMutableList()
+                                                    )
+                                                )
+
+                                                db.updateUser(
+                                                    userViewModel.deviceId,
+                                                    updatedUser
+                                                ) { updateResult ->
+                                                    updateResult.onSuccess {
+                                                        userViewModel.refreshCurrentUser()
+                                                        navController.popBackStack()
+                                                    }
+
+                                                    updateResult.onFailure { exception ->
+                                                        error = exception.message
+                                                            ?: "Failed to update owner data"
+                                                    }
+                                                }
+                                            }
+
+                                            result.onFailure { exception ->
+                                                error = exception.message
+                                                    ?: "Failed to upload campsite images"
+                                            }
                                         }
                                     }
-                                    db.createNewCampsite(newCampsite)
-                                    navController.popBackStack()
+
                                 }
                             }
                             else{
@@ -415,8 +533,9 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
 
 
                     Button(
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        modifier = Modifier.padding(vertical = 12.dp).testTag("create_campsite_button"),
                         onClick = {
+                            val db = Database()
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
                                 intNewMaxOcc = newMaxOcc.toIntOrNull()
                                 error = ""
@@ -424,18 +543,40 @@ fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
                                     error = "Max Int must be an int"
                                 } else {
                                     error = ""
-                                    campsite.updateName(newCampName)
-                                    campsite.updateLocation(newCampLocation)
-                                    campsite.updateDescription(newCampDescription)
-                                    campsite.updateMaxOcc(intNewMaxOcc!!)
-                                    campsite.updateTag(newTags)
-                                    db.updateCampsite(campsite)
-                                    if (selectedPhotos.isNotEmpty()){
-                                        for (photo in selectedPhotos) {
-                                            campsite.addImage(photo)
+
+                                    val originalImages = campsite.images.toList()
+                                    val imagesToSave = newPhotos.toList()
+
+                                    uploadNewImages(
+                                        campsiteId = campsite.documentId,
+                                        originalImages = originalImages,
+                                        imagesToSave = imagesToSave
+                                    ) { result ->
+
+                                        result.onSuccess { imageUrls ->
+                                            campsite.updateName(newCampName)
+                                            campsite.updateLocation(newCampLocation)
+                                            campsite.updateDescription(newCampDescription)
+                                            campsite.updateMaxOcc(intNewMaxOcc!!)
+                                            campsite.updateTag(newTags.toMutableList())
+
+                                            // Replace the old image list with the final URLs.
+                                            campsite.images.clear()
+
+                                            for (url in imageUrls) {
+                                                campsite.addImage(Uri.parse(url))
+                                            }
+
+                                            // Save the updated campsite to Firestore.
+                                            db.updateCampsite(campsite)
+                                        }
+
+                                        result.onFailure { exception ->
+                                            error = exception.message
+                                                ?: "Failed to upload campsite images"
                                         }
                                     }
-                                    navController.popBackStack()
+
                                 }
                             }
                             else{

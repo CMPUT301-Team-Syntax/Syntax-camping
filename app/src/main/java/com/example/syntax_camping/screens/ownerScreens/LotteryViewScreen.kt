@@ -4,6 +4,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
 fun validateAndCreateLottery(
+    name: String,
     startDay: String,
     startMonth: String,
     startYear: String,
@@ -15,12 +16,13 @@ fun validateAndCreateLottery(
     finalHour: String,
     finalMinute: String,
     numWinnersText: String,
+    capacity: String,
     selectedCampsites: MutableList<Campsite>
 
 ): Pair<Boolean, String>
 
 {
-
+    val myName = name.trim()
     val sDay = startDay.toIntOrNull()
     val sMonth = startMonth.toIntOrNull()
     val sYear = startYear.toIntOrNull()
@@ -34,6 +36,18 @@ fun validateAndCreateLottery(
     val fMin = finalMinute.toIntOrNull()
 
     val parsedWinners = numWinnersText.toIntOrNull()
+    val lotCapacity = if (capacity.isEmpty()){
+        null} else{
+        capacity.toIntOrNull()
+        }
+
+
+    if (myName.isEmpty()){
+        return Pair(false, "No name given to lottery")
+    }
+    if (myName.length < 2) {
+        return Pair(false, "Lottery name must be 50 characters or fewer")
+    }
 
     if (sDay == null || sMonth == null || sYear == null || sHour == null || sMin == null ||
         fDay == null || fMonth == null || fYear == null || fHour == null || fMin == null ||
@@ -58,7 +72,10 @@ fun validateAndCreateLottery(
         endTimeLottery = endTimeLottery,
         endTimeBooking = endTimeBooking,
         numWinners = parsedWinners,
-        campsites = selectedCampsites
+        campsites = selectedCampsites,
+        capacity = lotCapacity,
+        name = myName,
+        status = null
     )
 
     val success = newLottery.createLotteryTimer()

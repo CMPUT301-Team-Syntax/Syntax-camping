@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.dataClasses.LotteryEntry
-import com.example.syntax_camping.dataClasses.LotteryManager
+
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
 /*

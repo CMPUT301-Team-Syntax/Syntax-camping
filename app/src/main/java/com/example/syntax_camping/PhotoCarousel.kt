@@ -75,18 +75,20 @@ class PhotoCarousel(images: List<Uri>) {
     //This composable takes as argument an instance of the photocarousel class so it can call the other functions in the clas on itself, has it's variables tracked within it
 
     @Composable
-    fun displayCarousel(modifier: Modifier = Modifier, photoCarousel: PhotoCarousel) {
+    fun displayCarousel(modifier: Modifier = Modifier, photoCarousel: PhotoCarousel): Uri? {
         //Variable tracked by the display method(the photo it is showing
-        var currPhoto  by remember { mutableStateOf(photoCarousel.getCurrPhoto()) }
+        var currPhoto by remember { mutableStateOf(photoCarousel.getCurrPhoto()) }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            Box( modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp) ){
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            ) {
                 //if images is empty, displays an image showing to upload/there is no photos
-            if (photoCarousel.getCurrPhoto() == null) {
+                if (photoCarousel.getCurrPhoto() == null) {
                     Image(
                         painter = painterResource(id = R.drawable.missing_image_filler),
                         contentDescription = "A description of the image for accessibility",
@@ -95,11 +97,12 @@ class PhotoCarousel(images: List<Uri>) {
                             .size(220.dp),
 
 
-                    )
+                        )
                 } else {
                     AsyncImage(
                         model = currPhoto,
                         contentDescription = "Selected photo preview",
+                        error = painterResource(id = R.drawable.missing_image_filler),   //Handle error loading image.
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(220.dp)
@@ -115,7 +118,7 @@ class PhotoCarousel(images: List<Uri>) {
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(8.dp)
-                ){
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.back),//tkaes the already made back arrow and just mirrors it
                         contentDescription = "next button",
@@ -135,7 +138,7 @@ class PhotoCarousel(images: List<Uri>) {
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .padding(8.dp)
-                ){
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.back),
                         contentDescription = "back button",
@@ -146,6 +149,12 @@ class PhotoCarousel(images: List<Uri>) {
 
             }
 
+        }
+        if(images.isEmpty()){
+            return null
+        }
+        else{
+            return images[_currImageIndex]
         }
 
     }

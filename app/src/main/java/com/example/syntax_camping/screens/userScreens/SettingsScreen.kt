@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 import com.example.syntax_camping.screens.CustomBottomBar
 

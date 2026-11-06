@@ -5,15 +5,18 @@ import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
 import androidx.core.net.toUri
-import com.example.syntax_camping.dataClasses.LotteryManager
+
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
+* This object is used in many places, by lottery to store a list of campsites, hte id's from it are stored by a campsite owner to store all their owned campsites, the campsite repository retrieves objects of this
+* type for use in the app, and the database uploads objects of this type to be stored in firebase. Many of the screens also use it to find information they need to display about a campsite
  */
 
 class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String> = mutableListOf<String>(), /*mapLocation<MapLocation> */) {
     //Please note whoever implements the ability to go in and out of campsite page, when ever they click details should reset campsite carousel index
     private var _hasQRCode = false
+    val db = Database()
     private var _lotteryId: String? = null
     private var _currImageIndex = 0
     private var _name = name
@@ -24,6 +27,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
     private var _rating =  rating
+    private var _ratings = mutableListOf<Double>()
     private var _raters = 0 //number of people that have rated
 
     val name: String
@@ -38,31 +42,57 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _tags
     val images: MutableList<Uri>
         get() = _images
+    val ratings: MutableList<Double>
+        get() = _ratings
     val documentId: String
         get() = _documentId
     val hasQRCode: Boolean
         get() = _hasQRCode
     val rating: Double
-        get() = _rating
+        get(){
+            refreshRating()
+            return _rating
+        }
     val raters: Int
-        get() = _raters
+        get() = _ratings.size
     val lotteryId: String?
         get() = _lotteryId
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
-    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
+    /*Called whenever a user leaves, so within the campsite details screen. Then uploads rating change to the databse
+
+     */
     fun updateRating(number: Double){
+        db.updateCampsiteRating(_documentId, number)
+        _ratings.add(number)
+        _rating = 0.0
 
-        _rating = (_rating*_raters) + number
-        _raters += 1
-        _rating /= _raters
+        for (rating in _ratings){
+            _rating+= rating
+
+        }
+        _rating= _rating/(_ratings.size)
+
     }
+    //Used in tandem with the getter for rating to ensure that it has most up to date rating
+    fun refreshRating(){
 
+        _rating = 0.0
+        for (rating in _ratings){
+            _rating+= rating
+        }
+        _rating= _rating/(_ratings.size)
+    }
+    fun updateRaterList(raters: MutableList<Double>){
+        _ratings = raters
+    }
+    //Not currently implemented
+    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
     fun generateQRcode(){
         _hasQRCode = true
     }
-
+//The followinng work with campsiteEditingScreen.
     fun updateName(newName: String){
         _name = newName
     }
@@ -106,6 +136,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
     // On init, we must parse these strings as Uris
     fun updateLotteryId(newLotteryId: String?){
         _lotteryId= newLotteryId
+
+
     }
     init {
 
@@ -116,6 +148,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         }
 
     }
+
 
 
 

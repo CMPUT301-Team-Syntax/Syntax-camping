@@ -35,10 +35,11 @@ import com.example.syntax_camping.screens.CampsiteListScreen
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.testTag
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.CustomBottomBar
 
 @Composable
-fun SearchHomeScreen(navController: NavController){
+fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel){
 
     var  SearchInput by remember { mutableStateOf("")  }
     var FlitteredCampsiteList by remember { mutableStateOf(listOf<Campsite>()) }
@@ -110,8 +111,8 @@ fun SearchHomeScreen(navController: NavController){
 
 
                 IconButton(onClick = {
-                    displayFillereted = true
-                    FlitteredCampsiteList = realCampsites.filter { campsite ->
+                    val listToFilter = if (realCampsites.isNotEmpty()) realCampsites else CampsiteRepository.getCampsites()
+                    FlitteredCampsiteList = listToFilter.filter { campsite ->
                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                     }
                     displayFillereted = true

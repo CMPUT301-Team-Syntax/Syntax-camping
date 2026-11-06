@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,15 +41,19 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.LotteryListScreenOwner
 import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.filterOwnedCampsites
 
 @Composable
 fun CampsiteOwnerHome(
     navController: NavController,
+    userViewModel: UserViewModel,
     onEditCampsite: (Campsite?) -> Unit,
     onEditLottery: (Lottery?) -> Unit,
 ) {
@@ -71,9 +76,27 @@ fun CampsiteOwnerHome(
         }
     }
 
-    var filteredCampsiteList = ownerCampsites.filter { campsite ->
-        campsite.lotteryId == null
+    val myCampsites = filterOwnedCampsites(ownerCampsites, userViewModel.currentUser?.ownerData)
+
+    var filteredCampsiteList = myCampsites.filter { campsite ->
+        campsite.lotteryId.isNullOrBlank()
     }
+    val myLotteryIds = myCampsites
+        .mapNotNull { campsite -> campsite.lotteryId?.takeIf { it.isNotBlank() } }
+        .distinct()
+
+    LaunchedEffect(myLotteryIds) {
+        if (myLotteryIds.isEmpty()) {
+            lotteriesOwned.clear()
+        } else {
+            lotteryRepository().getLotteries { allLotteries ->
+                lotteriesOwned.clear()
+                lotteriesOwned.addAll(allLotteries.filter { it.lotteryId in myLotteryIds })
+            }
+        }
+    }
+
+
     val scrollState = rememberScrollState()
 
 
@@ -104,9 +127,9 @@ fun CampsiteOwnerHome(
         ) {
 
             Box(modifier = Modifier.weight(1f)) {
-                if (isLoading) {
+                if (isLoading|| userViewModel.currentUser == null) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else if (ownerCampsites.isNotEmpty()) {
+                } else if (myCampsites.isNotEmpty()) {
 
                     Column(
                         modifier = Modifier
@@ -133,7 +156,10 @@ fun CampsiteOwnerHome(
                                     onClick = { isMenuExpanded = true },
                                     modifier = Modifier
                                         .width(160.dp)
-                                        .height(44.dp),
+                                        .height(44.dp)
+                                        .testTag("owner_three_dots_menu")
+                                    ,
+
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.more_vertical),
@@ -148,6 +174,7 @@ fun CampsiteOwnerHome(
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Add Campsite") },
+                                        modifier = Modifier.testTag("add_campsite_menu_item"),
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.location_on),
@@ -163,6 +190,7 @@ fun CampsiteOwnerHome(
 
                                     DropdownMenuItem(
                                         text = { Text("Add Lottery") },
+
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.lottery),
@@ -170,6 +198,7 @@ fun CampsiteOwnerHome(
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         },
+
                                         onClick = {
                                             if (filteredCampsiteList.isNotEmpty()) {
                                                 isMenuExpanded = false
@@ -208,7 +237,7 @@ fun CampsiteOwnerHome(
 
                         Box {
                             CampsiteListScreenOwner(
-                                campsiteList = ownerCampsites,
+                                campsiteList = myCampsites,
                                 onItemClick = { clickedId ->
                                     navController.navigate("ownerCampsiteDetails/$clickedId")
                                 },
@@ -216,6 +245,9 @@ fun CampsiteOwnerHome(
                                     val clickedCamp =
                                         ownerCampsites.find { it.documentId == clickedId }
                                     onEditCampsite(clickedCamp)
+                                },
+                                onViewLotClick = { lotteryId ->
+                                    navController.navigate("LotteryDetailsScreen/$lotteryId")
                                 }
                             )
                         }
@@ -229,12 +261,19 @@ fun CampsiteOwnerHome(
                         Text("Add new Campsite")
 
                         IconButton(onClick = { onEditCampsite(null) },
-                            modifier = Modifier.size(40.dp)) {
+                            modifier = Modifier.
+                            size(40.dp)
+                                .testTag("add_campsite_button")
+
+                        )
+
+
+                        {
                             Icon(
                                 painter = painterResource(id = R.drawable.add),
                                 contentDescription = "add campsite",
-                                tint = Color.Unspecified
-                            )
+                                tint = Color.Unspecified,
+                                )
                         }
                     }
                     Text("No campsites found.", modifier = Modifier.align(Alignment.Center))
