@@ -2,7 +2,6 @@ package com.example.syntax_camping.dataClasses
 
 import com.example.syntax_camping.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.Timestamp
 import kotlin.collections.mutableListOf
 
 class lotteryRepository {
@@ -90,7 +89,7 @@ class lotteryRepository {
                 }
                     val capacityLong = document.getLong("capacity")
                     val capacity = capacityLong?.toInt()
-                    val lottery = Lottery(
+                    lottery = Lottery(
                         endTimeLottery = document.getLong("endTimeLottery")?.toLong() ?:0,
                         endTimeBooking = document.getLong("endTimeBooking")?.toLong() ?: 0,
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
@@ -109,7 +108,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
+    fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
         val winners = mutableListOf<Winner>()
@@ -136,7 +135,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
+    fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<LotteryEntry>()
@@ -164,7 +163,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
+    fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
 
       //  val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<WaitlistEntry>()
