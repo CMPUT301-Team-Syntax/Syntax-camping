@@ -1,6 +1,7 @@
 package com.example.syntax_camping
 
 import android.content.Context
+import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
@@ -13,7 +14,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
 
 // class Database
 // author: Andrew
@@ -560,6 +564,7 @@ class Database {
             }
     }
 
+
     fun createNewCampsite(campsite: Campsite) {
         db.collection("campsites")
             .document(campsite.documentId)
@@ -570,7 +575,7 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ","),    // same with images
+                    "images" to campsite.getImagesAsStrs(),    // same with images
                     "lotteryId" to ""
                 )
             )
@@ -599,10 +604,36 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
+                    "images" to campsite.getImagesAsStrs()   // same with images
                 )
             )
     }
 
+    fun uploadCampsiteImage(
+        campsiteId: String,
+        imageUri: Uri,
+        callback: (Result<String>) -> Unit
+    ) {
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("campsites/$campsiteId/${UUID.randomUUID()}")
+
+        storageRef.putFile(imageUri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    throw task.exception
+                        ?: Exception("Image upload failed")
+                }
+
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUri ->
+                callback(Result.success(downloadUri.toString()))
+            }
+            .addOnFailureListener { exception ->
+                callback(Result.failure(exception))
+            }
+    }
 
 }
