@@ -55,13 +55,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.syntax_camping.PhotoCarousel
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 
 //import androidx.compose.ui.Modifier
 
 @Composable
-fun CampsiteEditingScreen(navController: NavController, campsite: Campsite?){
+fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewModel, campsite: Campsite?){
     /*ToDo: fIRST Copy this template for all other screens, the scaffold is the same for all screens*/
     /*ToDo: SECOND add tests as well for buttons and information on actual screen using the testtag, Can be done second week*/
     //Note that campsite inof has two variable representations, one is for the labels of text fields and is labelled as display before what it displays, the others are for actually storing and changing what that variable display

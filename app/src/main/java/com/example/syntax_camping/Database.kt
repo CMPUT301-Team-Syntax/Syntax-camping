@@ -2,6 +2,7 @@ package com.example.syntax_camping
 
 import android.content.Context
 import android.provider.Settings
+import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.OwnerData
@@ -12,7 +13,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.DocumentSnapshot
-import com.example.syntax_camping.dataClasses.LotteryManager
 import com.google.firebase.functions.FirebaseFunctions
 
 // class Database
@@ -50,7 +50,7 @@ class Database {
                 callback(document.exists())   //User exists & firebase is working
             }
             .addOnFailureListener { error ->
-                println("Error checking user: ${error.message}")   //Returns an error message (aka user does not exist).
+                Log.d("UserDebug", "Error checking user: ${error.message}")   //Returns an error message (aka user does not exist).
                 callback(false)   //Returns either user failure / database failure
             }
     }
@@ -66,9 +66,9 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>): String{
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String): String{
         //The two following values allow firebase to generate a unique lottery id
-        println("inhere")
+
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
         for (campsite in campsites){
@@ -80,14 +80,16 @@ class Database {
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
-            "campsites" to campsites
+            "campsites" to campsites,
+            "name" to name,
+            "capacity" to capacity
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>, lotteryId: String){
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String){
         //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document(lotteryId)
@@ -101,59 +103,68 @@ class Database {
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
-            "campsites" to campsites
+            "campsites" to campsites,
+            "name" to name,
+            "capacity" to capacity
 
         )
         lotteryReference.update(data)
 
 
     }
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry) {
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry):Boolean {
         // 1. Wait for hasUserJoinedLottery to check the database via callback
+        var joined = false
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
 
             // If the user has already joined, stop here and don't add them again
             if (hasJoined) {
                 return@hasUserJoinedLottery
             }
-
-            val lottery = db.collection("lotteries")
-                .document(lotteryId)
-
-            // 2. Fetch the lottery document to check its status
-            lottery.get()
-                .addOnSuccessListener { lotterySnapshot ->
-                    val currentTime = System.currentTimeMillis()
-                    val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
-                    val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
-                    val status = lotterySnapshot.getString("status")
-
-                    val collectionName: String? = when (status) {
-                        "initialAccepting" -> "entries"
-                        "booking" -> "waitlist"
-                        else -> null
-                    }
-
-                    // 3. Add the user to the correct collection
-                    if (collectionName != null) {
-                        lottery.collection(collectionName)
-                            .document(entry.userId)
-                            .set(
-                                mapOf(
-                                    "userId" to entry.userId,
-                                    "joinedTimestamp" to entry.joined,
-                                    "status" to "waiting"
-                                )
-                            )
-                            .addOnSuccessListener {
-                                // Successfully added entry!
-                            }
-                            .addOnFailureListener { e ->
-                                // Handle failure if needed
-                            }
-                    }
+            hasLotteryHitCapacity(lotteryId) { notCapacity ->
+                if (notCapacity) {
+                    return@hasLotteryHitCapacity
                 }
+                val lottery = db.collection("lotteries")
+                    .document(lotteryId)
+
+                // 2. Fetch the lottery document to check its status
+                lottery.get()
+                    .addOnSuccessListener { lotterySnapshot ->
+                        val currentTime = System.currentTimeMillis()
+                        val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
+                        val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
+                        val status = lotterySnapshot.getString("status")
+
+                        val collectionName: String? = when (status) {
+                            "initialAccepting" -> "entries"
+                            "booking" -> "waitlist"
+                            else -> null
+                        }
+
+                        // 3. Add the user to the correct collection
+                        if (collectionName != null) {
+                           joined = true
+                            lottery.collection(collectionName)
+                                .document(entry.userId)
+                                .set(
+                                    mapOf(
+                                        "userId" to entry.userId,
+                                        "joinedTimestamp" to entry.joined,
+                                        "status" to "waiting"
+                                    )
+                                )
+                                .addOnSuccessListener {
+                                    // Successfully added entry!
+                                }
+                                .addOnFailureListener { e ->
+                                    // Handle failure if needed
+                                }
+                        }
+                    }
+            }
         }
+        return joined
     }
     fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry){
 
@@ -223,6 +234,57 @@ class Database {
             }
         }
     }
+    fun hasLotteryHitCapacity(lotteryId: String, onResult: (Boolean) -> Unit) {
+        val lotteryRef = db.collection("lotteries").document(lotteryId)
+
+        db.collection("lotteries")
+            .document(lotteryId)
+            .get()
+            .addOnSuccessListener { lotterySnapshot ->
+                // Adjust "capacity" to match whatever field name you use in Firestore (e.g., "maxCapacity", "capacity", etc.)
+                val status = lotterySnapshot.getString("status")
+                var listWeAreChecking = ""
+                if(status == "initialBooking") {
+                    listWeAreChecking = "entries"
+                }
+                else if(status == "Booking") {
+                        listWeAreChecking = "waitlist"
+                }
+                else {
+                    onResult(true)
+                    return@addOnSuccessListener
+                }
+
+                val capacityLong = lotterySnapshot.getLong("capacity")
+                val capacity = capacityLong?.toInt()
+
+
+                db.collection("lotteries")
+                    .document(lotteryId)
+                    .collection(listWeAreChecking)
+                    .get()
+                    .addOnSuccessListener { entriesSnapshot ->
+                        val currentCount = entriesSnapshot.size()
+
+                        // 3. Compare current count to capacity
+                        val isFull = if(capacity!= null) {
+                            currentCount >= capacity
+                        }else{
+                            false
+                            }
+                        // Pass back the results
+                        onResult(isFull)
+                    }
+                    .addOnFailureListener {
+                        onResult(false)
+                    }
+            }
+            .addOnFailureListener {
+                onResult(false)
+            }
+
+
+    }
     // updateUser
     // takes in a device id (this will be the document id), the userDetails (to store userType), and the userProfile (actually stores entrant/owner info).
     // Gives back a result of either true or false.
@@ -258,7 +320,7 @@ class Database {
                                 callback(Result.success(Unit))
                             }
                             .addOnFailureListener { error ->
-                                println("Error updating owner data: ${error.message}")
+                                Log.d("UserDebug", "Error updating owner data: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
@@ -282,7 +344,7 @@ class Database {
                             updateOwnerData()   //Update owner data after entrant succeeds updating.
                         }
                         .addOnFailureListener { error ->
-                            println("Error updating entrant data: ${error.message}")
+                            Log.d("UserDebug", "Error updating entrant data: ${error.message}")
                             callback(Result.failure(error))
                         }
                 }
@@ -291,7 +353,7 @@ class Database {
                 }
             }
             .addOnFailureListener { error ->
-                println("Error updating user: ${error.message}")
+                Log.d("UserDebug", "Error updating user: ${error.message}")
                 callback(Result.failure(error))
             }
     }
@@ -317,8 +379,8 @@ class Database {
                     .document(devId)
                     .set(
                         mapOf(
-                            "entrantReservationIds" to emptyList<String>(),
-                            "entrantLotteryEntryIds" to emptyList<String>()
+                            "entrantReservationIds" to (user.entrantData?.reservationIds ?: emptyList<String>()),
+                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>())
                         )
                     )
                     .addOnSuccessListener {
@@ -327,26 +389,27 @@ class Database {
                             .document(devId)
                             .set(
                                 mapOf(
-                                    "lotteryIds" to emptyList<String>(),
-                                    "ownerCampsiteIds" to emptyList<String>()
+                                    "lotteryIds" to (user.ownerData?.lotteryIds ?: emptyList<String>()),
+                                    "ownerCampsiteIds" to (user.ownerData?.campsiteIds ?: emptyList<String>())
                                 )
                             )
                             .addOnSuccessListener {
                                 //All documents successfully created!
+                                Log.d("UserDebug", "User Created in Firebase")
                                 callback(Result.success(Unit))
                             }
                             .addOnFailureListener { error ->
-                                println("Error creating document for campsite owner: ${error.message}")
+                                Log.d("UserDebug", "Error creating document for campsite owner: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
                     .addOnFailureListener { error ->
-                        println("Error creating document for entrant: ${error.message}")
+                        Log.d("UserDebug", "Error creating document for entrant: ${error.message}")
                         callback(Result.failure(error))
                     }
             }
             .addOnFailureListener { error ->
-                println("Error creating document for user: ${error.message}")
+                Log.d("UserDebug", "Error creating document for user: ${error.message}")
                 callback(Result.failure(error))
             }
     }
@@ -423,17 +486,17 @@ class Database {
                                 callback(Result.success(fetchedUser))
                             }
                             .addOnFailureListener { error ->
-                                println("Error fetching campsite owner data: ${error.message}")
+                                Log.d("UserDebug", "Error fetching campsite owner data: ${error.message}")
                                 callback(Result.failure(error))
                             }
                     }
                     .addOnFailureListener { error ->
-                        println("Error fetching entrant data: ${error.message}")
+                        Log.d("UserDebug", "Error fetching entrant data: ${error.message}")
                         callback(Result.failure(error))
                     }
             }
             .addOnFailureListener { error ->
-                println("Error fetching user details: ${error.message}")
+                Log.d("UserDebug", "Error fetching user details: ${error.message}")
                 callback(Result.failure(error))   //Database request failed to retrieve user.
             }
     }
@@ -483,7 +546,7 @@ class Database {
                 }
             }
             .addOnFailureListener { error ->
-                println("Error refreshing user cache: ${error.message}")
+                Log.d("UserDebug", "Error refreshing user cache: ${error.message}")
                 callback(false)
             }
     }
@@ -498,11 +561,22 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
+                    "images" to campsite.getImagesAsStrs().joinToString(separator = ","),    // same with images
+                    "lotteryId" to ""
                 )
             )
     }
-
+    fun updateCampsiteLotteryId(documentId: String,lotteryId:String){
+        db.collection("campsites")
+            .document(documentId)
+            .update("lotteryId", lotteryId)
+            .addOnSuccessListener {
+                // Optional: Successfully updated
+            }
+            .addOnFailureListener { e ->
+                // Optional: Handle the error
+            }
+    }
     fun updateCampsite(campsite: Campsite) {
         db.collection("campsites")
             .document(campsite.documentId)

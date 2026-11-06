@@ -1,16 +1,7 @@
 package com.example.syntax_camping.dataClasses
 
-import android.icu.util.Calendar
 import com.example.syntax_camping.Campsite
-import java.sql.Time
-import java.sql.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.firestore.FieldValue
-import java.util.Collections
-import kotlin.math.absoluteValue
-import kotlin.random.Random
-import android.util.Log
 import com.example.syntax_camping.Database
 
 /**
@@ -20,8 +11,8 @@ import com.example.syntax_camping.Database
  * Each lottery manager objects should have its own associated campsite and capacity.
  */
 
-
-class LotteryManager (
+//THis class is not in use rn, it will be for reservations later
+class ReservationManager (
     val campsite: Campsite,
     val lotteryId: String,
     var capacity: Int,

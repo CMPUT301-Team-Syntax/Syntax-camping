@@ -36,13 +36,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.User
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.TopBar
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
 
     Scaffold(
 
@@ -109,26 +110,26 @@ fun ProfileScreen(navController: NavController) {
                     {
 
                         Text(
-                            text = " Name ",
+                            text = " Name: " + userViewModel.currentUser?.name,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
 
                         Text(
-                            text = " number",
+                            text = " User ID: " + userViewModel.deviceId,
                             fontSize = 12.sp,
                             color = Color.Black
                         )
 
                         Text(
-                            text = " gmail",
+                            text = " Gmail " + userViewModel.currentUser?.email,
                             fontSize = 12.sp,
                             color = Color.DarkGray
                         )
 
                         Text(
-                            text = "number",
+                            text = " Phone Number: " + userViewModel.currentUser?.phoneNumber,
                             fontSize = 12.sp,
                             color = Color.DarkGray
                         )

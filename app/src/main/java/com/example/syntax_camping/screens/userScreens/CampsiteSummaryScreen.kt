@@ -25,10 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.CampsiteCard
 
 @Composable
-fun CampsiteSummaryScreen(navController: NavController){
+fun CampsiteSummaryScreen(navController: NavController, userViewModel: UserViewModel){
 
 
     Scaffold(
