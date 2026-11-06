@@ -6,8 +6,64 @@ import com.google.firebase.Timestamp
 import kotlin.collections.mutableListOf
 
 class lotteryRepository {
+    val db = FirebaseFirestore.getInstance()
+    fun getLotteries(callback: ( MutableList<Lottery>) -> Unit){
+        db.collection("lotteries")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val lotteriesList = mutableListOf<Lottery>()
+
+                // Loop through every document in the "lotteries" collection
+                for (document in querySnapshot) {
+                    val campsites = mutableListOf<Campsite>()
+
+                    // 1. Extract the array of maps from this specific document
+                    val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
+
+                    for (campsiteItem in campsitesReference) {
+                        val campsiteMap = campsiteItem as? Map<*, *> ?: continue
+                        val campsite = Campsite(
+                            documentId = campsiteMap["documentId"] as? String ?: "",
+                            name = campsiteMap["name"] as? String ?: "",
+                            location = campsiteMap["location"] as? String ?: "",
+                            description = campsiteMap["description"] as? String ?: "",
+                            maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
+                            tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
+                            rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
+                            images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
+                        )
+                        campsites.add(campsite)
+                    }
+
+                    val capacityLong = document.getLong("capacity")
+                    val capacity = capacityLong?.toInt()
+
+                    // 2. Build the Lottery object for this document
+                    val lottery = Lottery(
+                        endTimeLottery = document.getLong("endTimeLottery") ?: 0L,
+                        endTimeBooking = document.getLong("endTimeBooking") ?: 0L,
+                        numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
+                        campsites = campsites,
+                        capacity = capacity,
+                        name = document.getString("name") ?: ""
+                    ).apply {
+                        this.lotteryId = document.id
+                    }
+
+                    // 3. Add it to our master list
+                    lotteriesList.add(lottery)
+                }
+
+                // 4. Return the full list via callback once all documents are processed
+                callback(lotteriesList)
+            }
+            .addOnFailureListener {
+                // Return an empty list if the query fails
+                callback(mutableListOf())
+            }
+    }
     fun getLottery(lotteryId: String, callback: (Lottery?)->Unit){
-        val db = FirebaseFirestore.getInstance()
+
         var lottery: Lottery?
         lottery = null
         val campsites= mutableListOf<Campsite>()
@@ -17,25 +73,29 @@ class lotteryRepository {
             .addOnSuccessListener { document ->
 
                 val campsitesReference = document.get("campsites") as? MutableList<Campsite> ?: emptyList<Campsite>()
-                for (campsiteReference in campsitesReference){
+                for (campsiteItem in campsitesReference){
+                    val campsiteMap = campsiteItem as? Map<*, *> ?: continue
                     val campsite = Campsite(
-                        documentId = document.id,
-                        name = document.getString("name") ?: "",
-                        location = document.getString("location") ?: "",
-                        description = document.getString("description") ?: "",
-                        maxOcc = document.getLong("maxOccupancy")?.toInt() ?: 0,
-                        tags = (document.getString("tags") ?: "").split(",").toMutableList(),
-                        document.getDouble("rating") ?: 0.00,
-                        images = (document.getString("images") ?: "").split(",").toMutableList()
+                        documentId = campsiteMap["documentId"] as? String ?: "",
+                        name = campsiteMap["name"] as? String ?: "",
+                        location = campsiteMap["location"] as? String ?: "",
+                        description = campsiteMap["description"] as? String ?: "",
+                        maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
+                        tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
+                        rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
+                        images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
                     )
                     campsites.add(campsite)
                 }
-
+                    val capacityLong = document.getLong("capacity")
+                    val capacity = capacityLong?.toInt()
                     val lottery = Lottery(
                         endTimeLottery = document.getLong("endTimeLottery")?.toLong() ?:0,
                         endTimeBooking = document.getLong("endTimeBooking")?.toLong() ?: 0,
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
-                        campsites
+                        campsites,
+                        capacity = capacity,
+                        name= document.getString("name")?: ""
                     ).apply {
                         this.lotteryId = document.id
                     }
@@ -49,7 +109,7 @@ class lotteryRepository {
     }
     private fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
 
-        val db = FirebaseFirestore.getInstance()
+       // val db = FirebaseFirestore.getInstance()
         val winners = mutableListOf<Winner>()
 
         db.collection("lotteries")
@@ -76,7 +136,7 @@ class lotteryRepository {
     }
     private fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
 
-        val db = FirebaseFirestore.getInstance()
+       // val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<LotteryEntry>()
 
         db.collection("lotteries")
@@ -104,7 +164,7 @@ class lotteryRepository {
     }
     private fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
 
-        val db = FirebaseFirestore.getInstance()
+      //  val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<WaitlistEntry>()
 
         db.collection("lotteries")

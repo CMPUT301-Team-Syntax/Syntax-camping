@@ -10,10 +10,11 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.ZoneId
 //endTimeLottery and endTimeBooking can be found by feedinmg year monthd,day,hour minute into an object of the date to long converter class
-class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>) {
+class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>, capacity: Int?, name: String) {
     var lotteryId = ""
     val longDateConverter = dateConverterToLong()
-
+    var capacity = capacity
+    var name = name
     var endTimeLottery = endTimeLottery
     var endTimeBooking = endTimeBooking
     lateinit var readableEndTimeLottery: Timestamp
@@ -38,7 +39,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
             return false
         }
 
-        lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners,campsites)
+        lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners,campsites,capacity, name)
         for (campsite in campsites){
             campsite.updateLotteryId(lotteryId)
             db.updateCampsiteLotteryId(campsite.documentId, lotteryId)
@@ -56,9 +57,10 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
         return readableEndTimeBooking
     }
 
-    fun addEntry(entry: LotteryEntry) {
+    fun addEntry(entry: LotteryEntry):Boolean {
 
-        db.addLotteryEntry( lotteryId, entry)
+        val joined = db.addLotteryEntry( lotteryId, entry)
+        return joined
     }
 
     //still implement TODO

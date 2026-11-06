@@ -66,9 +66,9 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>): String{
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String): String{
         //The two following values allow firebase to generate a unique lottery id
-        println("inhere")
+
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
         for (campsite in campsites){
@@ -80,14 +80,16 @@ class Database {
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
-            "campsites" to campsites
+            "campsites" to campsites,
+            "name" to name,
+            "capacity" to capacity
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>, lotteryId: String){
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String){
         //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document(lotteryId)
@@ -101,59 +103,68 @@ class Database {
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
-            "campsites" to campsites
+            "campsites" to campsites,
+            "name" to name,
+            "capacity" to capacity
 
         )
         lotteryReference.update(data)
 
 
     }
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry) {
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry):Boolean {
         // 1. Wait for hasUserJoinedLottery to check the database via callback
+        var joined = false
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
 
             // If the user has already joined, stop here and don't add them again
             if (hasJoined) {
                 return@hasUserJoinedLottery
             }
-
-            val lottery = db.collection("lotteries")
-                .document(lotteryId)
-
-            // 2. Fetch the lottery document to check its status
-            lottery.get()
-                .addOnSuccessListener { lotterySnapshot ->
-                    val currentTime = System.currentTimeMillis()
-                    val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
-                    val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
-                    val status = lotterySnapshot.getString("status")
-
-                    val collectionName: String? = when (status) {
-                        "initialAccepting" -> "entries"
-                        "booking" -> "waitlist"
-                        else -> null
-                    }
-
-                    // 3. Add the user to the correct collection
-                    if (collectionName != null) {
-                        lottery.collection(collectionName)
-                            .document(entry.userId)
-                            .set(
-                                mapOf(
-                                    "userId" to entry.userId,
-                                    "joinedTimestamp" to entry.joined,
-                                    "status" to "waiting"
-                                )
-                            )
-                            .addOnSuccessListener {
-                                // Successfully added entry!
-                            }
-                            .addOnFailureListener { e ->
-                                // Handle failure if needed
-                            }
-                    }
+            hasLotteryHitCapacity(lotteryId) { notCapacity ->
+                if (notCapacity) {
+                    return@hasLotteryHitCapacity
                 }
+                val lottery = db.collection("lotteries")
+                    .document(lotteryId)
+
+                // 2. Fetch the lottery document to check its status
+                lottery.get()
+                    .addOnSuccessListener { lotterySnapshot ->
+                        val currentTime = System.currentTimeMillis()
+                        val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
+                        val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
+                        val status = lotterySnapshot.getString("status")
+
+                        val collectionName: String? = when (status) {
+                            "initialAccepting" -> "entries"
+                            "booking" -> "waitlist"
+                            else -> null
+                        }
+
+                        // 3. Add the user to the correct collection
+                        if (collectionName != null) {
+                           joined = true
+                            lottery.collection(collectionName)
+                                .document(entry.userId)
+                                .set(
+                                    mapOf(
+                                        "userId" to entry.userId,
+                                        "joinedTimestamp" to entry.joined,
+                                        "status" to "waiting"
+                                    )
+                                )
+                                .addOnSuccessListener {
+                                    // Successfully added entry!
+                                }
+                                .addOnFailureListener { e ->
+                                    // Handle failure if needed
+                                }
+                        }
+                    }
+            }
         }
+        return joined
     }
     fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry){
 
@@ -222,6 +233,57 @@ class Database {
                 }
             }
         }
+    }
+    fun hasLotteryHitCapacity(lotteryId: String, onResult: (Boolean) -> Unit) {
+        val lotteryRef = db.collection("lotteries").document(lotteryId)
+
+        db.collection("lotteries")
+            .document(lotteryId)
+            .get()
+            .addOnSuccessListener { lotterySnapshot ->
+                // Adjust "capacity" to match whatever field name you use in Firestore (e.g., "maxCapacity", "capacity", etc.)
+                val status = lotterySnapshot.getString("status")
+                var listWeAreChecking = ""
+                if(status == "initialBooking") {
+                    listWeAreChecking = "entries"
+                }
+                else if(status == "Booking") {
+                        listWeAreChecking = "waitlist"
+                }
+                else {
+                    onResult(true)
+                    return@addOnSuccessListener
+                }
+
+                val capacityLong = lotterySnapshot.getLong("capacity")
+                val capacity = capacityLong?.toInt()
+
+
+                db.collection("lotteries")
+                    .document(lotteryId)
+                    .collection(listWeAreChecking)
+                    .get()
+                    .addOnSuccessListener { entriesSnapshot ->
+                        val currentCount = entriesSnapshot.size()
+
+                        // 3. Compare current count to capacity
+                        val isFull = if(capacity!= null) {
+                            currentCount >= capacity
+                        }else{
+                            false
+                            }
+                        // Pass back the results
+                        onResult(isFull)
+                    }
+                    .addOnFailureListener {
+                        onResult(false)
+                    }
+            }
+            .addOnFailureListener {
+                onResult(false)
+            }
+
+
     }
     // updateUser
     // takes in a device id (this will be the document id), the userDetails (to store userType), and the userProfile (actually stores entrant/owner info).
