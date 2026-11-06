@@ -67,7 +67,8 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
     }
 
     //still implement TODO
-    fun removeEntry(entry: LotteryEntry) {
-        db.removeLotteryEntry( lotteryId, entry)
+    fun removeEntry(entry: LotteryEntry, onResult: (Boolean) -> Unit) {
+        db.removeLotteryEntry( lotteryId, entry){ success ->
+            onResult(success)}
     }
 }

@@ -39,7 +39,8 @@ import androidx.compose.runtime.setValue
 @Composable
 fun CampsiteCardOwner(campsite: Campsite,
                       onClick:() -> Unit,
-                      onUpdateClick: (() -> Unit)? = null) {
+                      onUpdateClick: (() -> Unit)? = null,
+                      onViewLotClick: ((String) -> Unit)? = null) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -163,7 +164,7 @@ fun CampsiteCardOwner(campsite: Campsite,
                             text = { Text("View Lotteries") },
                             onClick = {
                                 menuExpanded = false
-                                onUpdateClick() //fake implementation
+                                onViewLotClick?.invoke(campsite.lotteryId!!) //fake implementation
                             }
                         )
                     }

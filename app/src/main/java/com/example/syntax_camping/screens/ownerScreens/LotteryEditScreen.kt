@@ -57,12 +57,14 @@ fun LotteryEditScreen(
     var numWinners by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
+    var capacity by remember { mutableStateOf("") }
     val db = Database()
 
     LaunchedEffect(editingLottery?.lotteryId) {
         if (editingLottery != null) {
             numWinners = editingLottery.numWinners.toString()
             name = editingLottery.name
+            capacity = editingLottery.capacity.toString()
 
             val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
             startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
@@ -227,6 +229,16 @@ fun LotteryEditScreen(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = capacity,
+                        onValueChange = { capacity = it },
+                        label = { Text("Capacity") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
             }
 
             CampsiteSelectorDropdown(
@@ -245,7 +257,7 @@ fun LotteryEditScreen(
                 onClick = {
                     val (isSuccess, errorText) = validateAndCreateLottery(name,
                         startDay, startMonth, startYear, startHour, startMinute,
-                        finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,
+                        finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,capacity,
                         selectedCampsites
                     )
 

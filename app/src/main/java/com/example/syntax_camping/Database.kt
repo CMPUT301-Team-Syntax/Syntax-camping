@@ -179,10 +179,11 @@ class Database {
         }
 
     }
-    fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry){
+    fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean) -> Unit){
 
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
             if (!hasJoined) {
+                onComplete(false) // Trigger callback
                 return@hasUserJoinedLottery
             }
 
@@ -196,6 +197,7 @@ class Database {
 
                     // If they are a winner, stop here and do not delete
                     if (winnerSnapshot.exists()) {
+                        onComplete(false) // Trigger callback
                         return@addOnSuccessListener
                     }
 
@@ -216,11 +218,16 @@ class Database {
                                     .document(entry.userId)
                                     .delete()
                                     .addOnSuccessListener {
+                                        onComplete(true) // SUCCESS! Tell the UI.
 
                                     }
                                     .addOnFailureListener { e ->
+                                        onComplete(false) // FAILED! Tell the UI
 
                                     }
+                            }
+                            else {
+                                onComplete(false)
                             }
                         }
                 }

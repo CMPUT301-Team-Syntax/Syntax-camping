@@ -16,6 +16,7 @@ fun validateAndCreateLottery(
     finalHour: String,
     finalMinute: String,
     numWinnersText: String,
+    capacity: String,
     selectedCampsites: MutableList<Campsite>
 
 ): Pair<Boolean, String>
@@ -35,6 +36,11 @@ fun validateAndCreateLottery(
     val fMin = finalMinute.toIntOrNull()
 
     val parsedWinners = numWinnersText.toIntOrNull()
+    val lotCapacity = if (capacity.isEmpty()){
+        null} else{
+        capacity.toIntOrNull()
+        }
+
 
     if (myName.isEmpty()){
         return Pair(false, "No name given to lottery")
@@ -67,7 +73,7 @@ fun validateAndCreateLottery(
         endTimeBooking = endTimeBooking,
         numWinners = parsedWinners,
         campsites = selectedCampsites,
-        capacity = 0,
+        capacity = lotCapacity,
         name = myName,
         status = null
     )

@@ -19,13 +19,13 @@ import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserViewModel
-import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.screens.ownerScreens.LotteryDetailsScreen
 
 @Composable
 fun SyntaxCamping(
@@ -100,9 +100,7 @@ fun SyntaxCamping(
                 }
             )
         }
-        composable("campsiteLottery"){
-            CampsiteDetailsLotteryScreen(navController, userViewModel)
-        }
+
         composable("campsiteMessages"){
             CampsiteMessagesScreen(navController, userViewModel)
         }
@@ -116,9 +114,18 @@ fun SyntaxCamping(
          )
         }
 
-        composable ("LotteryDetailsScreen"){backStackEntry ->
+        composable("LotteryDetailsScreen/{lotteryId}") { backStackEntry ->
             val lotteryId = backStackEntry.arguments?.getString("lotteryId")
-            // Call your future Lottery Info View here and pass the lotteryId!
+            LotteryDetailsScreen(
+                navController = navController,
+                lotteryId = lotteryId,
+                userViewModel = userViewModel,
+                onEditLottery = { lotteryToEdit ->
+                    selCampsite = null                 // editing an existing lottery, nothing to preselect
+                    selectedLottery = lotteryToEdit
+                    navController.navigate("CreateLottery")
+                }
+            )
         }
 
         composable( "UpdateCamp") {

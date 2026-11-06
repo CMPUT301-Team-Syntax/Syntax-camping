@@ -52,7 +52,7 @@ fun LotteryCard(lottery: Lottery,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Lottery: ${lottery.lotteryId.takeIf { it.isNotBlank() } ?: "Pending ID"}",
+                    text = "Lottery: ${lottery.name.takeIf { it.isNotBlank() } ?: "Pending ID"}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
