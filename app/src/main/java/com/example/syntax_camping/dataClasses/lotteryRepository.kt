@@ -108,7 +108,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
+    fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
         val winners = mutableListOf<Winner>()
@@ -135,7 +135,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
+    fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<LotteryEntry>()
@@ -163,7 +163,7 @@ class lotteryRepository {
             }
 
     }
-    private fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
+    fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
 
       //  val db = FirebaseFirestore.getInstance()
         val entries = mutableListOf<WaitlistEntry>()
