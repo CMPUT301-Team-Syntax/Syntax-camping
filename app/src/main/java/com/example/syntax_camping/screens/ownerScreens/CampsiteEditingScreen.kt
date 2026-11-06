@@ -425,7 +425,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                         newTags,
                                         0.0
                                     )
-                                    //Addds images to Photos. Deleting images will be handled with the carousel, to be implemented TODO
+                                    //Addds images to Photos. Deleting images will be handled with the carousel
                                     if (selectedPhotos.isNotEmpty()){
                                         for (photo in selectedPhotos) {
                                             newCampsite.addImage(photo)

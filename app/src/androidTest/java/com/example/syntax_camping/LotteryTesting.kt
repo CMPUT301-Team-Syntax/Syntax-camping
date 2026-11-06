@@ -1,5 +1,5 @@
 package com.example.syntax_camping
-/*
+
 import com.google.firebase.firestore.FirebaseFirestore
 import org.junit.Assert
 import org.junit.Before
@@ -9,18 +9,24 @@ import android.net.Uri
 import com.google.firebase.firestore.FieldPath.documentId
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.google.firebase.Timestamp
+import java.sql.Timestamp as jsqlTimestamp
+
+
+import com.example.syntax_camping.dataClasses.LotteryEntry
 
 class LotteryTesting {
     private lateinit var testCampsite: Campsite
     private lateinit var db: Database
     private lateinit var testLottery: Lottery
-    private lateinit var lotteryRepository: lotteryRepository
+    private lateinit var lr: lotteryRepository
+
 
     // Set up a new wizard before every single test
     @Before
     fun setUp() {
 
-        lotteryRepository = lotteryRepository()
+        lr= lotteryRepository()
         db = Database()
         val documentID = FirebaseFirestore.getInstance()
             .collection("campsites")
@@ -48,15 +54,20 @@ class LotteryTesting {
     @Test
     fun testLotteryCreationInDbAndLotteryRepsoitorygetLottery() {
         testLottery.createLotteryTimer()
-        lotteryRepository.getLottery(testLottery.lotteryId){ lottery ->
-            assert(lottery.endTimeLottery == testLottery.endTimeLottery && lottery.endTimeBooking == testLottery.endTimeBooking && lottery.name == testLottery.name && (lottery))
+        lr.getLottery(testLottery.lotteryId){ lottery ->
+            if( lottery == null){
+            throw AssertionError("Lottery was null")
+        }
+
+
+            assert((lottery.endTimeLottery == testLottery.endTimeLottery) && (lottery.endTimeBooking == testLottery.endTimeBooking) && (lottery.name == testLottery.name) && (lottery.numWinners == testLottery.numWinners) && (lottery.capacity == testLottery.capacity))
         }
 
 
 
         //cleanup
-        FirebaseFirestore.getInstance().collection("campsites")
-            .document(testCampsite.documentId)
+        FirebaseFirestore.getInstance().collection("lotteries")
+            .document(testLottery.lotteryId)
             .delete()
             .addOnSuccessListener {
 
@@ -66,45 +77,23 @@ class LotteryTesting {
             }
     }
     @Test
-    fun testUriToString(){
-        val originalPhotos = testCampsite.images
+    fun testLotteryUpdateAndMulitLottery() {
+        testLottery.createLotteryTimer()
+        val campsiteList = mutableListOf<Campsite>(testLottery.campsites[0], Campsite( "docId","campnamene","campLocation2","descriptive description2",900,mutableListOf<String>("wabbafett"),1.0))
+        db.updateDrawTimer(testLottery.endTimeLottery+10000, testLottery.endTimeBooking+200000, 1, campsiteList, 3, "newName", "initialBooking")
 
-
-        val assertUri: Uri =
-            Uri.parse("app/src/androidTest/assets/Campsitetesterphotos/IMG_6503.jpeg")
-        val assertUri2: Uri =
-            Uri.parse("app/src/androidTest/assets/Campsitetesterphotos/IMG_7175.jpeg")
-        testCampsite.addImage(assertUri)
-        testCampsite.addImage(assertUri2)
-        val stringRep = testCampsite.getImagesAsStrs()
-        assert((testCampsite.images != stringRep) && (stringRep.isNotEmpty()) && (stringRep[0] is String))
-
-
-    }
-
-    @Test
-    fun  testUpdatingWithDatabase(){
-        val originalPhotos = testCampsite.images
-
-
-
-
-
-        testCampsite.updateName("Better Name TMTMTMTM")
-        testCampsite.updateLocation("We moved. Deal with it")
-        testCampsite.updateDescription("hip, fresh and new description")
-        testCampsite.updateMaxOcc(1)
-        testCampsite.updateTag(mutableListOf("woooooooooooo new tag"))
-        db.updateCampsite(testCampsite)
-        var campsites = CampsiteRepository.getCampsites()
-        for (campsite in campsites) {
-            if (campsite.documentId == testCampsite.documentId) {
+        lr.getLottery(testLottery.lotteryId) { lottery ->
+            if (lottery == null) {
+                throw AssertionError("Lottery was null")
             }
-            assert((campsite.name == "Better Name TMTMTMTM") && (campsite.location == "We moved. Deal with it") && (campsite.description == "hip, fresh and new description") && (campsite.maxOcc == 1) && (campsite.tags[0] == "woooooooooooo new tag"))
+
+
+            assert((lottery.endTimeLottery == testLottery.endTimeLottery+10000) && (lottery.endTimeBooking == testLottery.endTimeBooking+200000) && (lottery.name == "newName") && (lottery.numWinners == 1) && (lottery.capacity == 3))
         }
-        //cleanup
-        FirebaseFirestore.getInstance().collection("campsites")
-            .document(testCampsite.documentId)
+
+            //cleanup
+        FirebaseFirestore.getInstance().collection("lotteries")
+            .document(testLottery.lotteryId)
             .delete()
             .addOnSuccessListener {
 
@@ -113,7 +102,44 @@ class LotteryTesting {
                 // Handle any potential deletion failure if needed
             }
     }
+    @Test
+    fun testLotteryJoin(){
 
+        testLottery.createLotteryTimer()
+        val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
+        testLottery.addEntry(littleLotteryGuy)
+        lr.getEntries(testLottery.lotteryId){ entries ->
+            if (entries == null) {
+                throw AssertionError("entries was null")
+            }
+
+
+            assert(entries == mutableListOf<LotteryEntry>(littleLotteryGuy))
+        }
+        FirebaseFirestore.getInstance().collection("lotteries")
+            .document(testLottery.lotteryId)
+            .delete()
+            .addOnSuccessListener {
+
+            }
+            .addOnFailureListener { e ->
+                // Handle any potential deletion failure if needed
+            }
+    }
+    @Test
+    fun testGetReadables(){
+
+
+        val readableLottery = testLottery.getReadableLotteryEndTime()
+        val readableBooking = testLottery.getReadableBookingEndTime()
+        assert((readableLottery is jsqlTimestamp) && (readableBooking is jsqlTimestamp))
+        }
 }
 
- */
+//Test seeing if it will let me make an out of bounds lottery
+
+//test seeing if it will let me join a lottery at capacity
+
+//test seeing if it will let me join a lottery I already did
+
+//test removing from a lottery

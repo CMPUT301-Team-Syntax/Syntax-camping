@@ -58,10 +58,12 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
         return readableEndTimeBooking
     }
 
-    fun addEntry(entry: LotteryEntry):Boolean {
+    fun addEntry(entry: LotteryEntry, onResult: (Boolean) ->Unit){
 
-        val joined = db.addLotteryEntry( lotteryId, entry)
-        return joined
+       db.addLotteryEntry( lotteryId, entry) { success ->
+           onResult(success)
+
+       }
     }
 
     //still implement TODO

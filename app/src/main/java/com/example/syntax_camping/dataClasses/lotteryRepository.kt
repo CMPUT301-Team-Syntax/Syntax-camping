@@ -89,7 +89,7 @@ class lotteryRepository {
                 }
                     val capacityLong = document.getLong("capacity")
                     val capacity = capacityLong?.toInt()
-                    val lottery = Lottery(
+                    lottery = Lottery(
                         endTimeLottery = document.getLong("endTimeLottery")?.toLong() ?:0,
                         endTimeBooking = document.getLong("endTimeBooking")?.toLong() ?: 0,
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
