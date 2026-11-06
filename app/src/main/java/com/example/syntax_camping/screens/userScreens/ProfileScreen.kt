@@ -110,26 +110,26 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
                     {
 
                         Text(
-                            text = " Name ",
+                            text = " Name: " + userViewModel.currentUser?.name,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
 
                         Text(
-                            text = " number",
+                            text = " User ID: " + userViewModel.deviceId,
                             fontSize = 12.sp,
                             color = Color.Black
                         )
 
                         Text(
-                            text = " gmail",
+                            text = " Gmail " + userViewModel.currentUser?.email,
                             fontSize = 12.sp,
                             color = Color.DarkGray
                         )
 
                         Text(
-                            text = "number",
+                            text = " Phone Number: " + userViewModel.currentUser?.phoneNumber,
                             fontSize = 12.sp,
                             color = Color.DarkGray
                         )

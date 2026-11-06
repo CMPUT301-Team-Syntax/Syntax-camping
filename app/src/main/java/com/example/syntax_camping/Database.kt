@@ -13,7 +13,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.DocumentSnapshot
-
 import com.google.firebase.functions.FirebaseFunctions
 
 // class Database
@@ -380,8 +379,8 @@ class Database {
                     .document(devId)
                     .set(
                         mapOf(
-                            "entrantReservationIds" to emptyList<String>(),
-                            "entrantLotteryEntryIds" to emptyList<String>()
+                            "entrantReservationIds" to (user.entrantData?.reservationIds ?: emptyList<String>()),
+                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>())
                         )
                     )
                     .addOnSuccessListener {
@@ -390,8 +389,8 @@ class Database {
                             .document(devId)
                             .set(
                                 mapOf(
-                                    "lotteryIds" to emptyList<String>(),
-                                    "ownerCampsiteIds" to emptyList<String>()
+                                    "lotteryIds" to (user.ownerData?.lotteryIds ?: emptyList<String>()),
+                                    "ownerCampsiteIds" to (user.ownerData?.campsiteIds ?: emptyList<String>())
                                 )
                             )
                             .addOnSuccessListener {
