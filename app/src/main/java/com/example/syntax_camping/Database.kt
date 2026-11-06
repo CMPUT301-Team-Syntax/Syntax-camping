@@ -113,17 +113,19 @@ class Database {
 
 
     }
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry):Boolean {
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean)->Unit){
         // 1. Wait for hasUserJoinedLottery to check the database via callback
-        var joined = false
+
         hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
 
             // If the user has already joined, stop here and don't add them again
             if (hasJoined) {
+                onComplete(false)
                 return@hasUserJoinedLottery
             }
             hasLotteryHitCapacity(lotteryId) { notCapacity ->
                 if (notCapacity) {
+                    onComplete(false)
                     return@hasLotteryHitCapacity
                 }
                 val lottery = db.collection("lotteries")
@@ -145,7 +147,7 @@ class Database {
 
                         // 3. Add the user to the correct collection
                         if (collectionName != null) {
-                           joined = true
+
                             lottery.collection(collectionName)
                                 .document(entry.userId)
                                 .set(
@@ -156,16 +158,22 @@ class Database {
                                     )
                                 )
                                 .addOnSuccessListener {
-                                    // Successfully added entry!
+                                    onComplete(true)
                                 }
                                 .addOnFailureListener { e ->
-                                    // Handle failure if needed
+                                    onComplete(false)
                                 }
+                        }else{
+                            onComplete(false)
+
                         }
+                    }.addOnFailureListener{
+                        onComplete(false)
                     }
             }
+
         }
-        return joined
+
     }
     fun removeLotteryEntry(lotteryId: String, entry: LotteryEntry){
 
@@ -568,6 +576,7 @@ class Database {
             )
     }
     fun updateCampsiteLotteryId(documentId: String,lotteryId:String){
+
         db.collection("campsites")
             .document(documentId)
             .update("lotteryId", lotteryId)
@@ -579,6 +588,8 @@ class Database {
             }
     }
     fun updateCampsite(campsite: Campsite) {
+
+
         db.collection("campsites")
             .document(campsite.documentId)
             .update(

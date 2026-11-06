@@ -304,7 +304,9 @@ fun CampsiteDetailsScreen(navController: NavController,
                             LotteryJoinState.CAN_ENTER_LOTTERY, LotteryJoinState.CAN_JOIN_WAITLIST -> {
                                 Button(
                                     onClick = { campsite.lotteryId?.let { nonNullLotteryId ->
-                                        db.addLotteryEntry(lotteryId = nonNullLotteryId, LotteryEntry(userId = userViewModel.deviceId, Timestamp.now())) }
+                                        db.addLotteryEntry(lotteryId = nonNullLotteryId, LotteryEntry(userId = userViewModel.deviceId, Timestamp.now())) {success ->
+                                            //TODO
+                                        }}
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFFF2C9C9) // button color
