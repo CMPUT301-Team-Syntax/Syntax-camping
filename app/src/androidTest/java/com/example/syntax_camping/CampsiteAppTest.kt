@@ -2,9 +2,11 @@ package com.example.syntax_camping//package com.example.syntax_camping
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,11 +34,80 @@ class CampsiteAppTest {
             .onNodeWithTag("tab_campsiteshome")
             .performClick()
 
+
+        composeTestRule.waitForIdle()
+
+        val isEmptyState = composeTestRule
+            .onAllNodesWithTag("add_campsite_empty_button")
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+
+        if (isEmptyState) {
+            // Click the direct empty-state button
+            composeTestRule
+                .onNodeWithTag("add_campsite_empty_button")
+                .performClick()
+        } else {
+            // Open three-dots menu top right, then click "Add Campsite"
+            composeTestRule
+                .onNodeWithTag("owner_three_dots_menu")
+                .performClick()
+
+            composeTestRule
+                .onNodeWithTag("add_campsite_menu_item")
+                .performClick()
+        }
+
+        // 3. Fill in top fields
+        composeTestRule
+            .onNodeWithTag("campsite_name_input")
+            .performTextInput("Pine Haven Camp")
+
+        composeTestRule
+            .onNodeWithTag("campsite_location_input")
+            .performTextInput("Banff Park")
+
+        composeTestRule
+            .onNodeWithTag("campsite_MaximumOccupant_input")
+            .performTextInput("10")
+
+        composeTestRule
+            .onNodeWithTag("campsite_description_input")
+            .performTextInput("A cozy campsite in the mountains.")
+
+// 4. Scroll to tag input AND add_tag_button before tapping
+        composeTestRule
+            .onNodeWithTag("campsite_Tag_input")
+            .performScrollTo()// <--- MUST SCROLL FIRST
+            .performTextInput("Scenic")
+
+        composeTestRule
+            .onNodeWithTag("add_tag_button")
+            .performScrollTo()// <--- MUST SCROLL FIRST (so it doesn't click CustomBottomBar!)
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+// 5. Scroll to create button and submit
+        composeTestRule
+            .onNodeWithTag("create_campsite_button")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+// 6. Verify newly created campsite name is displayed
+        composeTestRule
+            .onNodeWithText("Pine Haven Camp")
+            .assertIsDisplayed()
+
+
     }
-
-
-
 }
+
+
+
+
 
 
 //        composeTestRule.setContent {
