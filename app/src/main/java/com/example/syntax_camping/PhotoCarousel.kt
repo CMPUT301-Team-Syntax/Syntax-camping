@@ -75,7 +75,7 @@ class PhotoCarousel(images: List<Uri>) {
     //This composable takes as argument an instance of the photocarousel class so it can call the other functions in the clas on itself, has it's variables tracked within it
 
     @Composable
-    fun displayCarousel(modifier: Modifier = Modifier, photoCarousel: PhotoCarousel) {
+    fun displayCarousel(modifier: Modifier = Modifier, photoCarousel: PhotoCarousel): Uri? {
         //Variable tracked by the display method(the photo it is showing
         var currPhoto  by remember { mutableStateOf(photoCarousel.getCurrPhoto()) }
         Row(
@@ -146,6 +146,12 @@ class PhotoCarousel(images: List<Uri>) {
 
             }
 
+        }
+        if(images.isEmpty()){
+            return null
+        }
+        else{
+            return images[_currImageIndex]
         }
 
     }

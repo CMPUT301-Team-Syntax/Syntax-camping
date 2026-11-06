@@ -2,7 +2,6 @@ package com.example.syntax_camping.dataClasses
 
 import com.example.syntax_camping.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.Timestamp
 import kotlin.collections.mutableListOf
 
 class lotteryRepository {
