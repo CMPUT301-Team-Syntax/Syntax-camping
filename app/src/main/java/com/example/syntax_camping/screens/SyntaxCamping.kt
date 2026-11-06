@@ -105,7 +105,6 @@ fun SyntaxCamping(
          LotteryEditScreen(
              navController,
              userViewModel,
-             myOwnedCampsites,
              selectedLottery
              )
         }

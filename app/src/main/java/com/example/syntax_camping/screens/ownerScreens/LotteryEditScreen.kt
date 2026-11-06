@@ -30,14 +30,16 @@ import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.screens.filterOwnedCampsites
 
 
 @Composable
 fun LotteryEditScreen(
     navController: NavController,
     userViewModel: UserViewModel,
-    myOwnedCampsites: List<Campsite>,
     editingLottery: Lottery?
 ) {
     var startDay by remember { mutableStateOf("") }
@@ -53,6 +55,7 @@ fun LotteryEditScreen(
     var numWinners by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
+    val db = Database()
 
     LaunchedEffect(editingLottery?.lotteryId) {
         if (editingLottery != null) {
@@ -74,10 +77,17 @@ fun LotteryEditScreen(
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
+
+
         } else {
             selectedCampsites.clear()
         }
     }
+
+    val myOwnedCampsites = filterOwnedCampsites(
+        CampsiteRepository.getCampsites(),
+        userViewModel.currentUser?.ownerData
+    )
 
     Scaffold(
         modifier = Modifier

@@ -172,6 +172,7 @@ fun CampsiteOwnerHome(
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         },
+
                                         onClick = {
                                             if (filteredCampsiteList.isNotEmpty()) {
                                                 isMenuExpanded = false
