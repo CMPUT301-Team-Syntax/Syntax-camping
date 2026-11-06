@@ -10,8 +10,9 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.ZoneId
 //endTimeLottery and endTimeBooking can be found by feedinmg year monthd,day,hour minute into an object of the date to long converter class
-class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>, capacity: Int?, name: String) {
+class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>, capacity: Int?, name: String, status: String?) {
     var lotteryId = ""
+    var status = status
     val longDateConverter = dateConverterToLong()
     var capacity = capacity
     var name = name
