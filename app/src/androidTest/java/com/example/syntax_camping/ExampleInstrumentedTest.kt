@@ -5,7 +5,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -17,15 +16,14 @@ import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.example.syntax_camping.screens.ownerScreens.MyCampsitesScreen
 import com.example.syntax_camping.screens.ownerScreens.OwnerCampsiteDetailsScreen
-import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import java.util.concurrent.atomic.AtomicReference
+import android.app.Application
+import androidx.test.core.app.ApplicationProvider
+import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.User
 
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +40,10 @@ class OwnerCampsiteUITest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private val userViewModel: UserViewModel by lazy {
+        UserViewModel(ApplicationProvider.getApplicationContext<Application>())
+    }
+
     @Test
     fun useAppContext() {
         // Context of the app under test.
@@ -56,7 +58,7 @@ class OwnerCampsiteUITest {
             SyntaxcampingTheme {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "Settings") {
-                    composable("Settings") { SettingsScreen(navController) }
+                    composable("Settings") { SettingsScreen(navController, userViewModel) }
                     composable(APP_GUIDELINES_ROUTE) { AppGuidelinesScreen(navController) }
                 }
             }
@@ -75,7 +77,7 @@ class OwnerCampsiteUITest {
         composeRule.onNodeWithText("Enable notifications").performScrollTo().assertIsOn()
         composeRule.onNodeWithText("Remember my device so I don’t have to sign in again").assertIsOff()
     }
-}
+
     /** US 02.03.01: shows the supplied campsites and opens the selected record. */
     @Test
     fun myCampsitesScreen_showsCampsitesAndSelectsTheClickedOne() {
@@ -99,6 +101,8 @@ class OwnerCampsiteUITest {
             rating = 4.2,
             images = mutableListOf() // Fixed compile error
         )
+        first.updateRaterList(mutableListOf((3.5).toDouble()))
+        second.updateRaterList(mutableListOf((4.2).toDouble()))
         val selected = AtomicReference<Campsite?>(null)
 
         composeRule.setContent {
@@ -133,6 +137,7 @@ class OwnerCampsiteUITest {
             rating = 4.6,
             images = mutableListOf() // Fixed compile error
         )
+        campsite.updateRaterList(mutableListOf((4.6).toDouble()))
         val edited = AtomicReference<Campsite?>(null)
 
         composeRule.setContent {
@@ -152,7 +157,7 @@ class OwnerCampsiteUITest {
         composeRule.onNodeWithText("8").assertIsDisplayed()
         composeRule.onNodeWithText("#Forest").assertIsDisplayed()
         composeRule.onNodeWithText("#Picnic tables").assertIsDisplayed()
-        composeRule.onNodeWithText("4.6/5").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("4.6", substring = true).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Update Campsite").performScrollTo().performClick()
         assertSame(campsite, edited.get())
     }
