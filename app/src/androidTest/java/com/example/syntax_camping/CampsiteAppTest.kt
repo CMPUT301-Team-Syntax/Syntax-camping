@@ -25,8 +25,9 @@ class CampsiteAppTest {
     @Test
     fun addnewCampsiteTest_and_FilterIt() {
 
+        composeTestRule.waitForIdle()
         composeTestRule
-            .onNodeWithText("CampsiteOwnerHome")
+            .onNodeWithTag("tab_CampsitesHome")
             .performClick()
 
 
