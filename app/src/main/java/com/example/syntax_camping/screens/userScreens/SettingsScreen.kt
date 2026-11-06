@@ -32,7 +32,7 @@ private val LinkBlue = Color(0xFF6093B5)
 
 /** Storyboard shell. These local control states do not change notification delivery or sign-in. */
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
     var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
 
@@ -129,4 +129,4 @@ internal fun SettingsPagesLayout(
 
 @Preview(showBackground = true, widthDp = 411, heightDp = 890)
 @Composable
-private fun SettingsPreview() { SettingsScreen(rememberNavController()) }
+private fun SettingsPreview() { SettingsScreen(rememberNavController(), userViewModel = TODO()) }
