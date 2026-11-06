@@ -6,7 +6,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
@@ -38,6 +40,7 @@ fun CustomBottomBar(
             val isSelected = currentRoute == tab.route
 
             NavigationBarItem(
+                modifier = Modifier.testTag("tab_$tab.name"),
                 //this is becasue i made two states in the figma mockup, may be unnecessary if campsite owner icons don't change colour when tapped to go to the screens
                 selected = isSelected,
                 onClick = {

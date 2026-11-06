@@ -30,16 +30,20 @@ import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.screens.filterOwnedCampsites
 
 
 @Composable
 fun LotteryEditScreen(
     navController: NavController,
     userViewModel: UserViewModel,
-    myOwnedCampsites: List<Campsite>,
-    editingLottery: Lottery?
+    editingLottery: Lottery?,
+    preselectedCampsite: Campsite? = null
 ) {
+    var name by remember { mutableStateOf("") }
     var startDay by remember { mutableStateOf("") }
     var startMonth by remember { mutableStateOf("") }
     var startYear by remember { mutableStateOf("") }
@@ -53,10 +57,12 @@ fun LotteryEditScreen(
     var numWinners by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
+    val db = Database()
 
     LaunchedEffect(editingLottery?.lotteryId) {
         if (editingLottery != null) {
             numWinners = editingLottery.numWinners.toString()
+            name = editingLottery.name
 
             val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
             startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
@@ -74,10 +80,20 @@ fun LotteryEditScreen(
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
-        } else {
-            selectedCampsites.clear()
-        }
+
+
+        }  else {
+        selectedCampsites.clear()
+        // CHANGED: a new lottery started from a campsite's page begins with that campsite already in the list
+        preselectedCampsite?.let { selectedCampsites.add(it) }
     }
+
+    }
+
+    val myOwnedCampsites = filterOwnedCampsites(
+        CampsiteRepository.getCampsites(),
+        userViewModel.currentUser?.ownerData
+    )
 
     Scaffold(
         modifier = Modifier
@@ -107,6 +123,16 @@ fun LotteryEditScreen(
             // --- Start Date Sections ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Start Date and Time")
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
@@ -217,7 +243,7 @@ fun LotteryEditScreen(
 
             Button(
                 onClick = {
-                    val (isSuccess, errorText) = validateAndCreateLottery(
+                    val (isSuccess, errorText) = validateAndCreateLottery(name,
                         startDay, startMonth, startYear, startHour, startMinute,
                         finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,
                         selectedCampsites

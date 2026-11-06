@@ -120,6 +120,8 @@ object CampsiteRepository {
                         images = (document.getString("images") ?: "").split(",").toMutableList()
                     )
 
+                    campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
+
                     loadedCampsites.add(campsite)
                 }
 
