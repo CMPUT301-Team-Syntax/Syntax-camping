@@ -58,7 +58,10 @@ fun validateAndCreateLottery(
         endTimeLottery = endTimeLottery,
         endTimeBooking = endTimeBooking,
         numWinners = parsedWinners,
-        campsites = selectedCampsites
+        campsites = selectedCampsites,
+        capacity = 0,
+        name = "woo",
+        status = null
     )
 
     val success = newLottery.createLotteryTimer()
