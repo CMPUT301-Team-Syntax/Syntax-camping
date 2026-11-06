@@ -608,4 +608,32 @@ class Database {
                 )
             )
     }
+
+    fun uploadCampsiteImage(
+        campsiteId: String,
+        imageUri: Uri,
+        callback: (Result<String>) -> Unit
+    ) {
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("campsites/$campsiteId/${UUID.randomUUID()}")
+
+        storageRef.putFile(imageUri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    throw task.exception
+                        ?: Exception("Image upload failed")
+                }
+
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUri ->
+                callback(Result.success(downloadUri.toString()))
+            }
+            .addOnFailureListener { exception ->
+                callback(Result.failure(exception))
+            }
+    }
+
 }

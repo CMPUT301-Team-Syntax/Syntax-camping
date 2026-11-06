@@ -71,7 +71,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     //ie newCampName stores the new name that will be passed when the camp is updated/created, while displayName is fo rthe text field label and determines what it displays(As it may be please enter name here or the old name)
     //A
     val db = Database()
-    var newCampsite: Campsite
+    //var newCampsite: Campsite
     var documentID: String
     var qrCodeChecked = false
     var nameDisplay by remember { mutableStateOf("") }
@@ -92,15 +92,15 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     currImage = null
 
     //Note the following is a list of selected photos, initialized as empty
-    var  selectedPhotos by remember {
-        mutableStateOf<List<Uri>>(emptyList())
-    }
+   // var  selectedPhotos by remember {
+    //    mutableStateOf<List<Uri>>(emptyList())
+   // }
     //Note this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
     val launcher =  rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     )
     { uris ->
-        selectedPhotos = uris
+        newPhotos.addAll(uris.filter {it !in newPhotos })
     }
     var photoCarousel = PhotoCarousel(newPhotos)
     //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
@@ -128,19 +128,62 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
             qrCodeChecked = campsite.hasQRCode
 
 
-            for (item in (campsite.images)){
-                newPhotos.add(item)
-            }
+            newPhotos.clear()
+            newPhotos.addAll(campsite.images)
 
-            for (item in (campsite.tags)){
-                newTags.add(item)
-            }
-
+            newTags.clear()
+            newTags.addAll(campsite.tags)
 
         }
     }
+    /**
+     * Accepts the images the user wants to keep.
+     * Determines which images are new.
+     * Uploads new images to Firebase Storage.
+     * Waits for every upload to finish.
+     * Returns the complete list of download URL strings, including existing images.
+     */
+    fun uploadNewImages(
+        campsiteId: String,
+        originalImages: List<Uri>,
+        imagesToSave: List<Uri>,
+        callback: (Result<List<String>>) -> Unit
+    ) {
+        val newImages = imagesToSave.filter { it !in originalImages }
 
+        if (newImages.isEmpty()) {
+            callback(Result.success(imagesToSave.map { it.toString() }))
+            return
+        }
 
+        val uploadedUrls = mutableMapOf<Uri, String>()
+        var completedUploads = 0
+        var uploadFailed = false
+
+        for (image in newImages) {
+            db.uploadCampsiteImage(campsiteId, image) { result ->
+                if (!uploadFailed) {
+                    result.onSuccess { downloadUrl ->
+                        uploadedUrls[image] = downloadUrl
+                        completedUploads++
+
+                        if (completedUploads == newImages.size) {
+                            val finalUrls = imagesToSave.map { uri ->
+                                uploadedUrls[uri] ?: uri.toString()
+                            }
+
+                            callback(Result.success(finalUrls))
+                        }
+                    }
+
+                    result.onFailure { exception ->
+                        uploadFailed = true
+                        callback(Result.failure(exception))
+                    }
+                }
+            }
+        }
+    }
 
     //var displayTag by remember{mutableStateOf(newTags.joinToString())}
     Scaffold(
@@ -361,9 +404,6 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                             )
                         )
 
-                            newPhotos.addAll(selectedPhotos)
-
-                            photoCarousel = PhotoCarousel(newPhotos)
 
                     }
                 ) {
@@ -416,40 +456,66 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                         .document()
                                         .id
 
-                                    newCampsite = Campsite(
-                                        documentID,
-                                        newCampName,
-                                        newCampLocation,
-                                        newCampDescription,
-                                        intNewMaxOcc,
-                                        newTags,
-                                        0.0
-                                    )
-                                    //Addds images to Photos. Deleting images will be handled with the carousel
-                                    if (selectedPhotos.isNotEmpty()){
-                                        for (photo in selectedPhotos) {
-                                            newCampsite.addImage(photo)
-                                        }
-                                    }
+
                                     val user = userViewModel.currentUser
+
                                     if (user == null) {
-                                        // The user document hasn't loaded yet. Stop here so we never create a campsite nobody owns.
                                         error = "Your account hasn't loaded yet. Please try again."
                                     } else {
-                                        db.createNewCampsite(newCampsite)
-                                        val oldOwnerData = user.ownerData ?: OwnerData()
-                                        // Builds a new list instead of changing currentUser's list in place
-                                        val updatedUser = user.copy(
-                                            ownerData = oldOwnerData.copy(
-                                                campsiteIds = (oldOwnerData.campsiteIds + newCampsite.documentId).toMutableList()
-                                            )
-                                        )
-                                        db.updateUser(userViewModel.deviceId, updatedUser) { result ->
-                                            // Reload the user so currentUser includes the new campsite id
-                                            result.onSuccess { userViewModel.refreshCurrentUser() }
+                                        uploadNewImages(
+                                            campsiteId = documentID,
+                                            originalImages = emptyList(),
+                                            imagesToSave = newPhotos.toList()
+                                        ) { result ->
+
+                                            result.onSuccess { imageUrls ->
+                                                val newCampsite = Campsite(
+                                                    documentId = documentID,
+                                                    name = newCampName,
+                                                    location = newCampLocation,
+                                                    description = newCampDescription,
+                                                    maxOcc = intNewMaxOcc,
+                                                    tags = newTags.toMutableList(),
+                                                    rating = 0.0,
+                                                    images = imageUrls.toMutableList()
+                                                )
+
+                                                db.createNewCampsite(newCampsite)
+
+                                                val oldOwnerData = user.ownerData ?: OwnerData()
+
+                                                val updatedUser = user.copy(
+                                                    ownerData = oldOwnerData.copy(
+                                                        campsiteIds = (
+                                                                oldOwnerData.campsiteIds +
+                                                                        newCampsite.documentId
+                                                                ).toMutableList()
+                                                    )
+                                                )
+
+                                                db.updateUser(
+                                                    userViewModel.deviceId,
+                                                    updatedUser
+                                                ) { updateResult ->
+                                                    updateResult.onSuccess {
+                                                        userViewModel.refreshCurrentUser()
+                                                        navController.popBackStack()
+                                                    }
+
+                                                    updateResult.onFailure { exception ->
+                                                        error = exception.message
+                                                            ?: "Failed to update owner data"
+                                                    }
+                                                }
+                                            }
+
+                                            result.onFailure { exception ->
+                                                error = exception.message
+                                                    ?: "Failed to upload campsite images"
+                                            }
                                         }
-                                        navController.popBackStack()
                                     }
+
                                 }
                             }
                             else{
@@ -474,17 +540,40 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                     error = "Max Int must be an int"
                                 } else {
                                     error = ""
-                                    campsite.updateName(newCampName)
-                                    campsite.updateLocation(newCampLocation)
-                                    campsite.updateDescription(newCampDescription)
-                                    campsite.updateMaxOcc(intNewMaxOcc!!)
-                                    campsite.updateTag(newTags)
-                                    db.updateCampsite(campsite)
-                                    if (selectedPhotos.isNotEmpty()){
-                                        for (photo in selectedPhotos) {
-                                            campsite.addImage(photo)
+
+                                    val originalImages = campsite.images.toList()
+                                    val imagesToSave = newPhotos.toList()
+
+                                    uploadNewImages(
+                                        campsiteId = campsite.documentId,
+                                        originalImages = originalImages,
+                                        imagesToSave = imagesToSave
+                                    ) { result ->
+
+                                        result.onSuccess { imageUrls ->
+                                            campsite.updateName(newCampName)
+                                            campsite.updateLocation(newCampLocation)
+                                            campsite.updateDescription(newCampDescription)
+                                            campsite.updateMaxOcc(intNewMaxOcc!!)
+                                            campsite.updateTag(newTags.toMutableList())
+
+                                            // Replace the old image list with the final URLs.
+                                            campsite.images.clear()
+
+                                            for (url in imageUrls) {
+                                                campsite.addImage(Uri.parse(url))
+                                            }
+
+                                            // Save the updated campsite to Firestore.
+                                            db.updateCampsite(campsite)
+                                        }
+
+                                        result.onFailure { exception ->
+                                            error = exception.message
+                                                ?: "Failed to upload campsite images"
                                         }
                                     }
+
                                 }
                             }
                             else{
