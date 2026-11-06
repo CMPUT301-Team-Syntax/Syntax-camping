@@ -47,9 +47,12 @@ class Campsite(documentId: String, name: String, location: String, description: 
     val hasQRCode: Boolean
         get() = _hasQRCode
     val rating: Double
-        get() = _rating
+        get(){
+            refreshRating()
+            return _rating
+        }
     val raters: Int
-        get() = _raters
+        get() = _ratings.size
     val lotteryId: String?
         get() = _lotteryId
     /*
@@ -59,6 +62,18 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun updateRating(number: Double){
         db.updateCampsiteRating(_documentId, number)
         _ratings.add(number)
+        _rating = 0.0
+
+        for (rating in _ratings){
+            _rating+= rating
+
+        }
+        _rating= _rating/(_ratings.size)
+
+    }
+    fun refreshRating(){
+
+
         _rating = 0.0
 
         for (rating in _ratings){

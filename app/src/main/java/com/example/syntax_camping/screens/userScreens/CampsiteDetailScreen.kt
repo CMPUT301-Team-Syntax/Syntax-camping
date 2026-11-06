@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,13 +67,17 @@ fun CampsiteDetailsScreen(
     val scrollState = rememberScrollState()
     val lotteryFolder = lotteryRepository()
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
+    var userReviewString by remember { mutableStateOf("") }
+    var userReview by remember { mutableStateOf(0.0) }
     val db = Database()
+    var ratingError by remember{mutableStateOf("")}
 
     if (campsite == null) {
         return
     }
 
-    val isOwner = userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
+    val isOwner =
+        userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
 
     // Fetch the lottery details safely
     campsite.lotteryId?.takeIf { it.isNotBlank() }?.let { nonNullId ->
@@ -291,15 +298,27 @@ fun CampsiteDetailsScreen(
                         } else {
                             when (joinState) {
                                 LotteryJoinState.ENDED -> {
-                                    Text("Lottery ended", color = Color(0xFFA13F3F), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(
+                                        "Lottery ended",
+                                        color = Color(0xFFA13F3F),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
                                 }
+
                                 LotteryJoinState.CAN_ENTER_LOTTERY, LotteryJoinState.CAN_JOIN_WAITLIST -> {
                                     if (hasJoined) {
                                         // LEAVE BUTTON
                                         Button(
                                             onClick = {
                                                 campsite.lotteryId?.let { nonNullLotteryId ->
-                                                    db.removeLotteryEntry(nonNullLotteryId, LotteryEntry(userId = userViewModel.deviceId, Timestamp.now())) { success ->
+                                                    db.removeLotteryEntry(
+                                                        nonNullLotteryId,
+                                                        LotteryEntry(
+                                                            userId = userViewModel.deviceId,
+                                                            Timestamp.now()
+                                                        )
+                                                    ) { success ->
                                                         if (success) {
                                                             hasJoined = false
                                                         }
@@ -319,14 +338,24 @@ fun CampsiteDetailsScreen(
                                         Button(
                                             onClick = {
                                                 campsite.lotteryId?.let { nonNullLotteryId ->
-                                                    db.addLotteryEntry(nonNullLotteryId, LotteryEntry(userId = userViewModel.deviceId, Timestamp.now())) { success ->
+                                                    db.addLotteryEntry(
+                                                        nonNullLotteryId,
+                                                        LotteryEntry(
+                                                            userId = userViewModel.deviceId,
+                                                            Timestamp.now()
+                                                        )
+                                                    ) { success ->
                                                         if (success) {
                                                             hasJoined = true
                                                         }
                                                     }
                                                 }
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF2C9C9)),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(
+                                                    0xFFF2C9C9
+                                                )
+                                            ),
                                             shape = MaterialTheme.shapes.small
                                         ) {
                                             Text(
@@ -347,7 +376,9 @@ fun CampsiteDetailsScreen(
                                     }
 
                                     val daysLeft = if (targetTime > 0L) {
-                                        ((targetTime - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceAtLeast(0)
+                                        ((targetTime - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceAtLeast(
+                                            0
+                                        )
                                     } else {
                                         0
                                     }
@@ -359,7 +390,8 @@ fun CampsiteDetailsScreen(
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
                                 }
-                                LotteryJoinState.NONE -> { }
+
+                                LotteryJoinState.NONE -> {}
                             }
                         }
                     } else {
@@ -377,6 +409,52 @@ fun CampsiteDetailsScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = userReviewString,
+                    onValueChange = { userReviewString = it },
+                    label = { Text("Leave a review out of 5") },
+                    modifier = Modifier.fillMaxWidth().testTag("campsite_name_input")
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        if(userReviewString.toDoubleOrNull() != null){
+                            userReview = userReviewString.toDoubleOrNull()!!
+                            if((userReview >= 0.0) && (userReview <= 5.0)){
+                                campsite.updateRating(userReview)
+                                ratingError = ""
+                            }
+
+                            else{
+                                ratingError = "review must be between 0.0 and 5.0"
+                            }
+
+                        }
+                        else{
+                            ratingError = "you must enter a rating before you can review"
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                ) {
+                    Text("Leave Review", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                if(ratingError!= "") {
+
+
+
+
+                        Text(text = ratingError, fontSize = 16.sp)
+
+                }
+                //THIS WILL CHANGE WITH MAP IMPLEMENTATION SLIGHTLY AS IT NEEDS TO ALSO RECIEVE POTENTIAL STRINGS FORM THE MAP/TODO
+
+
             }
         }
     }

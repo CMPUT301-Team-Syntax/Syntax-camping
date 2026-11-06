@@ -1,5 +1,6 @@
 package com.example.syntax_camping
 
+
 import com.google.firebase.firestore.FirebaseFirestore
 import org.junit.Assert
 import org.junit.Before
@@ -27,6 +28,7 @@ class LotteryTesting {
     // Set up a new wizard before every single test
     @Before
     fun setUp() {
+
 
         lr = lotteryRepository()
         db = Database()
@@ -57,6 +59,7 @@ class LotteryTesting {
 
     }
 
+
     @Test
     fun testLotteryCreationInDbAndLotteryRepsoitorygetLottery() {
         testLottery.createLotteryTimer()
@@ -64,6 +67,8 @@ class LotteryTesting {
             if (lottery == null) {
                 throw AssertionError("Lottery was null")
             }
+
+
 
 
             assert((lottery.endTimeLottery == testLottery.endTimeLottery) && (lottery.endTimeBooking == testLottery.endTimeBooking) && (lottery.name == testLottery.name) && (lottery.numWinners == testLottery.numWinners) && (lottery.capacity == testLottery.capacity))
@@ -76,11 +81,13 @@ class LotteryTesting {
             .delete()
             .addOnSuccessListener {
 
+
             }
             .addOnFailureListener { e ->
                 // Handle any potential deletion failure if needed
             }
     }
+
 
     @Test
     fun testLotteryUpdateAndMulitLottery() {
@@ -107,14 +114,18 @@ class LotteryTesting {
             "initialBooking"
         )
 
+
         lr.getLottery(testLottery.lotteryId) { lottery ->
             if (lottery == null) {
                 throw AssertionError("Lottery was null")
             }
 
 
+
+
             assert((lottery.endTimeLottery == testLottery.endTimeLottery + 10000) && (lottery.endTimeBooking == testLottery.endTimeBooking + 200000) && (lottery.name == "newName") && (lottery.numWinners == 1) && (lottery.capacity == 3))
         }
+
 
         //cleanup
         FirebaseFirestore.getInstance().collection("lotteries")
@@ -122,14 +133,17 @@ class LotteryTesting {
             .delete()
             .addOnSuccessListener {
 
+
             }
             .addOnFailureListener { e ->
                 // Handle any potential deletion failure if needed
             }
     }
 
+
     @Test
     fun testLotteryJoin() {
+
 
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
@@ -140,6 +154,8 @@ class LotteryTesting {
                 }
 
 
+
+
                 assert(entries == mutableListOf<LotteryEntry>(littleLotteryGuy))
             }
             FirebaseFirestore.getInstance().collection("lotteries")
@@ -147,12 +163,14 @@ class LotteryTesting {
                 .delete()
                 .addOnSuccessListener {
 
+
                 }
                 .addOnFailureListener { e ->
                     // Handle any potential deletion failure if needed
                 }
         }
     }
+
 
     @Test
     fun testGetReadables() {
@@ -162,6 +180,7 @@ class LotteryTesting {
         val readableBooking = testLottery.getReadableBookingEndTime()
         assert((readableLottery is jsqlTimestamp) && (readableBooking is jsqlTimestamp))
     }
+
 
     @Test
     fun testLotteryInThePast() {
@@ -176,8 +195,8 @@ class LotteryTesting {
         )
         val worked = testLottery.createLotteryTimer()
 
-        assert(worked == false)
 
+        assert(worked == false)
 
 
     }
@@ -185,6 +204,7 @@ class LotteryTesting {
 
     @Test
     fun testLotteryJoinAtCapacity() {
+
 
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
@@ -197,24 +217,29 @@ class LotteryTesting {
                 testLottery.addEntry(littleLotteryGuy3) { success3 ->
                     assertFalse("third entry fails", success3)
 
-            FirebaseFirestore.getInstance().collection("lotteries")
-                .document(testLottery.lotteryId)
-                .delete()
-                .addOnSuccessListener {
 
+                    FirebaseFirestore.getInstance().collection("lotteries")
+                        .document(testLottery.lotteryId)
+                        .delete()
+                        .addOnSuccessListener {
+
+
+                        }
+                        .addOnFailureListener { e ->
+                            // Handle any potential deletion failure if needed
+                        }
                 }
-                .addOnFailureListener { e ->
-                    // Handle any potential deletion failure if needed
-                }
-                }
+            }
         }
     }
-    }
+
     @Test
     fun testLotteryJoinAtalreadyatjoined() {
 
+
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
+
 
         testLottery.addEntry(littleLotteryGuy) { success1 ->
             assertTrue("First entry should succeed", success1)
@@ -222,20 +247,23 @@ class LotteryTesting {
                 assertFalse("second entry should succeed", success2)
 
 
-                    FirebaseFirestore.getInstance().collection("lotteries")
-                        .document(testLottery.lotteryId)
-                        .delete()
-                        .addOnSuccessListener {
 
-                        }
-                        .addOnFailureListener { e ->
-                            // Handle any potential deletion failure if needed
-                        }
+
+                FirebaseFirestore.getInstance().collection("lotteries")
+                    .document(testLottery.lotteryId)
+                    .delete()
+                    .addOnSuccessListener {
+
+
+                    }
+                    .addOnFailureListener { e ->
+                        // Handle any potential deletion failure if needed
+                    }
+
 
             }
         }
     }
-
 
 
     @Test
@@ -251,29 +279,30 @@ class LotteryTesting {
                 assertNotNull("Entries was null", entries)
                 assertEquals(1, entries?.size)
 
-                // 1. Call removeEntry (no callback)
-                testLottery.removeEntry(littleLotteryGuy)
+                // 1. Call removeEntry with the new callback
+                testLottery.removeEntry(littleLotteryGuy) { removeSuccess ->
+                    assertTrue("Failed to remove entry", removeSuccess)
 
-                // 2. Wait 2 seconds for Firebase to sync the deletion in the background,
-                // then fetch and assert.
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    // 2. Fetch and assert entries after removal
                     lr.getEntries(testLottery.lotteryId) { updatedEntries ->
                         assertNotNull("Updated entries was null", updatedEntries)
-                        assertTrue("Entry was not removed from Firebase", updatedEntries.isNullOrEmpty())
+                        assertTrue(
+                            "Entry was not removed from Firebase",
+                            updatedEntries.isNullOrEmpty()
+                        )
 
-                        // 3. Cleanup and finish test (UNCOMMENTED SO LATCH COUNTS DOWN!)
+                        // 3. Cleanup and finish test
                         FirebaseFirestore.getInstance().collection("lotteries")
                             .document(testLottery.lotteryId)
                             .delete()
                             .addOnCompleteListener {
-                                latch.countDown() // <-- This releases the test thread!
+                                latch.countDown()
                             }
                     }
-                }, 2000) // 2-second delay is plenty of time for Firebase sync
+                }
             }
         }
 
-        // Give it a slightly longer timeout than the delay (e.g., 10 seconds)
         val finished = latch.await(10, TimeUnit.SECONDS)
         assertTrue("Test timed out", finished)
     }
