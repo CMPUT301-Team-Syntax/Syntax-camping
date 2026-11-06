@@ -279,11 +279,11 @@ class LotteryTesting {
                 assertNotNull("Entries was null", entries)
                 assertEquals(1, entries?.size)
 
-                // 1. Call removeEntry with the new callback
+
                 testLottery.removeEntry(littleLotteryGuy) { removeSuccess ->
                     assertTrue("Failed to remove entry", removeSuccess)
 
-                    // 2. Fetch and assert entries after removal
+                    // Fetch and assert entries after removal
                     lr.getEntries(testLottery.lotteryId) { updatedEntries ->
                         assertNotNull("Updated entries was null", updatedEntries)
                         assertTrue(
@@ -291,7 +291,7 @@ class LotteryTesting {
                             updatedEntries.isNullOrEmpty()
                         )
 
-                        // 3. Cleanup and finish test
+                        // Cleanup and finish test
                         FirebaseFirestore.getInstance().collection("lotteries")
                             .document(testLottery.lotteryId)
                             .delete()

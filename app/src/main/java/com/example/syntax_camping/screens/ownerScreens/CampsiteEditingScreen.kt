@@ -64,8 +64,8 @@ import com.example.syntax_camping.screens.TopBar
 //import androidx.compose.ui.Modifier
 /*
 * This screen is called when the plus to add campsite is pressed in the my campsites page, or when
-*
-*
+*Teh update campsite button is pressed in CampsiteOwnerDetails or campsite owner campsiteview, three dot drop down.
+*It works with the database to add a campsite to the database, or update one
 * */
 @Composable
 fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewModel, campsite: Campsite?){

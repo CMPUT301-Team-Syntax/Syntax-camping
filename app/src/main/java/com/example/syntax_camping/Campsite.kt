@@ -9,6 +9,8 @@ import androidx.core.net.toUri
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
+* This object is used in many places, by lottery to store a list of campsites, hte id's from it are stored by a campsite owner to store all their owned campsites, the campsite repository retrieves objects of this
+* type for use in the app, and the database uploads objects of this type to be stored in firebase. Many of the screens also use it to find information they need to display about a campsite
  */
 
 class Campsite(documentId: String, name: String, location: String, description: String, maxOcc: Int, tags: MutableList<String>, rating: Double, images: MutableList<String> = mutableListOf<String>(), /*mapLocation<MapLocation> */) {
@@ -58,7 +60,9 @@ class Campsite(documentId: String, name: String, location: String, description: 
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
-    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
+    /*Called whenever a user leaves, so within the campsite details screen. Then uploads rating change to the databse
+
+     */
     fun updateRating(number: Double){
         db.updateCampsiteRating(_documentId, number)
         _ratings.add(number)
@@ -71,26 +75,24 @@ class Campsite(documentId: String, name: String, location: String, description: 
         _rating= _rating/(_ratings.size)
 
     }
+    //Used in tandem with the getter for rating to ensure that it has most up to date rating
     fun refreshRating(){
 
-
         _rating = 0.0
-
         for (rating in _ratings){
             _rating+= rating
-
         }
         _rating= _rating/(_ratings.size)
-
     }
     fun updateRaterList(raters: MutableList<Double>){
         _ratings = raters
     }
     //Not currently implemented
+    //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
     fun generateQRcode(){
         _hasQRCode = true
     }
-
+//The followinng work with campsiteEditingScreen.
     fun updateName(newName: String){
         _name = newName
     }
@@ -147,8 +149,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     }
 
-//val lottery = Lottery(yeah)
-    // lottery.createLottery(
+
 
 
 }
