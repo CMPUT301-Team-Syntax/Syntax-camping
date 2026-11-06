@@ -49,7 +49,7 @@ class LotteryTesting {
     fun testLotteryCreationInDbAndLotteryRepsoitorygetLottery() {
         testLottery.createLotteryTimer()
         lotteryRepository.getLottery(testLottery.lotteryId){ lottery ->
-            assert(lottery.endTimeLottery == testLottery.endTimeLottery && lottery.endTimeBooking == testLottery.endTimeBooking && lottery.name == testLottery.name && (lottery))
+            assert((lottery.endTimeLottery == testLottery.endTimeLottery) && (lottery.endTimeBooking == testLottery.endTimeBooking) && (lottery.name == testLottery.name) && (lottery.numWinners == testLottery.numWinners) && (lottery.capacity == testLottery.capacity)
         }
 
 
@@ -116,4 +116,4 @@ class LotteryTesting {
 
 }
 
- */
+*/
