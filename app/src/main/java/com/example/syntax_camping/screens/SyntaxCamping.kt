@@ -61,6 +61,11 @@ fun SyntaxCamping(
                 onEditCampsite = { campsiteToEdit ->
                     selectedCampsite = campsiteToEdit
                     navController.navigate("UpdateCamp")
+                },
+                onEditLottery = { campsiteForLottery ->
+                    selCampsite = campsiteForLottery   // CHANGED: remember which campsite this lottery is for (selCampsite was unused until now)
+                    selectedLottery = null             // a new lottery, not editing an existing one
+                    navController.navigate("CreateLottery")
                 }
             )
         }
@@ -89,6 +94,7 @@ fun SyntaxCamping(
                     navController.navigate("UpdateCamp")
                 },
                 onEditLottery = { lotteryToEdit ->
+                    selCampsite = null
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
@@ -105,8 +111,9 @@ fun SyntaxCamping(
          LotteryEditScreen(
              navController,
              userViewModel,
-             selectedLottery
-             )
+             selectedLottery,
+             preselectedCampsite = selCampsite
+         )
         }
 
         composable ("LotteryDetailsScreen"){backStackEntry ->

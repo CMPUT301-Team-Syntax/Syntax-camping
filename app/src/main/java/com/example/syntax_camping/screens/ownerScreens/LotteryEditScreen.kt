@@ -40,8 +40,10 @@ import com.example.syntax_camping.screens.filterOwnedCampsites
 fun LotteryEditScreen(
     navController: NavController,
     userViewModel: UserViewModel,
-    editingLottery: Lottery?
+    editingLottery: Lottery?,
+    preselectedCampsite: Campsite? = null
 ) {
+    var name by remember { mutableStateOf("") }
     var startDay by remember { mutableStateOf("") }
     var startMonth by remember { mutableStateOf("") }
     var startYear by remember { mutableStateOf("") }
@@ -60,6 +62,7 @@ fun LotteryEditScreen(
     LaunchedEffect(editingLottery?.lotteryId) {
         if (editingLottery != null) {
             numWinners = editingLottery.numWinners.toString()
+            name = editingLottery.name
 
             val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
             startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
@@ -79,9 +82,12 @@ fun LotteryEditScreen(
             selectedCampsites.addAll(editingLottery.campsites)
 
 
-        } else {
-            selectedCampsites.clear()
-        }
+        }  else {
+        selectedCampsites.clear()
+        // CHANGED: a new lottery started from a campsite's page begins with that campsite already in the list
+        preselectedCampsite?.let { selectedCampsites.add(it) }
+    }
+
     }
 
     val myOwnedCampsites = filterOwnedCampsites(
@@ -117,6 +123,16 @@ fun LotteryEditScreen(
             // --- Start Date Sections ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Start Date and Time")
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
@@ -227,7 +243,7 @@ fun LotteryEditScreen(
 
             Button(
                 onClick = {
-                    val (isSuccess, errorText) = validateAndCreateLottery(
+                    val (isSuccess, errorText) = validateAndCreateLottery(name,
                         startDay, startMonth, startYear, startHour, startMinute,
                         finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,
                         selectedCampsites

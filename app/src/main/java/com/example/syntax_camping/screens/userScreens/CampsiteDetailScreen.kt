@@ -335,16 +335,14 @@ fun CampsiteDetailsScreen(navController: NavController,
 
                         Button(
                             onClick = {
-                                if (onEditLottery != null) {
-                                    onEditLottery(campsite)
-                                }
+                                onEditLottery?.invoke(campsite)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp, vertical = 16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
                         ) {
-                            Text("Update Lottery", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Add Lottery", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
