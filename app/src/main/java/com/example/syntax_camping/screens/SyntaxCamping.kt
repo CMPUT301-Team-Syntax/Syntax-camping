@@ -44,7 +44,7 @@ fun SyntaxCamping(
 
     var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
 
-    NavHost(navController = navController, startDestination = "search", modifier = modifier) {
+    NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
         Log.d("UserDebug", "Current User: ${userViewModel.deviceId}")
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route

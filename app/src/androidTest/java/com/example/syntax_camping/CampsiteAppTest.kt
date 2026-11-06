@@ -23,15 +23,14 @@ class CampsiteAppTest {
 
 
     @Test
-    fun addnewCampsiteTest_and_FilterIt() {
+    fun addNewCampsiteTest_and_FilterIt() {
 
-        composeTestRule.waitForIdle()
         composeTestRule
-            .onNodeWithTag("tab_CampsitesHome")
+            .waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("tab_campsiteshome")
             .performClick()
-
-
-
 
     }
 
