@@ -67,7 +67,7 @@ fun validateAndCreateLottery(
         endTimeBooking = endTimeBooking,
         numWinners = parsedWinners,
         campsites = selectedCampsites,
-        capacity = 0,
+        capacity = null,
         name = myName,
         status = null
     )
