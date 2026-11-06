@@ -73,7 +73,7 @@ class lotteryRepository {
             .get()
             .addOnSuccessListener { document ->
 
-                val campsitesReference = document.get("campsites") as? MutableList<Campsite> ?: emptyList<Campsite>()
+                val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
                 for (campsiteItem in campsitesReference){
                     val campsiteMap = campsiteItem as? Map<*, *> ?: continue
                     val campsite = Campsite(

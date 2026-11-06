@@ -42,10 +42,12 @@ import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteListScreenOwner
 import com.example.syntax_camping.screens.CustomBottomBar
 import com.example.syntax_camping.screens.LotteryListScreenOwner
 import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.filterOwnedCampsites
 
 @Composable
 fun CampsiteOwnerHome(
@@ -73,9 +75,27 @@ fun CampsiteOwnerHome(
         }
     }
 
-    var filteredCampsiteList = ownerCampsites.filter { campsite ->
-        campsite.lotteryId == null
+    val myCampsites = filterOwnedCampsites(ownerCampsites, userViewModel.currentUser?.ownerData)
+
+    var filteredCampsiteList = myCampsites.filter { campsite ->
+        campsite.lotteryId.isNullOrBlank()
     }
+    val myLotteryIds = myCampsites
+        .mapNotNull { campsite -> campsite.lotteryId?.takeIf { it.isNotBlank() } }
+        .distinct()
+
+    LaunchedEffect(myLotteryIds) {
+        if (myLotteryIds.isEmpty()) {
+            lotteriesOwned.clear()
+        } else {
+            lotteryRepository().getLotteries { allLotteries ->
+                lotteriesOwned.clear()
+                lotteriesOwned.addAll(allLotteries.filter { it.lotteryId in myLotteryIds })
+            }
+        }
+    }
+
+
     val scrollState = rememberScrollState()
 
 
@@ -106,9 +126,9 @@ fun CampsiteOwnerHome(
         ) {
 
             Box(modifier = Modifier.weight(1f)) {
-                if (isLoading) {
+                if (isLoading|| userViewModel.currentUser == null) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else if (ownerCampsites.isNotEmpty()) {
+                } else if (myCampsites.isNotEmpty()) {
 
                     Column(
                         modifier = Modifier
@@ -172,6 +192,7 @@ fun CampsiteOwnerHome(
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         },
+
                                         onClick = {
                                             if (filteredCampsiteList.isNotEmpty()) {
                                                 isMenuExpanded = false
@@ -210,7 +231,7 @@ fun CampsiteOwnerHome(
 
                         Box {
                             CampsiteListScreenOwner(
-                                campsiteList = ownerCampsites,
+                                campsiteList = myCampsites,
                                 onItemClick = { clickedId ->
                                     navController.navigate("ownerCampsiteDetails/$clickedId")
                                 },
