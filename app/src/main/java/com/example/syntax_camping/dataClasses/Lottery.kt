@@ -10,6 +10,11 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.ZoneId
 //endTimeLottery and endTimeBooking can be found by feedinmg year monthd,day,hour minute into an object of the date to long converter class
+
+/*
+* This class works mostly with lottery repsoitroy and the database. It is how lottery objects are stored, and it works with campsite to store alsit of campsites. All fo its values are simultaneously stored in firebase to
+* save it. It works with database to  create a new timer for an automatic draw as well
+* */
 class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>, capacity: Int?, name: String, status: String?) {
     var lotteryId = ""
     var status = status
@@ -26,6 +31,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
     //val lotteryManagers = mutableListOf<LotteryManager>()
     val campsiteIds = mutableListOf<String>()
     val db = Database()
+    //wotks with database to create a lottery timer that automatically draws winners and handles the booking period in firebase
     fun createLotteryTimer(): Boolean {
 
         //So this creates java calendar object that takes the input values from the user for year, day, month etc and creates an object of it to be passed to firebase as an end date for which to trigger the draw.
@@ -49,6 +55,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
 
         return true
     }
+    //Works with the display screens to make sure that the time displayed is a more readable timestamp and not a long
     fun getReadableLotteryEndTime():Timestamp{
         readableEndTimeLottery = longDateConverter.convertLongToDate(endTimeLottery)
         return readableEndTimeLottery
@@ -57,7 +64,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
         readableEndTimeBooking = longDateConverter.convertLongToDate(endTimeBooking)
         return readableEndTimeBooking
     }
-
+    //wokrs with databse to add an entry to this lottery(either waitlist or entries depending on lottery stage
     fun addEntry(entry: LotteryEntry, onResult: (Boolean) ->Unit){
 
        db.addLotteryEntry( lotteryId, entry) { success ->
@@ -66,7 +73,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
        }
     }
 
-    //still implement TODO
+    //works with database to remove an entry from this lottery(either waitlist or entries depdning on lottery stage
     fun removeEntry(entry: LotteryEntry, onResult: (Boolean) -> Unit) {
         db.removeLotteryEntry( lotteryId, entry){ success ->
             onResult(success)}

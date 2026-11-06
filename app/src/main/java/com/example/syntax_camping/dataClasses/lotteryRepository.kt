@@ -3,9 +3,12 @@ package com.example.syntax_camping.dataClasses
 import com.example.syntax_camping.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.mutableListOf
-
+/*This repository handles the retireval of lottery information from the firebase. It works with most of the display screens to siplay the information as necessary, and also works wiht lottery, as the get lottery and getlotteries functions b
+*Both return objects of lottery type, or a list of lotteries.
+* */
 class lotteryRepository {
     val db = FirebaseFirestore.getInstance()
+    //returns all the lotteries in the database
     fun getLotteries(callback: ( MutableList<Lottery>) -> Unit){
         db.collection("lotteries")
             .get()
@@ -16,9 +19,9 @@ class lotteryRepository {
                 for (document in querySnapshot) {
                     val campsites = mutableListOf<Campsite>()
 
-                    // 1. Extract the array of maps from this specific document
-                    val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
 
+                    val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
+                    //handles the list of campsites attached to the lottery
                     for (campsiteItem in campsitesReference) {
                         val campsiteMap = campsiteItem as? Map<*, *> ?: continue
                         val campsite = Campsite(
@@ -37,7 +40,7 @@ class lotteryRepository {
                     val capacityLong = document.getLong("capacity")
                     val capacity = capacityLong?.toInt()
 
-                    // 2. Build the Lottery object for this document
+                    //stores the actual lottery portion
                     val lottery = Lottery(
                         endTimeLottery = document.getLong("endTimeLottery") ?: 0L,
                         endTimeBooking = document.getLong("endTimeBooking") ?: 0L,
@@ -50,11 +53,11 @@ class lotteryRepository {
                         this.lotteryId = document.id
                     }
 
-                    // 3. Add it to our master list
+
                     lotteriesList.add(lottery)
                 }
 
-                // 4. Return the full list via callback once all documents are processed
+
                 callback(lotteriesList)
             }
             .addOnFailureListener {
@@ -62,6 +65,7 @@ class lotteryRepository {
                 callback(mutableListOf())
             }
     }
+    //return a lottery object, so works with the lottery class, uses a lottery id to get a specific lottery from the repository
     fun getLottery(lotteryId: String, callback: (Lottery?)->Unit){
 
         var lottery: Lottery?
@@ -108,6 +112,7 @@ class lotteryRepository {
             }
 
     }
+    //Returns a list of the winners(if there are any)
     fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
@@ -135,6 +140,7 @@ class lotteryRepository {
             }
 
     }
+    //returns a list of the entries(if there are any)
     fun getEntries(lotteryId: String,callback: ( MutableList<LotteryEntry>) -> Unit) {
 
        // val db = FirebaseFirestore.getInstance()
@@ -163,6 +169,7 @@ class lotteryRepository {
             }
 
     }
+    //returns a list of the waitlsiters (if there are any)
     fun getWaitlist(lotteryId: String,callback: ( MutableList<WaitlistEntry>) -> Unit) {
 
       //  val db = FirebaseFirestore.getInstance()
@@ -192,17 +199,4 @@ class lotteryRepository {
     }
 }
 
-/*
-lr = lotteryRepository()
-val lottery = lr.getLottery(campsite.lotteryId)
-* if (lottery != null){
-    lottery.name
-    lottery.status (can be "initialBooking"(first joining, no names yet), status "booking" (names/winners drawn. wailist), "complete"
-    lottery.getReadableEndLotteryTime
-    lottery..getReadableBookingTime
-
-}
-
-*
-* */
 
