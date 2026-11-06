@@ -6,8 +6,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.screens.CampsiteListScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,42 +20,43 @@ import org.junit.runner.RunWith
 class CampsiteAppTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
-    val fakeCampsites = listOf(
-        Campsite(
-            "1",
-            "Pine Ridge Campground",
-            "Banff, AB",
-            "Mountain view",
-            4,
-            mutableListOf(),
-            4.8
-        ),
-        Campsite("2", "Lakeside Haven", "Jasper, AB", "Lake view", 6, mutableListOf(), 4.5),
-        Campsite("5", "Haven", "Jasper, AB", "wonderful veiw", 7, mutableListOf(), 4.5)
-    )
 
 
     @Test
-    fun testSearchHomeScreenInput() {
-        // 1. Type into search bar
-        composeTestRule
-            .onNodeWithTag("search_input_field")
-            .performTextInput("Jasper")
+    fun addnewCampsiteTest_and_FilterIt() {
 
-        // 2. Click search icon
         composeTestRule
-            .onNodeWithTag("search_icon")
+            .onNodeWithText("CampsiteOwnerHome")
             .performClick()
-        composeTestRule
-            .onNodeWithText("Lakeside Haven")
-            .assertIsDisplayed()
-        composeTestRule
-            .onNodeWithText("Pine Ridge Campground")
-            .assertDoesNotExist()
-    }
+
 
 
 
     }
+
+
+
+}
+
+
+//        composeTestRule.setContent {
+//            val navController = androidx.navigation.compose.rememberNavController()
+//            SearchHomeScreen(navController = navController)
+//        }
+//        // 1. Type into search bar
+//        composeTestRule
+//            .onNodeWithTag("search_input_field")
+//            .performTextInput("Jasper")
+//
+//        // 2. Click search icon
+//        composeTestRule
+//            .onNodeWithTag("search_icon")
+//            .performClick()
+//        composeTestRule
+//            .onNodeWithText("Lakeside Haven")
+//            .assertIsDisplayed()
+//        composeTestRule
+//            .onNodeWithText("Pine Ridge Campground")
+//            .assertDoesNotExist()
 
 

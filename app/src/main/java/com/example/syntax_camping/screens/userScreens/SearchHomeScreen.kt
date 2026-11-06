@@ -110,8 +110,8 @@ fun SearchHomeScreen(navController: NavController){
 
 
                 IconButton(onClick = {
-                    displayFillereted = true
-                    FlitteredCampsiteList = realCampsites.filter { campsite ->
+                    val listToFilter = if (realCampsites.isNotEmpty()) realCampsites else CampsiteRepository.getCampsites()
+                    FlitteredCampsiteList = listToFilter.filter { campsite ->
                         campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                     }
                     displayFillereted = true
