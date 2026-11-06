@@ -248,7 +248,7 @@ class Database {
                 if(status == "initialAccepting") {
                     listWeAreChecking = "entries"
                 }
-                else if(status == "Booking") {
+                else if(status == "booking") {
                         listWeAreChecking = "waitlist"
                 }
                 else {

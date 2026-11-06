@@ -86,7 +86,8 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
-
+    var currImage: Uri?
+    currImage = null
 
     //Note the following is a list of selected photos, initialized as empty
     var  selectedPhotos by remember {
@@ -99,7 +100,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     { uris ->
         selectedPhotos = uris
     }
-    var photoCarousel = PhotoCarousel(selectedPhotos)
+    var photoCarousel = PhotoCarousel(newPhotos)
     //This launched effect is to ensure that certain values are only initialized, not cconstantly set to a new value everytime the ccomposable is called(prevents bug where you could not actually
     //edit text fields since they ckept getting reset to campsite name values)
     LaunchedEffect(campsite?.documentId){
@@ -321,7 +322,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 }
             }
             //The following will Handle images
-            //TODO
+
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -335,7 +336,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 horizontalArrangement = Arrangement.Center
             ) {
 
-                    photoCarousel.displayCarousel(Modifier,photoCarousel)
+                 currImage =   photoCarousel.displayCarousel(Modifier,photoCarousel)
 
             }
             Row(
@@ -353,10 +354,32 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                     .PickVisualMedia.ImageOnly
                             )
                         )
-                        photoCarousel = PhotoCarousel(selectedPhotos)
+
+                            newPhotos.addAll(selectedPhotos)
+
+                            photoCarousel = PhotoCarousel(newPhotos)
+
                     }
                 ) {
                     Text("Add Images")
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+
+            ) {
+                Button(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    //This onclick handles the launcher for Android's built in image selector.
+                    onClick = {
+                        if((newPhotos.isNotEmpty()) && (currImage != null)){
+                            newPhotos.remove(currImage)
+                            photoCarousel = PhotoCarousel(newPhotos)
+                        }
+                    }
+                ) {
+                    Text("Remove Image")
                 }
             }
             //The following is to handle updating/creating the cmapsite

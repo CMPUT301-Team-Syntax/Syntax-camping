@@ -58,7 +58,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         _raters += 1
         _rating /= _raters
     }
-
+    //Not currently implemented
     fun generateQRcode(){
         _hasQRCode = true
     }
