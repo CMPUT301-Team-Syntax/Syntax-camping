@@ -123,9 +123,7 @@ class CampsiteAppTest {
         composeTestRule.waitForIdle()
 
 // 6. Verify newly created campsite name is displayed (wait for async Firebase save and navigation pop)
-        composeTestRule.waitUntil(timeoutMillis = 10000) {
-            composeTestRule.onAllNodesWithText("Pine Haven Camp").fetchSemanticsNodes().isNotEmpty()
-        }
+
 
         // Step 1: wait until we've left the form
         composeTestRule.waitUntil(timeoutMillis = 15000) {
@@ -138,15 +136,27 @@ class CampsiteAppTest {
 // Step 2: wait for the card to appear on the list
         composeTestRule.waitUntil(timeoutMillis = 15000) {
             composeTestRule
-                .onAllNodesWithText("Pine Haven Camp")
+                .onAllNodesWithText(testCampName)
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-
+        composeTestRule
+            .onNodeWithText(testCampName)
+            .assertIsDisplayed()
 
         composeTestRule
             .onNodeWithTag("tab_search")
             .performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag("search_input_field")
+            .performTextInput(testCampName)
+        composeTestRule
+            .onNodeWithTag("search_icon")
+            .performClick()
+
+
+
 
 
 
@@ -162,15 +172,9 @@ class CampsiteAppTest {
 
 
 
-//        composeTestRule.setContent {
-//            val navController = androidx.navigation.compose.rememberNavController()
-//            SearchHomeScreen(navController = navController)
-//        }
+
 //        // 1. Type into search bar
-//        composeTestRule
-//            .onNodeWithTag("search_input_field")
-//            .performTextInput("Jasper")
-//
+
 //        // 2. Click search icon
 //        composeTestRule
 //            .onNodeWithTag("search_icon")
