@@ -88,6 +88,8 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
+    var currImage: Uri?
+    currImage = null
 
 
     //Note the following is a list of selected photos, initialized as empty
@@ -341,7 +343,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 horizontalArrangement = Arrangement.Center
             ) {
 
-                    photoCarousel.displayCarousel(Modifier,photoCarousel)
+                    currImage = photoCarousel.displayCarousel(Modifier,photoCarousel)
 
             }
             Row(
@@ -363,6 +365,24 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     }
                 ) {
                     Text("Add Images")
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+
+            ) {
+                Button(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    //This onclick handles the launcher for Android's built in image selector.
+                    onClick = {
+                        if((newPhotos.isNotEmpty()) && (currImage != null)){
+                            newPhotos.remove(currImage)
+                            photoCarousel = PhotoCarousel(newPhotos)
+                        }
+                    }
+                ) {
+                    Text("Remove Image")
                 }
             }
             //The following is to handle updating/creating the cmapsite
@@ -443,6 +463,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     Button(
                         modifier = Modifier.padding(vertical = 12.dp).testTag("create_campsite_button"),
                         onClick = {
+                            val db = Database()
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
                                 intNewMaxOcc = newMaxOcc.toIntOrNull()
                                 error = ""
@@ -455,13 +476,20 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                     campsite.updateDescription(newCampDescription)
                                     campsite.updateMaxOcc(intNewMaxOcc!!)
                                     campsite.updateTag(newTags)
-                                    db.updateCampsite(campsite)
                                     if (selectedPhotos.isNotEmpty()){
                                         for (photo in selectedPhotos) {
                                             campsite.addImage(photo)
                                         }
                                     }
-                                    navController.popBackStack()
+                                    //New updateCampsite logic.
+                                    db.updateCampsite(campsite) {result ->
+                                        result.onSuccess {
+                                            navController.popBackStack()
+                                        }
+                                        result.onFailure { exception ->
+                                            error = "Failed to update campsite: ${exception.message}"
+                                        }
+                                    }
                                 }
                             }
                             else{

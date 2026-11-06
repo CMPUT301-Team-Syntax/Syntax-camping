@@ -43,7 +43,7 @@ fun CustomBottomBar(
             NavigationBarItem(
                 modifier = Modifier.testTag("tab_$tab.name"),
                 //this is becasue i made two states in the figma mockup, may be unnecessary if campsite owner icons don't change colour when tapped to go to the screens
-                modifier = Modifier.testTag("tab_${tab.name.lowercase()}"),
+                //modifier = Modifier.testTag("tab_${tab.name.lowercase()}"),
                 selected = isSelected,
                 onClick = {
                     if (!isSelected) {

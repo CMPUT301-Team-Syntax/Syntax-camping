@@ -1,6 +1,7 @@
 package com.example.syntax_camping
 
 import android.content.Context
+import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
@@ -13,7 +14,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.joinToString
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
 
 // class Database
 // author: Andrew
@@ -552,7 +556,12 @@ class Database {
             }
     }
 
-    fun createNewCampsite(campsite: Campsite) {
+
+    //Creates new campsite (callback is optional)
+    fun createNewCampsite(
+        campsite: Campsite,
+        callback: (Result<Unit>) -> Unit = {}
+    ) {
         db.collection("campsites")
             .document(campsite.documentId)
             .set(
@@ -562,10 +571,16 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ","),    // same with images
+                    "images" to campsite.getImagesAsStrs(),
                     "lotteryId" to ""
                 )
             )
+            .addOnSuccessListener {
+                callback(Result.success(Unit))
+            }
+            .addOnFailureListener { error ->
+                callback(Result.failure(error))
+            }
     }
     fun updateCampsiteLotteryId(documentId: String,lotteryId:String){
         db.collection("campsites")
@@ -578,20 +593,90 @@ class Database {
                 // Optional: Handle the error
             }
     }
-    fun updateCampsite(campsite: Campsite) {
-        db.collection("campsites")
-            .document(campsite.documentId)
-            .update(
-                mapOf(
-                    "name" to campsite.name,
-                    "location" to campsite.location,
-                    "description" to campsite.description,
-                    "maxOccupancy" to campsite.maxOcc,
-                    "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs().joinToString(separator = ",")    // same with images
+    fun updateCampsite(
+        campsite: Campsite,
+        callback: (Result<Unit>) -> Unit = {}
+    ) {
+        //"content" is for new local files, "file" is from online database.
+        //This filters out only new files that need to be added, aka local files with "content".
+        val localImages = campsite.images.filter { image ->
+            image.scheme == "content" || image.scheme == "file"
+        }
+
+        fun saveCampsite() {
+            db.collection("campsites")
+                .document(campsite.documentId)
+                .update(
+                    mapOf(
+                        "name" to campsite.name,
+                        "location" to campsite.location,
+                        "description" to campsite.description,
+                        "maxOccupancy" to campsite.maxOcc,
+                        "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
+                        "images" to campsite.getImagesAsStrs()
+                    )
                 )
-            )
+                .addOnSuccessListener {
+                    callback(Result.success(Unit))
+                }
+                .addOnFailureListener { error ->
+                    callback(Result.failure(error))
+                }
+        }
+
+        //Recursive function to keep uploads next image in the local list to match firebase storage URI.
+        fun uploadNextImage(index: Int) {
+            if (index == localImages.size) {
+                saveCampsite()
+                return
+            }
+
+            val localUri = localImages[index]
+
+            uploadCampsiteImage(campsite, localUri) { result ->
+                result.onSuccess { downloadUri ->
+                    //Replace Local URI with Firebase Storage download URI.
+                    val imageIndex = campsite.images.indexOf(localUri)
+
+                    if (imageIndex != -1) {
+                        campsite.images[imageIndex] = downloadUri
+                    }
+                    uploadNextImage(index + 1)
+                }
+                result.onFailure { error -> callback(Result.failure(error)) }
+            }
+        }
+
+        uploadNextImage(0)
     }
 
+
+    //Takes in the campsite and imageUri to be added
+    //Makes a callback of a result whether it succeeds or not.
+    fun uploadCampsiteImage(campsite: Campsite, imageUri: Uri, callback: (Result<Uri>) -> Unit) {
+
+        //Reference to our storage.
+        val storageRef = FirebaseStorage.getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("campsites/${campsite.documentId}/${UUID.randomUUID()}.jpg")   //Specifies path inside storage bracket.
+
+        //Adds image into our Firebase Storage.
+        storageRef.putFile(imageUri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl   //Downloads url of the file and gives that to the campsite to save.
+                    .addOnSuccessListener { downloadUri ->
+                        callback(Result.success(downloadUri))
+                    }
+                    .addOnFailureListener { error ->
+                        Log.e("CampsiteDebug", "Failed to get new image's download URL as Uri.", error)
+                        callback(Result.failure(error))
+                    }
+
+            }
+            .addOnFailureListener { error ->
+                Log.e("CampsiteDebug", "Failed to put new image into the Firebase Storage.", error)
+                callback(Result.failure(error))
+            }
+    }
 
 }
