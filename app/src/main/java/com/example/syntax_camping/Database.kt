@@ -576,7 +576,8 @@ class Database {
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                     "images" to campsite.getImagesAsStrs(),    // same with images
-                    "lotteryId" to ""
+                    "lotteryId" to "",
+                    "ratings" to campsite.ratings
                 )
             )
     }
@@ -604,11 +605,21 @@ class Database {
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
-                    "images" to campsite.getImagesAsStrs()   // same with images
-                )
+                    "images" to campsite.getImagesAsStrs(),   // same with images
+                    "ratings" to campsite.ratings
+                    )
             )
     }
-
+    fun updateCampsiteRating(documentId: String, rating: Double) {
+        db.collection("campsites").document(documentId)
+            .update("ratings", FieldValue.arrayUnion(rating))
+            .addOnSuccessListener {
+                // Successfully appended the rating to the array in Firebase!
+            }
+            .addOnFailureListener { e ->
+                // Handle the erro
+            }
+    }
     fun uploadCampsiteImage(
         campsiteId: String,
         imageUri: Uri,
