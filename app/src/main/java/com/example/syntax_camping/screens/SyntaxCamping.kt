@@ -20,7 +20,6 @@ import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
-import com.example.syntax_camping.screens.ownerScreens.CampsiteDetailsLotteryScreen
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen

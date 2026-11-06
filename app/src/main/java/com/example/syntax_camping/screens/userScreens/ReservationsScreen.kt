@@ -62,11 +62,6 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
-                    onClick = {}
-                ){
-                    Text(" ")
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
