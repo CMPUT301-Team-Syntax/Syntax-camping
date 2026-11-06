@@ -269,12 +269,14 @@ fun CampsiteDetailsScreen(navController: NavController,
                                 fontSize = 16.sp
                             )
 
-                            Text(
-                                text = currentLottery.name, // Fixed: No error, no !!
-                                color = Color(0xFFA13F3F),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
+                            currentLottery.status?.let {
+                                Text(
+                                    text = it, // Fixed: No error, no !!
+                                    color = Color(0xFFA13F3F),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
                         }
                     }
 
