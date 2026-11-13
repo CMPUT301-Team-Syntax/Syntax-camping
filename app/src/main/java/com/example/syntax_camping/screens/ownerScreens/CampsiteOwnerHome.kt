@@ -63,8 +63,6 @@ fun CampsiteOwnerHome(
     var ownerCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    //this is to be a commented as an ai prompt request, about testing this creation when its a data class
-
     //  Trigger a database refresh every time this screen appears
     LaunchedEffect(Unit) {
         isLoading = true
@@ -106,7 +104,8 @@ fun CampsiteOwnerHome(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White), // Set the background color to white
+            .background(Color.White) // Set the background color to white
+            .testTag("ownerHomeScreen"),
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
             TopBar(
@@ -128,7 +127,10 @@ fun CampsiteOwnerHome(
 
             Box(modifier = Modifier.weight(1f)) {
                 if (isLoading|| userViewModel.currentUser == null) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .testTag("ownerLoading"))
                 } else if (myCampsites.isNotEmpty()) {
 
                     Column(
@@ -157,7 +159,7 @@ fun CampsiteOwnerHome(
                                     modifier = Modifier
                                         .width(160.dp)
                                         .height(44.dp)
-                                        .testTag("owner_three_dots_menu")
+                                        .testTag("ownerThreeDotsMenu")
                                     ,
 
                                 ) {
@@ -174,7 +176,7 @@ fun CampsiteOwnerHome(
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Add Campsite") },
-                                        modifier = Modifier.testTag("add_campsite_menu_item"),
+                                        modifier = Modifier.testTag("addCampsiteMenuItem"),
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.location_on),
@@ -190,6 +192,7 @@ fun CampsiteOwnerHome(
 
                                     DropdownMenuItem(
                                         text = { Text("Add Lottery") },
+                                        modifier = Modifier.testTag("addLotteryMenuItem"),
 
                                         leadingIcon = {
                                             Icon(
@@ -213,6 +216,13 @@ fun CampsiteOwnerHome(
                             }
                         }
 
+                        Text(
+                            text = "Your Lotteries",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+
+                        )
+
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -226,6 +236,7 @@ fun CampsiteOwnerHome(
                                 onLotteryClick = { clickedId ->
                                     navController.navigate("LotteryDetailsScreen/$clickedId")
                                 },
+                                modifier = Modifier.testTag("OwnerLotterySection")
                             )
 
                         Text(
@@ -235,7 +246,7 @@ fun CampsiteOwnerHome(
 
                         )
 
-                        Box {
+                        Box (modifier = Modifier.testTag("ownerCampsiteList")){
                             CampsiteListScreenOwner(
                                 campsiteList = myCampsites,
                                 onItemClick = { clickedId ->
@@ -263,7 +274,7 @@ fun CampsiteOwnerHome(
                         IconButton(onClick = { onEditCampsite(null) },
                             modifier = Modifier.
                             size(40.dp)
-                                .testTag("add_campsite_button")
+                                .testTag("addCampsiteButton")
 
                         )
 
@@ -273,10 +284,14 @@ fun CampsiteOwnerHome(
                                 painter = painterResource(id = R.drawable.add),
                                 contentDescription = "add campsite",
                                 tint = Color.Unspecified,
+                                modifier = Modifier.testTag("addCampsite")
                                 )
                         }
                     }
-                    Text("No campsites found.", modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        "No campsites found.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
             }
         }
@@ -284,6 +299,7 @@ fun CampsiteOwnerHome(
         if (noLotteryAvailable) {
             AlertDialog(
                 onDismissRequest = { noLotteryAvailable = false },
+                modifier = Modifier.testTag("noLotteryDialog"),
                 title = {
                     Text(text = "No Lottery Slot Available")
                 },
@@ -292,7 +308,8 @@ fun CampsiteOwnerHome(
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = { noLotteryAvailable = false }
+                        onClick = { noLotteryAvailable = false },
+                        modifier = Modifier.testTag("noLotteryDialogOk")
                     ) {
                         Text("OK")
                     }
