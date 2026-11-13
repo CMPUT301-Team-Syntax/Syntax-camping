@@ -1,7 +1,5 @@
 package com.example.syntax_camping.UserScreens
 
-import android.R.attr.subtitle
-import android.R.attr.title
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,28 +17,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
-import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.Rating
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 
 @Composable
 fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {

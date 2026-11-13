@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.dataClasses.Lottery

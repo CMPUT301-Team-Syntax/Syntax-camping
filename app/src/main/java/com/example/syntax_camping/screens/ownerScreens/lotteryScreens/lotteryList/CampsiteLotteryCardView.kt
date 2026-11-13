@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.R
 import androidx.compose.ui.text.font.FontWeight
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.screens.LotteryListScreenOwner
 
 
 @Composable

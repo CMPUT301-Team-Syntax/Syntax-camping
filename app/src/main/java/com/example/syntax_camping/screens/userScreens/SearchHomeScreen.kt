@@ -31,12 +31,12 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CampsiteListScreen
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteListScreen
+import com.example.syntax_camping.screens.tabs.TopBar
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.UserViewModel
-import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
 
 @Composable
 fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel){

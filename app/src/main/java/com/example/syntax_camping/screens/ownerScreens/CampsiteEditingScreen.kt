@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -21,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,13 +36,11 @@ composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
 import androidx.navigation.NavController
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.R
 import kotlin.String
 
 import com.example.syntax_camping.Database
@@ -58,8 +52,8 @@ import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.OwnerData
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 
 //import androidx.compose.ui.Modifier
 /*

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,15 +39,15 @@ import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.Database
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.Rating
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.lotteryRepository
-import com.example.syntax_camping.screens.LotteryJoinState
-import com.example.syntax_camping.screens.lotteryJoinState
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.lotteryJoinState
 import com.google.firebase.Timestamp
 import getLotteryCounts
 
@@ -413,7 +412,7 @@ fun CampsiteDetailsScreen(
                 OutlinedTextField(
                     value = userReviewString,
                     onValueChange = { userReviewString = it },
-                    label = { Text("Leave a review out of 5") },
+                    label = { Text("Leave a rating out of 5") },
                     modifier = Modifier.fillMaxWidth().testTag("campsite_name_input")
                 )
                 Spacer(modifier = Modifier.height(24.dp))
@@ -441,7 +440,7 @@ fun CampsiteDetailsScreen(
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
                 ) {
-                    Text("Leave Review", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Leave Rating", color = Color.White, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 if(ratingError!= "") {

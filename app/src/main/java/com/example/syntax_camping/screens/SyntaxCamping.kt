@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
@@ -23,11 +22,11 @@ import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
-import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.screens.ownerScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 
 @Composable
 fun SyntaxCamping(
@@ -87,9 +86,6 @@ fun SyntaxCamping(
         }
         composable("Profile") {
             ProfileScreen(navController, userViewModel)
-        }
-        composable("home") {
-            CampsiteSummaryScreen(navController, userViewModel)
         }
         composable("CampsiteOwnerHome"){
             CampsiteOwnerHome(

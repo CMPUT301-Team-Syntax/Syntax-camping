@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +26,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.filterOwnedCampsites
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteSelectorDropdown
+import java.util.Calendar
 
 
 @Composable
@@ -66,19 +68,19 @@ fun LotteryEditScreen(
             name = editingLottery.name
             capacity = editingLottery.capacity.toString()
 
-            val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
-            startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
-            startMonth = (startCal.get(java.util.Calendar.MONTH) + 1).toString()
-            startYear = startCal.get(java.util.Calendar.YEAR).toString()
-            startHour = startCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
-            startMinute = startCal.get(java.util.Calendar.MINUTE).toString()
+            val startCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            startDay = startCal.get(Calendar.DAY_OF_MONTH).toString()
+            startMonth = (startCal.get(Calendar.MONTH) + 1).toString()
+            startYear = startCal.get(Calendar.YEAR).toString()
+            startHour = startCal.get(Calendar.HOUR_OF_DAY).toString()
+            startMinute = startCal.get(Calendar.MINUTE).toString()
 
-            val finalCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
-            finalDay = finalCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
-            finalMonth = (finalCal.get(java.util.Calendar.MONTH) + 1).toString()
-            finalYear = finalCal.get(java.util.Calendar.YEAR).toString()
-            finalHour = finalCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
-            finalMinute = finalCal.get(java.util.Calendar.MINUTE).toString()
+            val finalCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
+            finalDay = finalCal.get(Calendar.DAY_OF_MONTH).toString()
+            finalMonth = (finalCal.get(Calendar.MONTH) + 1).toString()
+            finalYear = finalCal.get(Calendar.YEAR).toString()
+            finalHour = finalCal.get(Calendar.HOUR_OF_DAY).toString()
+            finalMinute = finalCal.get(Calendar.MINUTE).toString()
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
@@ -255,9 +257,20 @@ fun LotteryEditScreen(
 
             Button(
                 onClick = {
-                    val (isSuccess, errorText) = validateAndCreateLottery(name,
-                        startDay, startMonth, startYear, startHour, startMinute,
-                        finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,capacity,
+                    val (isSuccess, errorText) = validateAndCreateLottery(
+                        name,
+                        startDay,
+                        startMonth,
+                        startYear,
+                        startHour,
+                        startMinute,
+                        finalDay,
+                        finalMonth,
+                        finalYear,
+                        finalHour,
+                        finalMinute,
+                        numWinners,
+                        capacity,
                         selectedCampsites
                     )
 

@@ -1,13 +1,9 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -26,7 +22,7 @@ fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
             campsiteList.forEach {camp ->
                 CampsiteCardOwner(//owners version of card
                     campsite = camp,
-                    onClick = { onItemClick(camp.documentId)},
+                    onClick = { onItemClick(camp.documentId) },
 
                     onUpdateClick = if (onUpdateClick != null) {
                         { onUpdateClick(camp.documentId) }

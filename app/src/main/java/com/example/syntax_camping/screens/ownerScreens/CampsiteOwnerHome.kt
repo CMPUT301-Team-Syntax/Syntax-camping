@@ -44,11 +44,11 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
-import com.example.syntax_camping.screens.CampsiteListScreenOwner
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.LotteryListScreenOwner
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteListScreenOwner
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.filterOwnedCampsites
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.CampsiteLotteryCardView
 
 @Composable
 fun CampsiteOwnerHome(

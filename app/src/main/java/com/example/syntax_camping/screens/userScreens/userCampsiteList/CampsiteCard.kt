@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.userScreens.userCampsiteList
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.Rating
 
 @Composable
 fun CampsiteCard(campsite: Campsite, onClick:() -> Unit) {

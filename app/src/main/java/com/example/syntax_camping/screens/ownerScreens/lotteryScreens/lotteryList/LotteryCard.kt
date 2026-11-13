@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
