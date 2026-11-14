@@ -15,8 +15,7 @@ fun CampsiteListScreenOwner(campsiteList: List<Campsite>,
                             onUpdateClick: ((String) -> Unit)? = null,
                             onViewLotClick: ((String) -> Unit)? = null){
         Column(Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+            .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ){
             campsiteList.forEach {camp ->

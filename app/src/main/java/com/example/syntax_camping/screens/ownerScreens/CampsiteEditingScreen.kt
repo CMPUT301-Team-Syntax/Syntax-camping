@@ -224,7 +224,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     value = newCampName,
                     onValueChange = { newCampName = it },
                     label = { Text(nameDisplay) },
-                    modifier = Modifier.weight(1f).testTag("campsite_name_input")
+                    modifier = Modifier.weight(1f).testTag("campsiteNameInput")
                 )
                 //THIS WILL CHANGE WITH MAP IMPLEMENTATION SLIGHTLY AS IT NEEDS TO ALSO RECIEVE POTENTIAL STRINGS FORM THE MAP/TODO
                 Spacer(modifier = Modifier.width(8.dp))
@@ -232,7 +232,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     value = newCampLocation,
                     onValueChange = { newCampLocation = it },
                     label = { Text(locationDisplay) },
-                    modifier = Modifier.weight(1f).testTag("campsite_location_input")
+                    modifier = Modifier.weight(1f).testTag("campsiteLocationInput")
                 )
             }
 
@@ -259,7 +259,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                             value = newMaxOcc ,
                             onValueChange = { newMaxOcc = it },
                             label = { Text(maxOccDisplay) },
-                            modifier = Modifier.weight(1f).testTag("campsite_MaximumOccupant_input")
+                            modifier = Modifier.weight(1f).testTag("campsiteMaximumOccupantInput")
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         //A filler Image for map until map is updated later down the road
@@ -301,7 +301,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                         .heightIn(min = 350.dp, max = 350.dp)
                         // Enables the vertical scroll behavior inside the text box
                         .verticalScroll(rememberScrollState())
-                        .testTag("campsite_description_input")
+                        .testTag("campsiteDescriptionInput")
 
                 )
             }
@@ -333,7 +333,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     value = newTag,
                     onValueChange = { newTag = it },
                     label = { Text("Enter a tag") },
-                    modifier = Modifier.weight(1f).testTag("campsite_Tag_input")
+                    modifier = Modifier.weight(1f).testTag("campsiteTagInput")
 
                 )
             }
@@ -342,7 +342,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
             ) {
                 Button(
-                    modifier = Modifier.padding(vertical = 12.dp).testTag("add_tag_button"),
+                    modifier = Modifier.padding(vertical = 12.dp).testTag("addTagButton"),
                     onClick = {
                         if (newTag.isNotBlank() and (newTag !in newTags)) {
                             newTags.add(newTag)
@@ -436,7 +436,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
                     Button(
                         modifier = Modifier.padding(vertical = 12.dp)
-                            .testTag("create_campsite_button")
+                            .testTag("createCampsiteButton")
                         ,
                         onClick = {
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
@@ -527,7 +527,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
 
                     Button(
-                        modifier = Modifier.padding(vertical = 12.dp).testTag("create_campsite_button"),
+                        modifier = Modifier.padding(vertical = 12.dp).testTag("createCampsiteButton"),
                         onClick = {
                             val db = Database()
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
@@ -563,6 +563,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
                                             // Save the updated campsite to Firestore.
                                             db.updateCampsite(campsite)
+                                            navController.popBackStack()
                                         }
 
                                         result.onFailure { exception ->

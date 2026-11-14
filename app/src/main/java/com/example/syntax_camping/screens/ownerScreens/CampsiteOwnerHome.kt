@@ -119,8 +119,7 @@ fun CampsiteOwnerHome(
 
         Column( modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
-            .padding(16.dp),
+            .padding(innerPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -162,7 +161,7 @@ fun CampsiteOwnerHome(
                                         .testTag("ownerThreeDotsMenu")
                                     ,
 
-                                ) {
+                                    ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.more_vertical),
                                         contentDescription = "add info",
@@ -216,13 +215,6 @@ fun CampsiteOwnerHome(
                             }
                         }
 
-                        Text(
-                            text = "Your Lotteries",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-
-                        )
-
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -239,29 +231,29 @@ fun CampsiteOwnerHome(
                                 modifier = Modifier.testTag("OwnerLotterySection")
                             )
 
-                        Text(
-                            text = "Your Campsites",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            Text(
+                                text = "Your Campsites",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
 
-                        )
-
-                        Box (modifier = Modifier.testTag("ownerCampsiteList")){
-                            CampsiteListScreenOwner(
-                                campsiteList = myCampsites,
-                                onItemClick = { clickedId ->
-                                    navController.navigate("ownerCampsiteDetails/$clickedId")
-                                },
-                                onUpdateClick = { clickedId ->
-                                    val clickedCamp =
-                                        ownerCampsites.find { it.documentId == clickedId }
-                                    onEditCampsite(clickedCamp)
-                                },
-                                onViewLotClick = { lotteryId ->
-                                    navController.navigate("LotteryDetailsScreen/$lotteryId")
-                                }
                             )
-                        }
+
+                            Box (modifier = Modifier.testTag("ownerCampsiteList")){
+                                CampsiteListScreenOwner(
+                                    campsiteList = myCampsites,
+                                    onItemClick = { clickedId ->
+                                        navController.navigate("ownerCampsiteDetails/$clickedId")
+                                    },
+                                    onUpdateClick = { clickedId ->
+                                        val clickedCamp =
+                                            ownerCampsites.find { it.documentId == clickedId }
+                                        onEditCampsite(clickedCamp)
+                                    },
+                                    onViewLotClick = { lotteryId ->
+                                        navController.navigate("LotteryDetailsScreen/$lotteryId")
+                                    }
+                                )
+                            }
                         }
                     }
                 }else {
@@ -285,7 +277,7 @@ fun CampsiteOwnerHome(
                                 contentDescription = "add campsite",
                                 tint = Color.Unspecified,
                                 modifier = Modifier.testTag("addCampsite")
-                                )
+                            )
                         }
                     }
                     Text(

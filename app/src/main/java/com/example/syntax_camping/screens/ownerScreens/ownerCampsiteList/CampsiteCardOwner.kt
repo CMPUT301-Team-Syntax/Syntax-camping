@@ -35,13 +35,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.Rating
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.testTag
+import com.example.syntax_camping.dataClasses.Lottery
 
 @Composable
 fun CampsiteCardOwner(campsite: Campsite,
                       onClick:() -> Unit,
                       onUpdateClick: (() -> Unit)? = null,
                       onViewLotClick: ((String) -> Unit)? = null) {
+
+
+    val lotteryId = campsite.lotteryId?.takeIf { it.isNotBlank() }
+    var lottery by remember(lotteryId) { mutableStateOf<Lottery?>(null) }
+    var lotteryLoaded by remember(lotteryId) { mutableStateOf(false) }   // false while the lottery is still being fetched
+
+// ADDED: loads this campsite's lottery when the card appears (and again if the id changes)
+    LaunchedEffect(lotteryId) {
+        if (lotteryId != null) {
+            lotteryRepository().getLottery(lotteryId) { fetched ->
+                // getLottery hands back a Lottery with a blank status when the document doesn't exist
+                lottery = fetched?.takeIf { !it.status.isNullOrBlank() }
+                lotteryLoaded = true
+            }
+        }
+    }
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -71,7 +93,8 @@ fun CampsiteCardOwner(campsite: Campsite,
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement
+                    .spacedBy(6.dp)
             )
             {
 
@@ -115,19 +138,25 @@ fun CampsiteCardOwner(campsite: Campsite,
                     )
                 }
 
+                // CHANGED: real lottery info instead of the hardcoded "304 people currently waiting" / "5 days left"
+                val shownLottery = lottery
+                val lotteryText = when {
+                    lotteryId == null -> "No lottery available"
+                    !lotteryLoaded -> "Loading lottery..."
+                    shownLottery == null -> "Lottery not found"
+                    shownLottery.status == "initialAccepting" -> "Lottery open · ${daysUntil(shownLottery.endTimeLottery)} days until the draw"
+                    shownLottery.status == "booking" -> "Waitlist open · ${daysUntil(shownLottery.endTimeBooking)} days left"
+                    shownLottery.status == "complete" -> "Lottery ended"
+                    else -> "Lottery status unknown"
+                }
                 Text(
-                    text = "304 people currently waiting",
+                    text = lotteryText,
                     fontSize = 12.sp,
                     color = Color.DarkGray
                 )
 
-                Text(
-                    text = "$5 days left",
-                    fontSize = 12.sp,
-                    color = Color.DarkGray
-                )
-
-                Rating(numRating = campsite.rating)
+                Rating(numRating = campsite.rating,
+                    modifier = Modifier.testTag("Rating"))
             }
 
             if (onUpdateClick != null) {
@@ -165,7 +194,8 @@ fun CampsiteCardOwner(campsite: Campsite,
                             text = { Text("View Lotteries") },
                             onClick = {
                                 menuExpanded = false
-                                onViewLotClick?.invoke(campsite.lotteryId!!) //fake implementation
+                                // CHANGED: only navigates when this campsite has a lottery (was campsite.lotteryId!!, which crashes when it doesn't)
+                                lotteryId?.let { onViewLotClick?.invoke(it) }
                             }
                         )
                     }
@@ -177,3 +207,7 @@ fun CampsiteCardOwner(campsite: Campsite,
         }
     }
 }
+
+// ADDED: whole days from now until the given time (0 once it has passed), the same math LotteryCard uses
+private fun daysUntil(timeMillis: Long): Long =
+    ((timeMillis - System.currentTimeMillis()) / 86_400_000L).coerceAtLeast(0)

@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -158,7 +159,8 @@ fun CampsiteDetailsScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Rating(campsite.rating)
+                    Rating(campsite.rating,
+                        modifier = Modifier.testTag("Rating"))
                     Text(
                         text = " ${campsite.rating} (${campsite.raters})",
                         fontSize = 14.sp,
@@ -400,10 +402,14 @@ fun CampsiteDetailsScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                                .padding(horizontal = 24.dp, vertical = 16.dp)
+                                .testTag("addLottery"),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
                         ) {
-                            Text("Add Lottery", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Add Lottery",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }

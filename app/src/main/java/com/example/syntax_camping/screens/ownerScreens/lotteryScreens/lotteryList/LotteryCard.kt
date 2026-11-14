@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.dataClasses.Lottery
 import java.text.SimpleDateFormat
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.testTag
 
 @Composable
 fun LotteryCard(lottery: Lottery,
@@ -36,7 +37,8 @@ fun LotteryCard(lottery: Lottery,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 8.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .testTag("lotteryCard"),
         shape = RoundedCornerShape(25.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

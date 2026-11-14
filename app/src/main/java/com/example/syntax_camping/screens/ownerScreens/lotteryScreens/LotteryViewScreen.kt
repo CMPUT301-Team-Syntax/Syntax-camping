@@ -4,6 +4,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
 fun validateAndCreateLottery(
+    editingLotteryId: String? = null,
     name: String,
     startDay: String,
     startMonth: String,
@@ -78,7 +79,12 @@ fun validateAndCreateLottery(
         status = null
     )
 
+    if (editingLotteryId != null) {
+        newLottery.lotteryId = editingLotteryId
+    }
+
     val success = newLottery.createLotteryTimer()
+
     if (!success) {
         return Pair(false, "Invalid dates: times cannot be in the past or close dates overlap")
     }
