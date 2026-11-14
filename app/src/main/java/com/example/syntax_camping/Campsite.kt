@@ -78,12 +78,34 @@ class Campsite(documentId: String, name: String, location: String, description: 
     //Used in tandem with the getter for rating to ensure that it has most up to date rating
     fun refreshRating(){
 
-        _rating = 0.0
-        for (rating in _ratings){
-            _rating+= rating
+        if (_ratings.isEmpty()) {
+            _rating = 0.0
+            return
         }
-        _rating= _rating/(_ratings.size)
+        _rating = 0.0
+        for (rating in _ratings) {
+            _rating += rating
+        }
+        _rating /= (_ratings.size)
     }
+
+    /**
+     * Replaces a user's previous rating with a new rating, recalculates the average,
+     * and saves the updated ratings list to Firestore.
+     */
+    fun replaceRating(oldRating: Double, newRating: Double) {
+        val index = _ratings.indexOfFirst { kotlin.math.abs(it - oldRating) < 0.0001 }
+        if (index != -1) {
+            _ratings[index] = newRating
+        } else {
+            _ratings.add(newRating)
+        }
+        _raters = _ratings.size
+        refreshRating()
+
+        db.updateCampsite(this)
+    }
+
     fun updateRaterList(raters: MutableList<Double>){
         _ratings = raters
     }

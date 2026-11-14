@@ -26,6 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryLis
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 @Composable
 fun CampsiteDetailsScreen(
@@ -74,6 +77,11 @@ fun CampsiteDetailsScreen(
     val scrollState = rememberScrollState()
     val lotteryFolder = remember { lotteryRepository() }
     val db = remember { Database() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
+    if (campsite == null) {
+        return
+    }
 
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
     var entryCount by remember { mutableIntStateOf(0) }
@@ -82,16 +90,41 @@ fun CampsiteDetailsScreen(
     var isActionLoading by remember { mutableStateOf(false) }
     var popupMessage by remember { mutableStateOf<String?>(null) }
 
+    // Real-time UI states for Rating
+    var displayedRating by remember(campsite) { mutableDoubleStateOf(campsite.rating) }
+    var displayedRaters by remember(campsite) { mutableIntStateOf(campsite.raters) }
+    var previousUserRating by remember { mutableStateOf<Double?>(null) }
+    var showRatingInput by remember { mutableStateOf(false) }
+    var showThankYouMessage by remember { mutableStateOf(false) }
+    var showRatingPopup by remember { mutableStateOf(false) }
     var userReviewString by remember { mutableStateOf("") }
-    var userReview by remember { mutableStateOf(0.0) }
     var ratingError by remember { mutableStateOf("") }
-
-    if (campsite == null) {
-        return
-    }
 
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
+
+    // Load whether this user has already rated this campsite from Firestore
+    LaunchedEffect(campsite.documentId, userViewModel.deviceId) {
+        firestore.collection("campsites")
+            .document(campsite.documentId)
+            .get()
+            .addOnSuccessListener { doc ->
+                val userRatingsMap = doc.get("userRatings") as? Map<*, *>
+                val existing = (userRatingsMap?.get(userViewModel.deviceId) as? Number)?.toDouble()
+                if (existing != null) {
+                    previousUserRating = existing
+                }
+                val ratingsList = (doc.get("ratings") as? List<*>)
+                    ?.mapNotNull { (it as? Number)?.toDouble() }
+                if (ratingsList != null) {
+                    campsite.ratings.clear()
+                    campsite.ratings.addAll(ratingsList)
+                    // campsite.rating and campsite.raters are computed automatically from campsite.ratings!
+                    displayedRating = if (campsite.ratings.isEmpty()) 0.0 else campsite.rating
+                    displayedRaters = campsite.raters
+                }
+            }
+    }
 
     fun refreshLotteryDetails(id: String) {
         lotteryFolder.getLottery(id) { fetchedLottery ->
@@ -175,13 +208,14 @@ fun CampsiteDetailsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Rating(
-                        campsite.rating,
+                        displayedRating,
                         modifier = Modifier.testTag("Rating")
                     )
                     Text(
-                        text = " ${campsite.rating} (${campsite.raters})",
+                        text = " $displayedRating ($displayedRaters)",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = Color.Gray,
+                        modifier = Modifier.testTag("ratingSummaryText")
                     )
                 }
 
@@ -405,7 +439,6 @@ fun CampsiteDetailsScreen(
                                                         popupMessage = "Leave Successful"
                                                         refreshLotteryDetails(nonNullLotteryId)
 
-                                                        // Also sync user's entrantData in Firestore
                                                         userViewModel.currentUser?.let { u ->
                                                             val oldEntrant = u.entrantData ?: EntrantData()
                                                             val updatedUser = u.copy(
@@ -455,7 +488,6 @@ fun CampsiteDetailsScreen(
                                                         popupMessage = "Join Successful"
                                                         refreshLotteryDetails(nonNullLotteryId)
 
-                                                        // Also sync user's entrantData in Firestore
                                                         userViewModel.currentUser?.let { u ->
                                                             val oldEntrant = u.entrantData ?: EntrantData()
                                                             val updatedIds = (oldEntrant.lotteryEntryIds + nonNullLotteryId).distinct().toMutableList()
@@ -496,7 +528,6 @@ fun CampsiteDetailsScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // DYNAMIC TIMER & COUNTS
                                 val targetTime = if (currentLottery?.status == "booking") {
                                     currentLottery.endTimeBooking
                                 } else {
@@ -523,50 +554,117 @@ fun CampsiteDetailsScreen(
                     }
                 }
 
-                // Only non-owners can leave a rating
+                // ================== RATING SECTION (Non-Owners Only) ==================
                 if (!isOwner && !update) {
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    OutlinedTextField(
-                        value = userReviewString,
-                        onValueChange = { userReviewString = it },
-                        label = { Text("Leave a rating out of 5") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("campsite_name_input")
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = {
-                            if (userReviewString.toDoubleOrNull() != null) {
-                                userReview = userReviewString.toDoubleOrNull()!!
-                                if ((userReview >= 0.0) && (userReview <= 5.0)) {
-                                    campsite.updateRating(userReview)
-                                    ratingError = ""
-                                } else {
-                                    ratingError = "review must be between 0.0 and 5.0"
-                                }
-                            } else {
-                                ratingError = "you must enter a rating before you can review"
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp)
-                            .testTag("leaveRatingButton"),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Leave Rating", color = Color.White, fontWeight = FontWeight.Bold)
+                        if (showThankYouMessage) {
+                            Text(
+                                text = "Thank you for leaving a rating",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF3E6B68),
+                                modifier = Modifier
+                                    .padding(bottom = 8.dp)
+                                    .testTag("thankYouRatingText")
+                            )
+                        }
+
+                        if (!showRatingInput) {
+                            val hasRatedBefore = previousUserRating != null
+                            Button(
+                                onClick = {
+                                    ratingError = ""
+                                    userReviewString = previousUserRating?.toString() ?: ""
+                                    showRatingInput = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .testTag(if (hasRatedBefore) "editRatingPrompt" else "openRatingPrompt"),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                            ) {
+                                Text(
+                                    text = if (hasRatedBefore) "Edit rating?" else "Do you want to leave a rating?",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            OutlinedTextField(
+                                value = userReviewString,
+                                onValueChange = { userReviewString = it },
+                                label = { Text("Leave a rating out of 5") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("campsite_name_input")
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    val parsedRating = userReviewString.toDoubleOrNull()
+                                    if (parsedRating != null) {
+                                        if (parsedRating in 0.0..5.0) {
+                                            val oldRating = previousUserRating
+                                            if (oldRating == null) {
+                                                campsite.updateRating(parsedRating)
+                                            } else {
+                                                campsite.replaceRating(oldRating, parsedRating)
+                                            }
+
+                                            // Save per-user rating in Firestore so it's remembered when returning
+                                            firestore.collection("campsites")
+                                                .document(campsite.documentId)
+                                                .set(
+                                                    mapOf("userRatings" to mapOf(userViewModel.deviceId to parsedRating)),
+                                                    SetOptions.merge()
+                                                )
+
+                                            previousUserRating = parsedRating
+                                            displayedRating = campsite.rating
+                                            displayedRaters = campsite.raters
+                                            ratingError = ""
+                                            showRatingInput = false
+                                            showThankYouMessage = true
+                                            showRatingPopup = true
+                                        } else {
+                                            ratingError = "review must be between 0.0 and 5.0"
+                                        }
+                                    } else {
+                                        ratingError = "you must enter a rating before you can review"
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .testTag("submitRatingButton"),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                            ) {
+                                Text("Submit Rating", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+
+                            if (ratingError.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = ratingError,
+                                    fontSize = 16.sp,
+                                    color = Color(0xFFA13F3F),
+                                    modifier = Modifier.testTag("ratingErrorText")
+                                )
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                    if (ratingError != "") {
-                        Text(text = ratingError, fontSize = 16.sp)
-                    }
                 }
             }
         }
 
+        // Lottery Join / Leave Popup
         if (popupMessage != null) {
             AlertDialog(
                 onDismissRequest = { popupMessage = null },
@@ -577,6 +675,24 @@ fun CampsiteDetailsScreen(
                     TextButton(
                         onClick = { popupMessage = null },
                         modifier = Modifier.testTag("lotteryStatusPopupOk")
+                    ) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+
+        // Rating Received Popup
+        if (showRatingPopup) {
+            AlertDialog(
+                onDismissRequest = { showRatingPopup = false },
+                modifier = Modifier.testTag("ratingPopup"),
+                title = { Text(text = "Rating received") },
+                text = { Text(text = "Thank you for leaving a rating") },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showRatingPopup = false },
+                        modifier = Modifier.testTag("ratingPopupOk")
                     ) {
                         Text("OK")
                     }
