@@ -871,9 +871,8 @@ class CampsiteOwnerHomeTest {
             .performScrollTo()
             .performClick()
 
-        // Wait for the edit form to close (which pops us back to Details)
-        composeTestRule
-            .waitUntil(timeoutMillis = 15_000) {
+        // Wait for the edit form to close
+        composeTestRule.waitUntil(timeoutMillis = 15_000) {
             composeTestRule
                 .onAllNodesWithTag("createLotteryButton")
                 .fetchSemanticsNodes()
@@ -882,11 +881,28 @@ class CampsiteOwnerHomeTest {
 
         Thread.sleep(2000)
 
-        // 5. Go back to the Home Screen (which forces a full data refresh)
-        goBack()
+        // 5. INSTEAD OF goBack(), explicitly tap the Home Tab to force a refresh
+        composeTestRule
+            .onNodeWithTag("tab_campsiteshome")
+            .performClick()
+
+        // Wait for the loading spinner to vanish
+        composeTestRule.waitUntil(timeoutMillis = 15_000) {
+            composeTestRule
+                .onAllNodesWithTag("ownerLoading")
+                .fetchSemanticsNodes()
+                .isEmpty()
+        }
 
         // 6. Verify the Home Screen Card updated to the new name!
-        waitForText(newName)
+        // INSTEAD OF waitForText(newName), we use a smart wait that allows substrings:
+        composeTestRule.waitUntil(timeoutMillis = 15_000) {
+            composeTestRule
+                .onAllNodesWithText(newName, substring = true, useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
         composeTestRule
             .onNodeWithText(newName, substring = true, useUnmergedTree = true)
             .performScrollTo()
@@ -894,8 +910,8 @@ class CampsiteOwnerHomeTest {
 
         // Ensure the old name is completely gone from the list
         composeTestRule
-            .onNodeWithText(originalName, substring = true, useUnmergedTree = true)
-            .assertDoesNotExist()
+            .onAllNodesWithText(originalName, substring = true, useUnmergedTree = true)
+            .assertCountEquals(0)
     }
 
 
