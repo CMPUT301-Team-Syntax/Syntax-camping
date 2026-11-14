@@ -914,6 +914,185 @@ class CampsiteOwnerHomeTest {
             .assertCountEquals(0)
     }
 
+    // ================= NEW: connected campsites menu in lottery details =================
+
+    /**
+     * In a lottery with two campsites, removing one campsite via the 3-dot menu frees that campsite
+     * (its lotteryId becomes blank in Firestore) while keeping the lottery alive with the other campsite.
+     */
+    @Test
+    fun removingOneOfTwoCampsitesFromLotteryFreesCampsiteAndKeepsLottery() {
+        val a = seedOwnedCampsite("A")
+        val b = seedOwnedCampsite("B")
+        launchApp()
+        openOwnerHome()
+        waitForText(a.name)
+        waitForText(b.name)
+
+        val lotteryName = newLotteryName("removeOne")
+        createLotteryFromHome(lotteryName, listOf(a, b))
+        waitForLotteryCards(1)
+        val lotteryId = waitForLotteryId(lotteryName)
+
+        // Open the lottery details screen
+        composeTestRule
+            .onNodeWithText(lotteryName, substring = true, useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+
+        waitForText("Participating Campsites")
+
+        // Open the 3-dot menu on campsite A and remove it from the lottery
+        composeTestRule
+            .onNodeWithTag("connectedCampsiteMenu_${a.id}")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("removeCampsiteFromLotteryItem")
+            .performClick()
+
+        // Warning dialog should NOT appear since there were 2 campsites
+        composeTestRule
+            .onNodeWithTag("deleteLotteryWarningDialog")
+            .assertDoesNotExist()
+
+        // Campsite A is freed in Firestore, while Campsite B is still linked to the lottery
+        waitUntilTrue("campsite A to be freed from the lottery in Firestore") {
+            campsiteLotteryId(a.id).isNullOrBlank() && campsiteLotteryId(b.id) == lotteryId
+        }
+
+        // And because A is free again, going back to Home and tapping "Add Lottery" opens the form instead of the blocked dialog
+        goBack()
+        openAddLotteryFromHome()
+        composeTestRule
+            .onNodeWithTag("createLotteryButton")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    /**
+     * In a lottery with only one campsite, removing that campsite shows the delete warning dialog.
+     * Canceling keeps the lottery; confirming deletes the lottery from Firestore and frees the campsite.
+     */
+    @Test
+    fun removingOnlyCampsiteFromLotteryWarnsAndDeletesLotteryFromDatabase() {
+        val campsite = seedOwnedCampsite("Only")
+        launchApp()
+        openOwnerHome()
+        waitForText(campsite.name)
+
+        val lotteryName = newLotteryName("deleteMe")
+        createLotteryFromHome(lotteryName, listOf(campsite))
+        waitForLotteryCards(1)
+        val lotteryId = waitForLotteryId(lotteryName)
+
+        // Open Lottery Details
+        composeTestRule
+            .onNodeWithText(lotteryName, substring = true, useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+
+        waitForText("Participating Campsites")
+
+        // Tap the 3-dot menu on the only campsite -> Remove Campsite from Lottery
+        composeTestRule
+            .onNodeWithTag("connectedCampsiteMenu_${campsite.id}")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("removeCampsiteFromLotteryItem")
+            .performClick()
+
+        // 1. Warning dialog appears
+        composeTestRule
+            .onNodeWithTag("deleteLotteryWarningDialog")
+            .assertIsDisplayed()
+
+        // 2. Test "Cancel" first: dialog closes and lottery still exists
+        composeTestRule
+            .onNodeWithTag("cancelDeleteLotteryButton")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("deleteLotteryWarningDialog")
+            .assertDoesNotExist()
+
+        // 3. Open menu again and confirm deletion
+        composeTestRule
+            .onNodeWithTag("connectedCampsiteMenu_${campsite.id}")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("removeCampsiteFromLotteryItem")
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("confirmDeleteLotteryButton")
+            .performClick()
+
+        // 4. Verify the lottery document is deleted from Firestore and the campsite is freed
+        waitUntilTrue("the lottery to be deleted from Firestore and campsite freed") {
+            val lotDoc = Tasks.await(
+                firestore.collection("lotteries")
+                    .document(lotteryId)
+                    .get(),
+                10,
+                TimeUnit.SECONDS
+            )
+            !lotDoc.exists() && campsiteLotteryId(campsite.id).isNullOrBlank()
+        }
+
+        // Back on Home Screen, no running lotteries remain
+        composeTestRule.waitUntil(timeoutMillis = 15_000) {
+            composeTestRule
+                .onAllNodesWithText("No running Lotteries")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+    }
+
+    /**
+     * Using "Update Lottery" from the connected campsite's 3-dot menu on LotteryDetailsScreen
+     * opens the prefilled LotteryEditScreen.
+     */
+    @Test
+    fun updateLotteryFromConnectedCampsiteCardMenuOpensPrefilledEditForm() {
+        val campsite = seedOwnedCampsite("U")
+        launchApp()
+        openOwnerHome()
+        waitForText(campsite.name)
+
+        val lotteryName = newLotteryName("menuUpdate")
+        createLotteryFromHome(lotteryName, listOf(campsite))
+        waitForLotteryCards(1)
+
+        // Open Lottery Details
+        composeTestRule
+            .onNodeWithText(lotteryName, substring = true, useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+
+        waitForText("Participating Campsites")
+
+        // Open 3-dot menu on the connected campsite card and tap "Update Lottery"
+        composeTestRule
+            .onNodeWithTag("connectedCampsiteMenu_${campsite.id}")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag("updateLotteryMenuItem")
+            .performClick()
+
+        // Verify the Edit Form opens with the lottery's name prefilled
+        composeTestRule
+            .onNodeWithTag("lotteryName")
+            .assertTextContains(lotteryName)
+    }
+
 
 
 

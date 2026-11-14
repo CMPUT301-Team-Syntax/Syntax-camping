@@ -14,10 +14,8 @@ import com.example.syntax_camping.Campsite
 
 @Composable
 fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Unit){
-    Scaffold { innerPadding ->
         LazyColumn(Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
+            .fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ){
@@ -28,4 +26,3 @@ fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Un
             }
         }
     }
-}
