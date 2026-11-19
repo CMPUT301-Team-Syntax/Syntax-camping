@@ -18,6 +18,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.storage.FirebaseStorage
 import java.util.UUID
+import com.example.syntax_camping.dataClasses.Review
+import com.google.firebase.firestore.SetOptions
 
 // class Database
 // author: Andrew
@@ -112,7 +114,7 @@ class Database {
             "capacity" to capacity,
 
 
-        )
+            )
         lotteryReference.update(data)
 
 
@@ -281,7 +283,7 @@ class Database {
                     listWeAreChecking = "entries"
                 }
                 else if(status == "booking") {
-                        listWeAreChecking = "waitlist"
+                    listWeAreChecking = "waitlist"
                 }
                 else {
                     onResult(true)
@@ -304,7 +306,7 @@ class Database {
                             currentCount >= capacity
                         }else{
                             false
-                            }
+                        }
 
                         onResult(isFull)
                     }
@@ -627,13 +629,13 @@ class Database {
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                     "images" to campsite.getImagesAsStrs(),   // same with images
                     "ratings" to campsite.ratings
-                    )
+                )
             )
     }
     /*
     * Updates a campsites ratings list every tiem a new review is added(to make sure it saves)
     * */
-    fun updateCampsiteRating(documentId: String, rating: Double) {
+    fun updateCampsiteRating(documentId: String, rating: Review) {
         db.collection("campsites").document(documentId)
             .update("ratings", FieldValue.arrayUnion(rating))
             .addOnSuccessListener {

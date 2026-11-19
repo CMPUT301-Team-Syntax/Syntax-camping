@@ -306,4 +306,56 @@ class LotteryTesting {
         val finished = latch.await(10, TimeUnit.SECONDS)
         assertTrue("Test timed out", finished)
     }
+    //checks if the automatic draw works and that there is one person in winners and one in waitlist(since winners is one and two added, this meaans they are being drawn
+    @Test
+    fun testLotteryDraw() {
+        val timeInMillis = System.currentTimeMillis()
+        val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
+        val littleLotteryGuy2 = LotteryEntry("madeupuserId2", Timestamp.now())
+
+        val drawLotteryId = db.addDrawTimer(
+            timeInMillis,
+            timeInMillis + 30000000,
+            1,
+            mutableListOf(testCampsite),
+            null,
+            "testingthewaters"
+        )
+
+        lr.getLottery(drawLotteryId) { lottery ->
+            if (lottery == null) {
+                throw AssertionError("Lottery was null")
+            }
+            assert(lottery.status == "booking")
+
+            // Use the fetched lottery object instead of 'testLottery'
+            lottery.addEntry(littleLotteryGuy) { success1 ->
+                assertTrue("First entry should succeed", success1)
+
+                // Added second user entry so waitlist has data
+                lottery.addEntry(littleLotteryGuy2) { success2 ->
+                    assertTrue("Second entry should succeed", success2)
+
+                    // Fetch and check winners
+                    lr.getWinners(drawLotteryId) { updatedWinners ->
+                        assertNotNull("Updated winners was null", updatedWinners)
+                        assertTrue(
+                            "Winners list should not be empty",
+                            !updatedWinners.isNullOrEmpty()
+                        )
+                    }
+
+                    // Fetch and check waitlist
+                    lr.getWaitlist(drawLotteryId) { updatedWaitlist ->
+                        assertNotNull("Updated waitlist was null", updatedWaitlist)
+                        assertTrue(
+                            "Waitlist should not be empty",
+                            !updatedWaitlist.isNullOrEmpty()
+                        )
+                    }
+                }
+            }
+        }
+    }
+    //endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String
 }
