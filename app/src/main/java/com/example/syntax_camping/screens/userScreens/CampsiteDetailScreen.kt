@@ -51,6 +51,7 @@ import com.example.syntax_camping.screens.LotteryJoinState
 import com.example.syntax_camping.screens.lotteryJoinState
 import com.google.firebase.Timestamp
 import getLotteryCounts
+import com.example.syntax_camping.dataClasses.Review
 
 @Composable
 fun CampsiteDetailsScreen(
@@ -68,9 +69,11 @@ fun CampsiteDetailsScreen(
     val lotteryFolder = lotteryRepository()
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
     var userReviewString by remember { mutableStateOf("") }
+    var userReviewTextString by remember { mutableStateOf("") }
     var userReview by remember { mutableStateOf(0.0) }
     val db = Database()
     var ratingError by remember{mutableStateOf("")}
+    var review by remember{mutableStateOf<Review?>(null)}
 
     if (campsite == null) {
         return
@@ -418,14 +421,28 @@ fun CampsiteDetailsScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
+                OutlinedTextField(
+                    value = userReviewTextString,
+                    onValueChange = { userReviewTextString = it },
+                    label = { Text("Enter a review description") },
+                    modifier = Modifier.fillMaxWidth().testTag("campsite_name_input")
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
                 Button(
                     onClick = {
                         if(userReviewString.toDoubleOrNull() != null){
                             userReview = userReviewString.toDoubleOrNull()!!
                             if((userReview >= 0.0) && (userReview <= 5.0)){
-                                campsite.updateRating(userReview)
-                                ratingError = ""
-                            }
+                                if(userReviewTextString != "") {
+                                    review = Review(userReview,userViewModel.deviceId,userReviewTextString)
+                                    campsite.updateRating(review!!)
+                                    ratingError = ""
+                                }
+                                else{
+                                    ratingError = "review Text must be entered"
+                                }
+                                }
 
                             else{
                                 ratingError = "review must be between 0.0 and 5.0"

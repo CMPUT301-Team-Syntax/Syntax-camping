@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.getField
 import kotlin.collections.toMutableList
 import kotlin.text.split
+import com.example.syntax_camping.dataClasses.Review
 
 // object CampsiteRepository
 // author: Andrew
@@ -84,7 +85,7 @@ object CampsiteRepository {
 
 
                 )
-                campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
+                campsite.updateRaterList(document.get("ratings") as? MutableList<Review> ?:mutableListOf())
 
                 callback(campsite)
             }
@@ -127,8 +128,20 @@ object CampsiteRepository {
                             ?.toMutableList()
                             ?: mutableListOf()
                     )
-                    campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
+                    val rawRatings = document.get("ratings") as? List<Map<String, Any>> ?: emptyList()
 
+                    // 2. Map those database items directly into instances of your custom Rating class
+                    val parsedRatings: MutableList<Review> = rawRatings.map { map ->
+                        Review(
+                            // Extract by database keys. Change "score" or "comment" to your exact database keys if they differ.
+                            rating = (map["rating"] as? Double) ?: 0.0,
+                            userId = (map["userId"] as? String) ?: "",
+                            reviewText = (map["reviewText"] as? String) ?: ""
+                        )
+                    }.toMutableList()
+
+                    // 3. Update your campsite with the newly typed list
+                    campsite.updateRaterList(parsedRatings)
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
 
                     loadedCampsites.add(campsite)
