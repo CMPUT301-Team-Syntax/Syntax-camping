@@ -6,6 +6,7 @@ import android.provider.Settings
 import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
+import com.example.syntax_camping.dataClasses.NotificationData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.User
@@ -121,67 +122,75 @@ class Database {
     /*
     * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
     * */
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean)->Unit){
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean) -> Unit) {
+        registerLotteryEntry(lotteryId, entry) { notification -> onComplete(notification != null) }
+    }
 
-
-        hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
-
-            // If the user has already joined, stop here and don't add them again
+    internal fun registerLotteryEntry(
+        lotteryId: String,
+        entry: LotteryEntry,
+        campsiteId: String? = null,
+        onComplete: (NotificationData.LotteryJoined?) -> Unit
+    ) {
+        readLotteryMembership(lotteryId, entry.userId, onFailure = { onComplete(null) }) { hasJoined ->
             if (hasJoined) {
-                onComplete(false)
-                return@hasUserJoinedLottery
+                onComplete(null)
+                return@readLotteryMembership
             }
-            hasLotteryHitCapacity(lotteryId) { notCapacity ->
-                if (notCapacity) {
-                    onComplete(false)
+            hasLotteryHitCapacity(lotteryId) { isFull ->
+                if (isFull) {
+                    onComplete(null)
                     return@hasLotteryHitCapacity
                 }
-                val lottery = db.collection("lotteries")
-                    .document(lotteryId)
-
-
+                val lottery = db.collection("lotteries").document(lotteryId)
                 lottery.get()
                     .addOnSuccessListener { lotterySnapshot ->
-                        val currentTime = System.currentTimeMillis()
-                        val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
-                        val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
-                        val status = lotterySnapshot.getString("status")
-
-                        val collectionName: String? = when (status) {
+                        val collectionName = when (lotterySnapshot.getString("status")) {
                             "initialAccepting" -> "entries"
                             "booking" -> "waitlist"
-                            else -> null
+                            else -> {
+                                onComplete(null)
+                                return@addOnSuccessListener
+                            }
                         }
-                        //If a collection name was actually found, huzzah, add the user to that collection
-                        if (collectionName != null) {
-
-                            lottery.collection(collectionName)
-                                .document(entry.userId)
-                                .set(
-                                    mapOf(
-                                        "userId" to entry.userId,
-                                        "joinedTimestamp" to entry.joined,
-                                        "status" to "waiting"
+                        lottery.collection(collectionName)
+                            .document(entry.userId)
+                            .set(
+                                mapOf(
+                                    "userId" to entry.userId,
+                                    "joinedTimestamp" to entry.joined,
+                                    "status" to "waiting"
+                                )
+                            )
+                            .addOnSuccessListener {
+                                onComplete(
+                                    NotificationData.LotteryJoined(
+                                        id = "${lotterySnapshot.id}:${entry.joined.seconds}:${entry.joined.nanoseconds}",
+                                        subject = lotteryNotificationSubject(lotterySnapshot, campsiteId),
+                                        joinedWaitlist = collectionName == "waitlist"
                                     )
                                 )
-                                .addOnSuccessListener {
-                                    onComplete(true)
-                                }
-                                .addOnFailureListener { e ->
-                                    onComplete(false)
-                                }
-                        }else{
-                            onComplete(false)
-
-                        }
-                    }.addOnFailureListener{
-                        onComplete(false)
+                            }
+                            .addOnFailureListener { onComplete(null) }
                     }
+                    .addOnFailureListener { onComplete(null) }
             }
-
         }
-
     }
+
+    private fun lotteryNotificationSubject(lottery: DocumentSnapshot, campsiteId: String?): String {
+        if (!campsiteId.isNullOrBlank()) {
+            val campsite = CampsiteRepository.getCampsites().find { it.documentId == campsiteId }
+            campsite?.name?.takeIf(String::isNotBlank)?.let { return it }
+
+            val campsites = lottery.get("campsites") as? List<*>
+            val savedCampsite = campsites?.filterIsInstance<Map<*, *>>()
+                ?.firstOrNull { it["documentId"] == campsiteId }
+            (savedCampsite?.get("name") as? String)?.takeIf(String::isNotBlank)?.let { return it }
+        }
+        return (lottery.get("name") as? String).orEmpty()
+    }
+
     /*
     * Works with the firebase and lotteris to remove a user either from the waitlist or entries list attacehd to a lottery
     * as well as the has joined function to make sure the user is actually in there before we try to delete them
@@ -245,26 +254,32 @@ class Database {
     *
     * */
     fun hasUserJoinedLottery(lotteryId: String, userId: String, onResult: (Boolean) -> Unit) {
+        readLotteryMembership(lotteryId, userId, onFailure = {}, onResult = onResult)
+    }
+
+    private fun readLotteryMembership(
+        lotteryId: String,
+        userId: String,
+        onFailure: () -> Unit,
+        onResult: (Boolean) -> Unit
+    ) {
         val lotteryRef = db.collection("lotteries").document(lotteryId)
 
-        lotteryRef.collection("entries").document(userId).get().addOnSuccessListener { entry ->
-            if (entry.exists()) {
-                onResult(true)
-                return@addOnSuccessListener
-            }
-
-            lotteryRef.collection("waitlist").document(userId).get().addOnSuccessListener { waitlist ->
-                if (waitlist.exists()) {
-                    onResult(true)
-                    return@addOnSuccessListener
+        fun checkCollection(collection: String, onMissing: () -> Unit) {
+            lotteryRef.collection(collection).document(userId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) onResult(true) else onMissing()
                 }
+                .addOnFailureListener { onFailure() }
+        }
 
-                lotteryRef.collection("winners").document(userId).get().addOnSuccessListener { winner ->
-                    onResult(winner.exists())
-                }
+        checkCollection("entries") {
+            checkCollection("waitlist") {
+                checkCollection("winners") { onResult(false) }
             }
         }
     }
+
     /*
     * works with adding an entry to make sure user is not already a winner/entry/waitlist before ltting them join(they can't join more than once)
     * */

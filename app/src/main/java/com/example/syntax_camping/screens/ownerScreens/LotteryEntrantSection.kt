@@ -10,12 +10,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.Database
+import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.google.firebase.Timestamp
 
 @Composable
-fun LotteryEntrantSection(lottery: Lottery?, userId: String) {
+fun LotteryEntrantSection(lottery: Lottery?, userViewModel: UserViewModel) {
+    val userId = userViewModel.deviceId
     val lotteryKey = lottery?.lotteryId
     var checking by remember(lotteryKey) { mutableStateOf(true) }
     var inLottery by remember(lotteryKey) { mutableStateOf(false) }
@@ -55,7 +57,7 @@ fun LotteryEntrantSection(lottery: Lottery?, userId: String) {
                 Button(
                     onClick = {
                         busy = true
-                        lottery.addEntry(LotteryEntry(userId = userId, joined = Timestamp.now())) { joined ->
+                        userViewModel.joinLottery(lottery.lotteryId) { joined ->
                             if (joined) inLottery = true
                             busy = false
                         }

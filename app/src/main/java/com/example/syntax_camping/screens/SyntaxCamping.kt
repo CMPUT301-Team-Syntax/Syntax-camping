@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
+import com.example.syntax_camping.UserScreens.campsiteInformationDestinations
 import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
@@ -27,6 +28,7 @@ import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.userScreens.notificationsDestination
 
 @Composable
 fun SyntaxCamping(
@@ -53,6 +55,8 @@ fun SyntaxCamping(
             CampsiteDetailsScreen(navController, campsiteId, userViewModel)
         }
 
+        campsiteInformationDestinations(navController)
+
         composable("ownerCampsiteDetails/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
             CampsiteDetailsScreen(
@@ -78,6 +82,7 @@ fun SyntaxCamping(
         composable(APP_GUIDELINES_ROUTE) {
             AppGuidelinesScreen(navController)
         }
+        notificationsDestination(navController, userViewModel.notificationInbox)
         composable("Search") {
             SearchHomeScreen(navController, userViewModel)
         }

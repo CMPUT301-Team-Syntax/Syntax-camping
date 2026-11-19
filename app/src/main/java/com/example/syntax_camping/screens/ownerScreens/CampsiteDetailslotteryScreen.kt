@@ -134,7 +134,7 @@ fun LotteryDetailsScreen(navController: NavController, lotteryId: String?, userV
                     // YOUR SEPARATE FILE HANDLES ALL THE JOIN/LEAVE LOGIC HERE!
                     LotteryEntrantSection(
                         lottery = current,
-                        userId = userViewModel.deviceId
+                        userViewModel = userViewModel
                     )
                 }
 

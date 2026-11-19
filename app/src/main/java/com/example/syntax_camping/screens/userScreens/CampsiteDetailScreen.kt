@@ -98,6 +98,7 @@ fun CampsiteDetailsScreen(
 
     // 2. Track if the user has joined
     var hasJoined by remember { mutableStateOf(false) }
+    var isJoining by remember(campsiteID, currentLottery?.lotteryId) { mutableStateOf(false) }
 
     // 3. Check if the user is in the lottery
     LaunchedEffect(currentLottery?.lotteryId) {
@@ -209,7 +210,7 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "💰 Rate: $25/n", fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "🏕️ Campsite Rules", fontSize = 16.sp, color = Color.Blue)
+                        CampsiteRulesLink(navController)
                     }
 
                     // Right column
@@ -228,7 +229,7 @@ fun CampsiteDetailsScreen(
                             Text(text = " Max Occupancy: ${campsite.maxOcc}", fontSize = 16.sp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "📜 Cancellation policy", fontSize = 16.sp, color = Color.Blue)
+                        CancellationPolicyLink(navController)
                     }
                 }
 
@@ -341,19 +342,19 @@ fun CampsiteDetailsScreen(
                                         Button(
                                             onClick = {
                                                 campsite.lotteryId?.let { nonNullLotteryId ->
-                                                    db.addLotteryEntry(
+                                                    isJoining = true
+                                                    userViewModel.joinLottery(
                                                         nonNullLotteryId,
-                                                        LotteryEntry(
-                                                            userId = userViewModel.deviceId,
-                                                            Timestamp.now()
-                                                        )
+                                                        campsiteId = campsite.documentId
                                                     ) { success ->
                                                         if (success) {
                                                             hasJoined = true
                                                         }
+                                                        isJoining = false
                                                     }
                                                 }
                                             },
+                                            enabled = !isJoining,
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color(
                                                     0xFFF2C9C9
