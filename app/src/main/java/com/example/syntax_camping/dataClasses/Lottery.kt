@@ -46,7 +46,14 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
             return false
         }
 
-        lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners,campsites,capacity, name)
+        //i made this an if else statement one of the tests for lottery wasnt working for editing
+        //so i just put it to a if blank then else uses the db update stuff
+
+        if (lotteryId.isBlank()) {
+            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name)
+        } else {
+            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId)
+        }
         for (campsite in campsites){
             campsite.updateLotteryId(lotteryId)
             db.updateCampsiteLotteryId(campsite.documentId, lotteryId)

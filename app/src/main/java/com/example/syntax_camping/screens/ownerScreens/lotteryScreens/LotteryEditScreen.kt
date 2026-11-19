@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +26,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.filterOwnedCampsites
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteSelectorDropdown
+import java.util.Calendar
 
 
 @Composable
@@ -66,19 +69,19 @@ fun LotteryEditScreen(
             name = editingLottery.name
             capacity = editingLottery.capacity.toString()
 
-            val startCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
-            startDay = startCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
-            startMonth = (startCal.get(java.util.Calendar.MONTH) + 1).toString()
-            startYear = startCal.get(java.util.Calendar.YEAR).toString()
-            startHour = startCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
-            startMinute = startCal.get(java.util.Calendar.MINUTE).toString()
+            val startCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            startDay = startCal.get(Calendar.DAY_OF_MONTH).toString()
+            startMonth = (startCal.get(Calendar.MONTH) + 1).toString()
+            startYear = startCal.get(Calendar.YEAR).toString()
+            startHour = startCal.get(Calendar.HOUR_OF_DAY).toString()
+            startMinute = startCal.get(Calendar.MINUTE).toString()
 
-            val finalCal = java.util.Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
-            finalDay = finalCal.get(java.util.Calendar.DAY_OF_MONTH).toString()
-            finalMonth = (finalCal.get(java.util.Calendar.MONTH) + 1).toString()
-            finalYear = finalCal.get(java.util.Calendar.YEAR).toString()
-            finalHour = finalCal.get(java.util.Calendar.HOUR_OF_DAY).toString()
-            finalMinute = finalCal.get(java.util.Calendar.MINUTE).toString()
+            val finalCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
+            finalDay = finalCal.get(Calendar.DAY_OF_MONTH).toString()
+            finalMonth = (finalCal.get(Calendar.MONTH) + 1).toString()
+            finalYear = finalCal.get(Calendar.YEAR).toString()
+            finalHour = finalCal.get(Calendar.HOUR_OF_DAY).toString()
+            finalMinute = finalCal.get(Calendar.MINUTE).toString()
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
@@ -131,8 +134,10 @@ fun LotteryEditScreen(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text("Name") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryName"),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                     )
                 }
 
@@ -141,14 +146,18 @@ fun LotteryEditScreen(
                         value = startDay,
                         onValueChange = { startDay = it },
                         label = { Text("Day") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryStartDay"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = startMonth,
                         onValueChange = { startMonth = it },
                         label = { Text("Month") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryStartMonth"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
 
@@ -156,7 +165,9 @@ fun LotteryEditScreen(
                         value = startYear,
                         onValueChange = { startYear = it },
                         label = { Text("Year") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryStartYear"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
@@ -165,14 +176,18 @@ fun LotteryEditScreen(
                         value = startHour,
                         onValueChange = { startHour = it },
                         label = { Text("Hour") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryStartHour"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = startMinute,
                         onValueChange = { startMinute = it },
                         label = { Text("Minute") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryStartMinute"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
@@ -187,21 +202,27 @@ fun LotteryEditScreen(
                         value = finalDay,
                         onValueChange = { finalDay = it },
                         label = { Text("Day") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryFinalDay"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = finalMonth,
                         onValueChange = { finalMonth = it },
                         label = { Text("Month") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryFinalMonth"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = finalYear,
                         onValueChange = { finalYear = it },
                         label = { Text("Year") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryFinalYear"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
@@ -210,14 +231,18 @@ fun LotteryEditScreen(
                         value = finalHour,
                         onValueChange = { finalHour = it },
                         label = { Text("Hour") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryFinalHour"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = finalMinute,
                         onValueChange = { finalMinute = it },
                         label = { Text("Minute") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("lotteryFinalMinute"),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
@@ -226,7 +251,9 @@ fun LotteryEditScreen(
                     value = numWinners,
                     onValueChange = { numWinners = it },
                     label = { Text("Number of Winners/Spots Available") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("lotteryWinners"),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
@@ -235,7 +262,8 @@ fun LotteryEditScreen(
                         value = capacity,
                         onValueChange = { capacity = it },
                         label = { Text("Capacity") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
@@ -255,9 +283,21 @@ fun LotteryEditScreen(
 
             Button(
                 onClick = {
-                    val (isSuccess, errorText) = validateAndCreateLottery(name,
-                        startDay, startMonth, startYear, startHour, startMinute,
-                        finalDay, finalMonth, finalYear, finalHour, finalMinute, numWinners,capacity,
+                    val (isSuccess, errorText) = validateAndCreateLottery(
+                        editingLottery?.lotteryId,
+                        name,
+                        startDay,
+                        startMonth,
+                        startYear,
+                        startHour,
+                        startMinute,
+                        finalDay,
+                        finalMonth,
+                        finalYear,
+                        finalHour,
+                        finalMinute,
+                        numWinners,
+                        capacity,
                         selectedCampsites
                     )
 
@@ -268,7 +308,9 @@ fun LotteryEditScreen(
                         errorMessage = errorText
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("createLotteryButton")
             ) {
                 Text("Create Lottery")
             }

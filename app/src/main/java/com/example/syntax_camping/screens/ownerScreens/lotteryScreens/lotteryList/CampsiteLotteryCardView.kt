@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.R
 import androidx.compose.ui.text.font.FontWeight
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.screens.LotteryListScreenOwner
 
 
 @Composable
@@ -51,6 +51,7 @@ fun CampsiteLotteryCardView(
                         onClick = onAddLotteryClick,
                         modifier = Modifier
                             .size(40.dp)
+                            .testTag("addLottery")
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.add),
