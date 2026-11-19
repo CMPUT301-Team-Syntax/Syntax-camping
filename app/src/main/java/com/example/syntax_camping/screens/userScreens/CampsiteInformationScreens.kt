@@ -28,8 +28,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 
 private const val CAMPSITE_RULES_ROUTE = "CampsiteRules"
 private const val CANCELLATION_POLICY_ROUTE = "CancellationPolicy"

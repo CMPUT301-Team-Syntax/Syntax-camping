@@ -30,7 +30,6 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
-import com.example.syntax_camping.screens.ownerScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
@@ -160,13 +159,14 @@ fun SyntaxCamping(
                 navController = navController,
                 lotteryId = lotteryId,
                 userViewModel = userViewModel,
-                onEditLottery = { lotteryToEdit ->
+                onEditLottery = { lotteryToEdit: Lottery ->
                     selCampsite = null
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
             )
         }
+
 
         composable("UpdateCamp") {
             CampsiteEditingScreen(

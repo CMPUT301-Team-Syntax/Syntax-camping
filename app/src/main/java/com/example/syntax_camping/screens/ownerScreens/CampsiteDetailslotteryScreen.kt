@@ -13,7 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
@@ -21,24 +23,37 @@ import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteC
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.ownerScreens.LotteryEntrantSection // Make sure this import matches where your file is!
+import com.google.firebase.firestore.FirebaseFirestore
 import getLotteryCounts
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun LotteryDetailsScreen(navController: NavController, lotteryId: String?, userViewModel: UserViewModel, onEditLottery: (Lottery) -> Unit) {
+fun LotteryDetailsScreen(
+    navController: NavController,
+    lotteryId: String?,
+    userViewModel: UserViewModel,
+    onEditLottery: (Lottery) -> Unit
+) {
+    val db = remember { Database() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
     var lottery by remember { mutableStateOf<Lottery?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var campsitePendingLastRemoval by remember { mutableStateOf<Campsite?>(null) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
-    // Fetch Lottery directly from your existing repository
-    LaunchedEffect(lotteryId) {
+    LaunchedEffect(lotteryId, refreshTrigger) {
         if (!lotteryId.isNullOrBlank()) {
-            lotteryRepository().getLottery(lotteryId) { fetched ->
-                lottery = fetched
-                isLoading = false
+            CampsiteRepository.refreshCampsiteCache {
+                lotteryRepository().getLottery(lotteryId) { fetched ->
+                    lottery = fetched
+                    isLoading = false
+                }
             }
         } else {
             isLoading = false

@@ -31,9 +31,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.AppNotification
 import com.example.syntax_camping.NotificationInbox
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.NOTIFICATIONS_ROUTE
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.NOTIFICATIONS_ROUTE
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 
 internal fun NavGraphBuilder.notificationsDestination(navController: NavController, inbox: NotificationInbox) {
