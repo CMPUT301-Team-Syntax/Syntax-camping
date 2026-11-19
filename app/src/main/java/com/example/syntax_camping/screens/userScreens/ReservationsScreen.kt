@@ -1,5 +1,5 @@
 package com.example.syntax_camping.UserScreens
-
+import com.example.syntax_camping.screens.CalenderVeiw
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -210,6 +210,8 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Section 2: Current Reservations
+
+
                     Text(
                         text = "Your Current Reservations",
                         fontSize = 20.sp,
