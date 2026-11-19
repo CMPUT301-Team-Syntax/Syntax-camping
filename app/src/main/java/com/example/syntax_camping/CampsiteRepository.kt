@@ -134,7 +134,7 @@ object CampsiteRepository {
                     val parsedRatings: MutableList<Review> = rawRatings.map { map ->
                         Review(
                             // Extract by database keys. Change "score" or "comment" to your exact database keys if they differ.
-                            rating = (map["rating"] as? Double) ?: 0.0,
+                            rating = (map["rating"] as? Number)?.toDouble() ?: 0.0,
                             userId = (map["userId"] as? String) ?: "",
                             reviewText = (map["reviewText"] as? String) ?: ""
                         )

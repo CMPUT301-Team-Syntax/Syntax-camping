@@ -93,28 +93,16 @@ fun CampsiteDetailsScreen(
     // Real-time UI states for Rating
     var displayedRating by remember(campsite) { mutableDoubleStateOf(campsite.rating) }
     var displayedRaters by remember(campsite) { mutableIntStateOf(campsite.raters) }
-    var previousUserRating by remember { mutableStateOf<Double?>(null) }
     var showRatingInput by remember { mutableStateOf(false) }
     var showThankYouMessage by remember { mutableStateOf(false) }
     var showRatingPopup by remember { mutableStateOf(false) }
     var userReviewString by remember { mutableStateOf("") }
     var ratingError by remember { mutableStateOf("") }
-
+    var previousUserRating by remember(campsite.documentId, userViewModel.deviceId) {
+        mutableStateOf<Double?>(campsite.ratings.find { it.userId == userViewModel.deviceId }?.rating)
+    }
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
-
-    // CHANGED: loads ratings through Database (reviews are Review objects now)
-    LaunchedEffect(campsite.documentId, userViewModel.deviceId) {
-        db.getCampsiteRatings(campsite.documentId, userViewModel.deviceId) { reviews, myRating ->
-            if (myRating != null) previousUserRating = myRating
-            if (reviews != null) {
-                campsite.ratings.clear()
-                campsite.ratings.addAll(reviews)
-                displayedRating = if (campsite.ratings.isEmpty()) 0.0 else campsite.rating
-                displayedRaters = campsite.raters
-            }
-        }
-    }
 
     fun refreshLotteryDetails(id: String) {
         lotteryFolder.getLottery(id) { fetchedLottery ->
@@ -607,9 +595,6 @@ fun CampsiteDetailsScreen(
                                             } else {
                                                 campsite.replaceRating(newReview)
                                             }
-
-                                            // CHANGED: goes through Database instead of Firestore directly
-                                            db.saveUserRating(campsite.documentId, userViewModel.deviceId, parsedRating)
 
                                             previousUserRating = parsedRating
                                             displayedRating = campsite.rating
