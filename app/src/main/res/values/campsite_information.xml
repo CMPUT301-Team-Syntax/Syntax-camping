@@ -1,0 +1,21 @@
+<resources>
+    <string name="campsite_rules_link">🏕️ Campsite Rules</string>
+    <string name="cancellation_policy_link">📜 Cancellation policy</string>
+    <string name="campsite_information_sample">Sample content</string>
+
+    <string name="campsite_rules_title">Campsite Rules</string>
+    <string name="campsite_rules_check_in_title">Check-in and check-out</string>
+    <string name="campsite_rules_check_in_body">Check in after 2:00 p.m. and check out by 11:00 a.m.</string>
+    <string name="campsite_rules_quiet_hours_title">Quiet hours</string>
+    <string name="campsite_rules_quiet_hours_body">Keep noise low between 10:00 p.m. and 7:00 a.m.</string>
+    <string name="campsite_rules_campfires_title">Campfires and cleanup</string>
+    <string name="campsite_rules_campfires_body">Use designated fire rings, put out fires before leaving, and take your garbage with you.</string>
+
+    <string name="cancellation_policy_title">Cancellation Policy</string>
+    <string name="cancellation_policy_early_title">48 hours or more before check-in</string>
+    <string name="cancellation_policy_early_body">You receive a full refund of the campsite fee.</string>
+    <string name="cancellation_policy_late_title">Less than 48 hours before check-in</string>
+    <string name="cancellation_policy_late_body" formatted="false">You receive a 50% refund of the campsite fee.</string>
+    <string name="cancellation_policy_no_show_title">No-shows</string>
+    <string name="cancellation_policy_no_show_body">The campsite fee is non-refundable if you do not cancel and do not arrive.</string>
+</resources>

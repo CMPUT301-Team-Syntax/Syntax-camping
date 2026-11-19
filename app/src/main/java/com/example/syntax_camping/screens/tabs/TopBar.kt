@@ -6,19 +6,34 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.syntax_camping.R
+
+internal const val NOTIFICATIONS_ROUTE = "Notifications"
+internal val LocalHasUnreadNotifications = compositionLocalOf { false }
 
 @Composable
 fun TopBar(navController: NavController){
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val onNotificationsPage = currentEntry?.destination?.route == NOTIFICATIONS_ROUTE
+    val showUnreadBadge = LocalHasUnreadNotifications.current && !onNotificationsPage
+    val unreadDescription = stringResource(R.string.notifications_unread)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -54,13 +69,20 @@ fun TopBar(navController: NavController){
                     tint = Color.Unspecified
                 )
             }
-            IconButton(onClick = { /* TODO: Navigate to notifications */ },
-                modifier = Modifier.size(100.dp)) {
-                Icon(
-                    painter = painterResource(id = R.drawable.notification),
-                    contentDescription = "notifications",
-                    tint = Color.Unspecified
-                )
+            IconButton(
+                onClick = { navController.navigate(NOTIFICATIONS_ROUTE) { launchSingleTop = true } },
+                enabled = !onNotificationsPage,
+                modifier = Modifier.size(100.dp).semantics {
+                    if (showUnreadBadge) stateDescription = unreadDescription
+                }
+            ) {
+                BadgedBox(badge = { if (showUnreadBadge) Badge() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.notification),
+                        contentDescription = stringResource(R.string.notifications_bell),
+                        tint = Color.Unspecified
+                    )
+                }
             }
         }
     }

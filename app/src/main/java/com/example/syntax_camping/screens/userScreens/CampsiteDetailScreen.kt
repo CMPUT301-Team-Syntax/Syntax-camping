@@ -238,7 +238,7 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "💰 Rate: $25/n", fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "🏕️ Campsite Rules", fontSize = 16.sp, color = Color.Blue)
+                        CampsiteRulesLink(navController)
                     }
 
                     // Right column
@@ -259,7 +259,7 @@ fun CampsiteDetailsScreen(
                             Text(text = " Max Occupancy: ${campsite.maxOcc}", fontSize = 16.sp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "📜 Cancellation policy", fontSize = 16.sp, color = Color.Blue)
+                        CancellationPolicyLink(navController)
                     }
                 }
 
