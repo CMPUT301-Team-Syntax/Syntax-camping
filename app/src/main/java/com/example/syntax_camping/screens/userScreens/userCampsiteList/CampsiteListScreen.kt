@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.userScreens.userCampsiteList
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,10 +14,8 @@ import com.example.syntax_camping.Campsite
 
 @Composable
 fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Unit){
-    Scaffold { innerPadding ->
         LazyColumn(Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
+            .fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ){
@@ -28,4 +26,3 @@ fun CampsiteListScreen(campsiteList: List<Campsite>, onItemClick: (String) -> Un
             }
         }
     }
-}

@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList
 
 // NEW FILE. What the campsite details screen offers a visitor, based on the lottery's status.
 // Plain function, so it can be unit tested with plain JUnit.

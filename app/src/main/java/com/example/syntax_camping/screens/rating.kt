@@ -12,11 +12,8 @@ import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.R
 
 @Composable
-fun Rating(numRating: Double) {
-    Row(
-
-    ) {
-
+fun Rating(numRating: Double,
+           modifier: Modifier = Modifier) {
         val starIcons = remember(numRating) {
             var myInt = numRating.toInt()
             var decimalLeft = numRating - myInt
@@ -38,7 +35,7 @@ fun Rating(numRating: Double) {
             list
         }
 
-        Row {
+        Row(modifier = modifier){
             starIcons.forEach { iconId ->
                 Icon(
                     painter = painterResource(id = iconId),
@@ -49,4 +46,3 @@ fun Rating(numRating: Double) {
             }
         }
     }
-}

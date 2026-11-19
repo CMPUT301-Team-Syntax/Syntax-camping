@@ -12,8 +12,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
+import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
 import com.example.syntax_camping.UserScreens.campsiteInformationDestinations
+import com.example.syntax_camping.screens.userScreens.PastReservationsScreen
 import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
@@ -21,20 +24,23 @@ import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.userScreens.UpdateProfileScreen
-import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
-import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
 
 @Composable
 fun SyntaxCamping(
     modifier: Modifier = Modifier,
     userViewModel: UserViewModel
-){
+) {
     val navController = rememberNavController()
     var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
     //i changed the name from of sel to selected for readability
@@ -43,16 +49,35 @@ fun SyntaxCamping(
     // var rp = CampsiteRepository()
     var documentId = "Test12"
     var selCampsite by remember { mutableStateOf<Campsite?>(null) }
-
-    var selectedLottery by remember {mutableStateOf<Lottery?>(null) }
+    var selectedLottery by remember { mutableStateOf<Lottery?>(null) }
 
     NavHost(navController = navController, startDestination = "Search", modifier = modifier) {
 
         Log.d("UserDebug", "Current User: ${userViewModel.deviceId}")
+
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
             // Extract the ID from the navigation route
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
-            CampsiteDetailsScreen(navController, campsiteId, userViewModel)
+            CampsiteDetailsScreen(
+                navController = navController,
+                campsiteID = campsiteId,
+                userViewModel = userViewModel,
+                update = false,
+                onEditCampsite = { campsiteToEdit ->
+                    selectedCampsite = campsiteToEdit
+                    navController.navigate("UpdateCamp")
+                },
+                onEditLottery = { campsiteForLottery ->
+                    selCampsite = campsiteForLottery
+                    selectedLottery = null
+                    navController.navigate("CreateLottery")
+                },
+                onEditExistingLottery = { lotteryToEdit ->
+                    selCampsite = null
+                    selectedLottery = lotteryToEdit
+                    navController.navigate("CreateLottery")
+                }
+            )
         }
 
         campsiteInformationDestinations(navController)
@@ -69,8 +94,13 @@ fun SyntaxCamping(
                     navController.navigate("UpdateCamp")
                 },
                 onEditLottery = { campsiteForLottery ->
-                    selCampsite = campsiteForLottery   // CHANGED: remember which campsite this lottery is for (selCampsite was unused until now)
-                    selectedLottery = null             // a new lottery, not editing an existing one
+                    selCampsite = campsiteForLottery
+                    selectedLottery = null
+                    navController.navigate("CreateLottery")
+                },
+                onEditExistingLottery = { lotteryToEdit ->
+                    selCampsite = null
+                    selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
             )
@@ -82,20 +112,21 @@ fun SyntaxCamping(
         composable(APP_GUIDELINES_ROUTE) {
             AppGuidelinesScreen(navController)
         }
-        notificationsDestination(navController, userViewModel.notificationInbox)
+        notificationsDestination(navController,
+            userViewModel.notificationInbox)
         composable("Search") {
             SearchHomeScreen(navController, userViewModel)
         }
         composable("Reservations") {
             ReservationsScreen(navController, userViewModel)
         }
+        composable("PastReservations") {
+            PastReservationsScreen(navController, userViewModel)
+        }
         composable("Profile") {
             ProfileScreen(navController, userViewModel)
         }
-        composable("home") {
-            CampsiteSummaryScreen(navController, userViewModel)
-        }
-        composable("CampsiteOwnerHome"){
+        composable("CampsiteOwnerHome") {
             CampsiteOwnerHome(
                 navController,
                 userViewModel,
@@ -111,17 +142,16 @@ fun SyntaxCamping(
             )
         }
 
-        composable("campsiteMessages"){
+        composable("campsiteMessages") {
             CampsiteMessagesScreen(navController, userViewModel)
         }
-        composable("CreateLottery"){
-            val myOwnedCampsites = CampsiteRepository.getCampsites().toList()
-         LotteryEditScreen(
-             navController,
-             userViewModel,
-             selectedLottery,
-             preselectedCampsite = selCampsite
-         )
+        composable("CreateLottery") {
+            LotteryEditScreen(
+                navController,
+                userViewModel,
+                selectedLottery,
+                preselectedCampsite = selCampsite
+            )
         }
 
         composable("LotteryDetailsScreen/{lotteryId}") { backStackEntry ->
@@ -131,26 +161,22 @@ fun SyntaxCamping(
                 lotteryId = lotteryId,
                 userViewModel = userViewModel,
                 onEditLottery = { lotteryToEdit ->
-                    selCampsite = null                 // editing an existing lottery, nothing to preselect
+                    selCampsite = null
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
             )
         }
 
-        composable( "UpdateCamp") {
+        composable("UpdateCamp") {
             CampsiteEditingScreen(
                 navController,
                 userViewModel,
-                selectedCampsite)
-
+                selectedCampsite
+            )
         }
-        composable("UpdateProfile"){
+        composable("UpdateProfile") {
             UpdateProfileScreen(navController, userViewModel, modifier = Modifier)
         }
-
-
-
     }
-
 }

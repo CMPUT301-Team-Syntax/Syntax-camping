@@ -9,11 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.syntax_camping.UserScreens.SearchHomeScreen
-import com.example.syntax_camping.screens.CampsiteListScreen
-import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import org.junit.After

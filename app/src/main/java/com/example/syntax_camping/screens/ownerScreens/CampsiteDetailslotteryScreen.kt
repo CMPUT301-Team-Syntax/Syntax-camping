@@ -17,9 +17,9 @@ import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
-import com.example.syntax_camping.screens.CampsiteCard
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteCard
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.ownerScreens.LotteryEntrantSection // Make sure this import matches where your file is!
 import getLotteryCounts
 import kotlinx.coroutines.delay
