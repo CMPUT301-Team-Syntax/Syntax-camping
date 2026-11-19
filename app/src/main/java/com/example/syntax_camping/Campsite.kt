@@ -5,7 +5,9 @@ import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
 import androidx.core.net.toUri
-
+import com.example.syntax_camping.dataClasses.DateManager
+import com.example.syntax_camping.dataClasses.Reservation
+import com.example.syntax_camping.dataClasses.Review
 /*
 * THis class is dedicated to the campsite object. It is how all of the data about how a campsite is stored,
 * and contains functions to update it and to help display it(most of the dispalying of it has to do with the image list)
@@ -20,18 +22,22 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private var _lotteryId: String? = null
     private var _currImageIndex = 0
     private var _name = name
+    private var _reservations = mutableListOf<Reservation>()
     private var _location = location
+    private var _dateManager: DateManager? = null
     private var _description = description
     private var _maxOcc = maxOcc
     private val _tags =tags
     private var _images = mutableListOf<Uri>()
     private var _documentId= documentId
     private var _rating =  rating
-    private var _ratings = mutableListOf<Double>()
+    private var _ratings = mutableListOf<Review>()
     private var _raters = 0 //number of people that have rated
 
     val name: String
         get() = _name
+    val dateManager: DateManager?
+        get() = _dateManager
     val location: String
         get() = _location
     val description: String
@@ -42,7 +48,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _tags
     val images: MutableList<Uri>
         get() = _images
-    val ratings: MutableList<Double>
+    val ratings: MutableList<Review>
         get() = _ratings
     val documentId: String
         get() = _documentId
@@ -63,19 +69,21 @@ class Campsite(documentId: String, name: String, location: String, description: 
     /*Called whenever a user leaves, so within the campsite details screen. Then uploads rating change to the databse
 
      */
-    fun updateRating(number: Double){
-        db.updateCampsiteRating(_documentId, number)
-        _ratings.add(number)
+    fun updateRating(review: Review){
+        db.updateCampsiteRating(_documentId, review)
+        _ratings.add(review)
         _rating = 0.0
 
-        for (rating in _ratings){
-            _rating+= rating
+        for (review in _ratings){
+            _rating+= review.rating
 
         }
         _rating= _rating/(_ratings.size)
 
     }
     //Used in tandem with the getter for rating to ensure that it has most up to date rating
+
+
     fun refreshRating(){
 
         if (_ratings.isEmpty()) {
@@ -83,32 +91,33 @@ class Campsite(documentId: String, name: String, location: String, description: 
             return
         }
         _rating = 0.0
-        for (rating in _ratings) {
-            _rating += rating
+        for (rating in _ratings){
+            _rating+= rating.rating
         }
         _rating /= (_ratings.size)
     }
 
-    /**
-     * Replaces a user's previous rating with a new rating, recalculates the average,
-     * and saves the updated ratings list to Firestore.
-     */
-    fun replaceRating(oldRating: Double, newRating: Double) {
-        val index = _ratings.indexOfFirst { kotlin.math.abs(it - oldRating) < 0.0001 }
+    // ADDED: lets a user change their earlier rating instead of adding a second one
+    fun replaceRating(review: Review) {
+        val index = _ratings.indexOfFirst { it.userId == review.userId }
         if (index != -1) {
-            _ratings[index] = newRating
+            _ratings[index] = review
         } else {
-            _ratings.add(newRating)
+            _ratings.add(review)
         }
-        _raters = _ratings.size
         refreshRating()
-
         db.updateCampsite(this)
     }
 
-    fun updateRaterList(raters: MutableList<Double>){
+
+
+    fun updateRaterList(raters: MutableList<Review>){
         _ratings = raters
     }
+
+
+
+
     //Not currently implemented
     //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
     fun generateQRcode(){
@@ -142,7 +151,14 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun removeImage(image:Uri){
         _images.remove(image)
     }
+    fun addReservation(reservation:Reservation){
 
+        //will use reservvation id to make sure the reservation does not already exist
+        _reservations.add(reservation)
+    }
+    fun removeResarvation(reservation:Reservation){
+        //Todo Waitning on reservation id
+    }
     fun getImagesAsStrs(): MutableList<String> {
 
         val imagesAsStrs = mutableListOf<String>()

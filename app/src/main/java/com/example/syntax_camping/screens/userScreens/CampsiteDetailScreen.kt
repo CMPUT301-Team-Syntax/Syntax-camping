@@ -51,6 +51,7 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.LotteryEntry
+import com.example.syntax_camping.dataClasses.Review // CHANGED: added (his rating model)
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
@@ -58,8 +59,7 @@ import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryLis
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
+// CHANGED: removed the FirebaseFirestore and SetOptions imports, this screen no longer talks to Firestore directly
 
 @Composable
 fun CampsiteDetailsScreen(
@@ -77,7 +77,7 @@ fun CampsiteDetailsScreen(
     val scrollState = rememberScrollState()
     val lotteryFolder = remember { lotteryRepository() }
     val db = remember { Database() }
-    val firestore = remember { FirebaseFirestore.getInstance() }
+    // CHANGED: removed `val firestore = ...`
 
     if (campsite == null) {
         return
@@ -103,27 +103,17 @@ fun CampsiteDetailsScreen(
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
 
-    // Load whether this user has already rated this campsite from Firestore
+    // CHANGED: loads ratings through Database (reviews are Review objects now)
     LaunchedEffect(campsite.documentId, userViewModel.deviceId) {
-        firestore.collection("campsites")
-            .document(campsite.documentId)
-            .get()
-            .addOnSuccessListener { doc ->
-                val userRatingsMap = doc.get("userRatings") as? Map<*, *>
-                val existing = (userRatingsMap?.get(userViewModel.deviceId) as? Number)?.toDouble()
-                if (existing != null) {
-                    previousUserRating = existing
-                }
-                val ratingsList = (doc.get("ratings") as? List<*>)
-                    ?.mapNotNull { (it as? Number)?.toDouble() }
-                if (ratingsList != null) {
-                    campsite.ratings.clear()
-                    campsite.ratings.addAll(ratingsList)
-                    // campsite.rating and campsite.raters are computed automatically from campsite.ratings!
-                    displayedRating = if (campsite.ratings.isEmpty()) 0.0 else campsite.rating
-                    displayedRaters = campsite.raters
-                }
+        db.getCampsiteRatings(campsite.documentId, userViewModel.deviceId) { reviews, myRating ->
+            if (myRating != null) previousUserRating = myRating
+            if (reviews != null) {
+                campsite.ratings.clear()
+                campsite.ratings.addAll(reviews)
+                displayedRating = if (campsite.ratings.isEmpty()) 0.0 else campsite.rating
+                displayedRaters = campsite.raters
             }
+        }
     }
 
     fun refreshLotteryDetails(id: String) {
@@ -610,20 +600,16 @@ fun CampsiteDetailsScreen(
                                     val parsedRating = userReviewString.toDoubleOrNull()
                                     if (parsedRating != null) {
                                         if (parsedRating in 0.0..5.0) {
-                                            val oldRating = previousUserRating
-                                            if (oldRating == null) {
-                                                campsite.updateRating(parsedRating)
+                                            // CHANGED: ratings are Review objects now (review text left blank, this screen only asks for a number)
+                                            val newReview = Review(parsedRating, userViewModel.deviceId, "")
+                                            if (previousUserRating == null) {
+                                                campsite.updateRating(newReview)
                                             } else {
-                                                campsite.replaceRating(oldRating, parsedRating)
+                                                campsite.replaceRating(newReview)
                                             }
 
-                                            // Save per-user rating in Firestore so it's remembered when returning
-                                            firestore.collection("campsites")
-                                                .document(campsite.documentId)
-                                                .set(
-                                                    mapOf("userRatings" to mapOf(userViewModel.deviceId to parsedRating)),
-                                                    SetOptions.merge()
-                                                )
+                                            // CHANGED: goes through Database instead of Firestore directly
+                                            db.saveUserRating(campsite.documentId, userViewModel.deviceId, parsedRating)
 
                                             previousUserRating = parsedRating
                                             displayedRating = campsite.rating
