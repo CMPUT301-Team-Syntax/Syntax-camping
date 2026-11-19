@@ -24,6 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.syntax_camping.R
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 
 internal const val NOTIFICATIONS_ROUTE = "Notifications"
 internal val LocalHasUnreadNotifications = compositionLocalOf { false }
@@ -34,6 +39,7 @@ fun TopBar(navController: NavController){
     val onNotificationsPage = currentEntry?.destination?.route == NOTIFICATIONS_ROUTE
     val showUnreadBadge = LocalHasUnreadNotifications.current && !onNotificationsPage
     val unreadDescription = stringResource(R.string.notifications_unread)
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -61,6 +67,38 @@ fun TopBar(navController: NavController){
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ){
+            IconButton(
+                onClick = {
+                    val scanner = GmsBarcodeScanning.getClient(context)
+
+                    scanner.startScan()
+                        .addOnSuccessListener { barcode ->
+
+                            val content = barcode.rawValue.orEmpty()
+                            val prefix = "syntaxcamping:campsite:"
+
+                            if (content.startsWith(prefix)) {
+                                val campsiteId = content.removePrefix(prefix)
+
+                                if (campsiteId.isNotBlank() &&
+                                    !campsiteId.contains("/")
+                                ) {
+                                    navController.navigate("campsiteDetails/$campsiteId")
+                                }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.e("QRScanner", "Failed to scan QR code", exception)
+                        }
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.QrCodeScanner,
+                    contentDescription = "Scan QR Code",
+                    tint = Color.White
+                )
+            }
             IconButton(onClick = {navController.navigate( "campsiteMessages")},
                 modifier = Modifier.size(40 .dp)) {
                 Icon(
@@ -72,7 +110,7 @@ fun TopBar(navController: NavController){
             IconButton(
                 onClick = { navController.navigate(NOTIFICATIONS_ROUTE) { launchSingleTop = true } },
                 enabled = !onNotificationsPage,
-                modifier = Modifier.size(100.dp).semantics {
+                modifier = Modifier.size(50.dp).semantics {
                     if (showUnreadBadge) stateDescription = unreadDescription
                 }
             ) {

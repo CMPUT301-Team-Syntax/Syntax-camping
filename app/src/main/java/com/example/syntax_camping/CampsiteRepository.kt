@@ -85,6 +85,7 @@ object CampsiteRepository {
 
 
                 )
+                campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)  //Adds QR Code check.
                 campsite.updateRaterList(document.get("ratings") as? MutableList<Review> ?:mutableListOf())
 
                 callback(campsite)
@@ -143,6 +144,9 @@ object CampsiteRepository {
                     // 3. Update your campsite with the newly typed list
                     campsite.updateRaterList(parsedRatings)
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
+
+                    // 4. Updates the QR Code check.
+                    campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)
 
                     loadedCampsites.add(campsite)
                 }

@@ -70,7 +70,9 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     val db = Database()
     //var newCampsite: Campsite
     var documentID: String
-    var qrCodeChecked = false
+    var qrCodeChecked by remember(campsite?.documentId) {
+        mutableStateOf(campsite?.hasQRCode ?: false)
+    }
     var nameDisplay by remember { mutableStateOf("") }
     var locationDisplay by remember { mutableStateOf("") }
     var descriptionDisplay by remember { mutableStateOf("") }
@@ -106,14 +108,12 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
         //If we are creating a cmapsite
         if (campsite == null){
             locationDisplay = "Enter campsite Location"
-            qrCodeChecked = false
             nameDisplay = "Enter campsite Name"
             descriptionDisplay = "Enter campsite Description"
             maxOccDisplay = "Enter campsite Maximum Occupancy"
         }
         //If a campsite already ecxists
         else{
-            qrCodeChecked = false
             newCampLocation  = campsite.location
             locationDisplay = newCampLocation
             newCampName = campsite.name
@@ -122,7 +122,6 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
             descriptionDisplay = newCampDescription
             newMaxOcc = campsite.maxOcc.toString()
             maxOccDisplay = newMaxOcc
-            qrCodeChecked = campsite.hasQRCode
 
 
             newPhotos.clear()
@@ -272,14 +271,14 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                         */
 
                     }
-                    //A check box for Qr code, not currently implemented as we are oding Qr Code at a later date
+                    //A checkbox for Qr code, hopefully implemented
                     Row(
                         modifier = Modifier.fillMaxWidth()
                     ){
                         Checkbox(
                             checked = qrCodeChecked,
                             onCheckedChange = { checked ->
-                                qrCodeChecked = true // Update the state when clicked
+                                qrCodeChecked = checked // Update the state when clicked
                             }
                         )
                         Text(text = "Generate QR Code")
@@ -476,7 +475,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                                     rating = 0.0,
                                                     images = imageUrls.toMutableList()
                                                 )
-
+                                                newCampsite.updateQRCode(qrCodeChecked)  //New QR Code update.
                                                 db.createNewCampsite(newCampsite)
 
                                                 val oldOwnerData = user.ownerData ?: OwnerData()
@@ -553,6 +552,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                             campsite.updateDescription(newCampDescription)
                                             campsite.updateMaxOcc(intNewMaxOcc!!)
                                             campsite.updateTag(newTags.toMutableList())
+                                            campsite.updateQRCode(qrCodeChecked)  //QR CODE
 
                                             // Replace the old image list with the final URLs.
                                             campsite.images.clear()

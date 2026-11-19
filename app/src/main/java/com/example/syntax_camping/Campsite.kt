@@ -1,5 +1,6 @@
 package com.example.syntax_camping
 
+import android.R
 import android.R.attr.description
 import android.R.attr.name
 import android.media.Rating
@@ -120,8 +121,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     //Not currently implemented
     //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
-    fun generateQRcode(){
-        _hasQRCode = true
+    fun updateQRCode(enabled: Boolean){
+        _hasQRCode = enabled
     }
 //The followinng work with campsiteEditingScreen.
     fun updateName(newName: String){

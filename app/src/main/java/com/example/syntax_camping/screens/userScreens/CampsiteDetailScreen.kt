@@ -53,6 +53,7 @@ import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.Review // CHANGED: added (his rating model)
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.lotteryJoinState
@@ -631,6 +632,27 @@ fun CampsiteDetailsScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // -- Campsite QR Code Section --
+                if (campsite.hasQRCode) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Campsite QR Code",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        CampsiteQRCode(
+                            campsiteId = campsite.documentId
+                        )
+                    }
                 }
             }
         }
