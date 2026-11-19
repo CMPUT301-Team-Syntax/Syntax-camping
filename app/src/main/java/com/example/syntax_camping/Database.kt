@@ -18,6 +18,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.storage.FirebaseStorage
 import java.util.UUID
+import com.example.syntax_camping.dataClasses.Review
 
 // class Database
 // author: Andrew
@@ -633,7 +634,7 @@ class Database {
     /*
     * Updates a campsites ratings list every tiem a new review is added(to make sure it saves)
     * */
-    fun updateCampsiteRating(documentId: String, rating: Double) {
+    fun updateCampsiteRating(documentId: String, rating: Review) {
         db.collection("campsites").document(documentId)
             .update("ratings", FieldValue.arrayUnion(rating))
             .addOnSuccessListener {
