@@ -20,6 +20,8 @@ import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
+import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
+import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
@@ -36,6 +38,11 @@ fun SyntaxCamping(
 ) {
     val navController = rememberNavController()
     var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
+    //i changed the name from of sel to selected for readability
+
+    var isLoading by remember { mutableStateOf(true) }
+    // var rp = CampsiteRepository()
+    var documentId = "Test12"
     var selCampsite by remember { mutableStateOf<Campsite?>(null) }
     var selectedLottery by remember { mutableStateOf<Lottery?>(null) }
 
@@ -44,6 +51,7 @@ fun SyntaxCamping(
         Log.d("UserDebug", "Current User: ${userViewModel.deviceId}")
 
         composable("campsiteDetails/{campsiteId}") { backStackEntry ->
+            // Extract the ID from the navigation route
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
             CampsiteDetailsScreen(
                 navController = navController,
