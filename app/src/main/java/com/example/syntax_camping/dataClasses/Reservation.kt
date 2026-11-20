@@ -14,18 +14,33 @@ data class Reservation (
 
 ) {
     var dateManager = campsite.dateManager
-    //Note this oes not exist yet as I have nto done firebaseval reservationId
+    //Note this oes not exist yet as I have nto done firebase
+    var reservationId = ""
+    val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
     init{
         for(date in datesReserved) {
             reservationNotFull = dateManager!!.addReservation(date, numberGuests)
 
-        if (!reservationNotFull){
-            reservationSuccessful = false
-        }
+            if (!reservationNotFull){
+                reservationSuccessful = false
+            }
 
         }
+        if (reservationSuccessful){
+            val reservationId = reservationRepository.addReservation(
+                documentId = campsite.documentId,
+                reservation = this
+            ) { success ->
+                if (success) {
+
+                }
+            }
+        }
         //Note should check status before adding reservation to user and campsite
+    }
+    fun updateReservationId(newId: String) {
+        this.reservationId = newId
     }
 }
