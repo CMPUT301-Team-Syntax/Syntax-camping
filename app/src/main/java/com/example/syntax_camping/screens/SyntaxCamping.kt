@@ -28,11 +28,11 @@ import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
+
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
 
 @Composable

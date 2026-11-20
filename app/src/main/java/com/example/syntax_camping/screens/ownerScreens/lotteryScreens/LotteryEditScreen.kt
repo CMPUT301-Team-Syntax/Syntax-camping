@@ -1,12 +1,14 @@
-package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
+package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.validateAndCreateLottery
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -37,6 +39,9 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.filterOwnedCampsites
 import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteSelectorDropdown
 import java.util.Calendar
+import com.example.syntax_camping.dataClasses.DateManager
+import com.example.syntax_camping.dataClasses.Date
+import com.example.syntax_camping.dataClasses.DateRepository
 
 
 @Composable
@@ -61,7 +66,12 @@ fun LotteryEditScreen(
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
     var capacity by remember { mutableStateOf("") }
+    var dateManager by remember{mutableStateOf<DateManager?>(null) }
+    val selectedDatesString = remember { mutableStateListOf<String>() }
+    val selectedDatesAsDate = remember { mutableStateListOf<Date>() }
     val db = Database()
+    var newDate by remember { mutableStateOf<Date?>(null) }
+    val drp = DateRepository()
 
     LaunchedEffect(editingLottery?.lotteryId) {
         if (editingLottery != null) {
@@ -303,14 +313,24 @@ fun LotteryEditScreen(
 
                     if (isSuccess) {
                         errorMessage = ""
+
+                        //Note, this for loop adds a Datemanager based on selected dates to each campsite, whoever makes Calendar, please just set the chosen dates as strings to selectedDatesString)
+                        for (campsite in selectedCampsites){
+                            for (date in selectedDatesString){
+                                newDate = Date(date, campsite.maxOcc)
+                                selectedDatesAsDate.add(newDate!!)
+
+                            }
+                            dateManager = DateManager(selectedDatesAsDate)
+                            campsite.updateDateManager(dateManager!!)
+                            drp.addDateManager(campsite.documentId, dateManager!!)
+                        }
                         navController.popBackStack()
                     } else {
                         errorMessage = errorText
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("createLotteryButton")
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Create Lottery")
             }
