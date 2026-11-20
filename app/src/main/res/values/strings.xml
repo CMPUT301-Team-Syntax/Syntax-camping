@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">syntax-camping</string>
+    <string name="notifications_bell">notifications</string>
+    <string name="notification_dismiss">Dismiss notification</string>
+    <string name="notifications_unread">Unread updates</string>
+    <string name="notifications_empty">No notifications yet.</string>
+    <string name="notification_lottery_joined">Joined lottery</string>
+    <string name="notification_lottery_joined_for">Joined lottery for %1$s</string>
+    <string name="notification_lottery_joined_body">Your lottery entry was received. Check the lottery details for updates.</string>
+    <string name="notification_waitlist_joined">Joined waitlist</string>
+    <string name="notification_waitlist_joined_for">Joined waitlist for %1$s</string>
+    <string name="notification_waitlist_joined_body">You’ve been added to the waitlist. Check the lottery details for updates.</string>
 </resources>

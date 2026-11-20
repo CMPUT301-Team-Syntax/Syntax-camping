@@ -1,5 +1,6 @@
 package com.example.syntax_camping
 
+import android.R
 import android.R.attr.description
 import android.R.attr.name
 import android.media.Rating
@@ -82,21 +83,46 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     }
     //Used in tandem with the getter for rating to ensure that it has most up to date rating
+
+
     fun refreshRating(){
 
+        if (_ratings.isEmpty()) {
+            _rating = 0.0
+            return
+        }
         _rating = 0.0
         for (rating in _ratings){
             _rating+= rating.rating
         }
-        _rating= _rating/(_ratings.size)
+        _rating /= (_ratings.size)
     }
+
+    // ADDED: lets a user change their earlier rating instead of adding a second one
+    fun replaceRating(review: Review) {
+        val index = _ratings.indexOfFirst { it.userId == review.userId }
+        if (index != -1) {
+            _ratings[index] = review
+        } else {
+            _ratings.add(review)
+        }
+        refreshRating()
+        db.updateCampsite(this)
+    }
+
+
+
     fun updateRaterList(raters: MutableList<Review>){
         _ratings = raters
     }
+
+
+
+
     //Not currently implemented
     //YES I KNOW THAT CAMPSITE LIKeLY WILL NOT HANDLE QR CODE GENERATION AND THIS FUNCTION WILL BE DELETED LATER, I AM JUST USING IT FOR NOW
-    fun generateQRcode(){
-        _hasQRCode = true
+    fun updateQRCode(enabled: Boolean){
+        _hasQRCode = enabled
     }
 //The followinng work with campsiteEditingScreen.
     fun updateName(newName: String){

@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.tabs
 
 import androidx.annotation.DrawableRes
 import androidx.compose.material3.Icon

@@ -88,6 +88,7 @@ object CampsiteRepository {
 
 
                 )
+                campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)  //Adds QR Code check.
                 campsite.updateRaterList(document.get("ratings") as? MutableList<Review> ?:mutableListOf())
 
                 callback(campsite)
@@ -141,7 +142,7 @@ object CampsiteRepository {
                     val parsedRatings: MutableList<Review> = rawRatings.map { map ->
                         Review(
                             // Extract by database keys. Change "score" or "comment" to your exact database keys if they differ.
-                            rating = (map["rating"] as? Double) ?: 0.0,
+                            rating = (map["rating"] as? Number)?.toDouble() ?: 0.0,
                             userId = (map["userId"] as? String) ?: "",
                             reviewText = (map["reviewText"] as? String) ?: ""
                         )
@@ -183,6 +184,9 @@ object CampsiteRepository {
                     }.toMutableList()
                     campsite.updateReservations(parsedReservations)
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
+
+                    // 4. Updates the QR Code check.
+                    campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)
 
                     loadedCampsites.add(campsite)
                 }
