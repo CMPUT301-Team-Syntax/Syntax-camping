@@ -134,6 +134,9 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun removeResarvation(reservation:Reservation){
         //Todo Waitning on reservation id
     }
+    fun updateDateManager(newDateManager: DateManager){
+        _dateManager = newDateManager
+    }
     fun getImagesAsStrs(): MutableList<String> {
 
         val imagesAsStrs = mutableListOf<String>()
@@ -143,6 +146,9 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
         return imagesAsStrs
 
+    }
+    fun updateReservations(newReservations: MutableList<Reservation>){
+        _reservations = newReservations
     }
 
     // Database stores images as a list of string.

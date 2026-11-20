@@ -7,15 +7,15 @@ import com.google.firebase.firestore.FirebaseFirestore
 class DateRepository {
 //For search will have a function to get all date repositories( so you can check if it has the dates needed in its available ates, tehn pull campsite id from that(daterepsotory has campsite id attached to it
     val db = FirebaseFirestore.getInstance()
-    fun addDateRepository(documentId:String, dateRepository: DateRepository){
+    fun addDateManager(documentId:String, dateManager: DateManager){
 
             db.collection("campsites").document(documentId)
-                .update("DateRepository", dateRepository)
+                .update("DateManager", dateManager)
                 .addOnSuccessListener {
-                    // Successfully appended the rating to the array in Firebase!
+
                 }
                 .addOnFailureListener { e ->
-                    // Handle the erro
+
                 }
 
     }

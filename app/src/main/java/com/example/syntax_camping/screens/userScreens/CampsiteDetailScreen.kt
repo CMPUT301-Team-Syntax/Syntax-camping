@@ -74,6 +74,7 @@ fun CampsiteDetailsScreen(
     val db = Database()
     var ratingError by remember{mutableStateOf("")}
     var review by remember{mutableStateOf<Review?>(null)}
+    var hasReviewed by remember{mutableStateOf(false)}
 
     if (campsite == null) {
         return
@@ -435,9 +436,24 @@ fun CampsiteDetailsScreen(
                             userReview = userReviewString.toDoubleOrNull()!!
                             if((userReview >= 0.0) && (userReview <= 5.0)){
                                 if(userReviewTextString != "") {
-                                    review = Review(userReview,userViewModel.deviceId,userReviewTextString)
-                                    campsite.updateRating(review!!)
-                                    ratingError = ""
+                                    for(review in campsite.ratings){
+                                        if(userViewModel.deviceId ==review.userId){
+                                            hasReviewed == true
+                                        }
+
+                                    }
+                                    if(!hasReviewed) {
+                                        review = Review(
+                                            userReview,
+                                            userViewModel.deviceId,
+                                            userReviewTextString
+                                        )
+                                        campsite.updateRating(review!!)
+                                        ratingError = ""
+                                    }
+                                    else{
+                                        ratingError = "You have already left a review"
+                                    }
                                 }
                                 else{
                                     ratingError = "review Text must be entered"

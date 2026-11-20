@@ -414,7 +414,8 @@ class Database {
                     .set(
                         mapOf(
                             "entrantReservationIds" to (user.entrantData?.reservationIds ?: emptyList<String>()),
-                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>())
+                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>()),
+                            "entrantPendingEntryIds" to (user.entrantData?.pendingEntryIds ?: emptyList<String>())
                         )
                     )
                     .addOnSuccessListener {
@@ -470,6 +471,7 @@ class Database {
                 var fetchedEntrantData: EntrantData? = null
                 var fetchedOwnerData: OwnerData? = null
 
+
                 //Reconstruct the entrant and campsite owner's info.
                 db.collection("entrantData")
                     .document(devId)
@@ -483,9 +485,13 @@ class Database {
                             val lotteryEntryIds =
                                 entrantDocument.get("entrantLotteryEntryIds") as? List<String>
                                     ?: emptyList()
+                            val pendingEntryIds =
+                                entrantDocument.get("entrantPendingEntryIds") as? List<String>
+                                    ?: emptyList()
                             fetchedEntrantData = EntrantData(
                                 reservationIds.toMutableList(),
-                                lotteryEntryIds.toMutableList()
+                                lotteryEntryIds.toMutableList(),
+                                pendingEntryIds.toMutableList()
                             )
                         }
 
