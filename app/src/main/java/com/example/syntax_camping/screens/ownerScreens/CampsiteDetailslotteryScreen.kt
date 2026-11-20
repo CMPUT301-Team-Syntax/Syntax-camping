@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.ownerScreens
+/**package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -167,3 +167,4 @@ private fun formatRemaining(millisLeft: Long): String {
     val secs = totalSecs % 60
     return if (days > 0) "${days}d ${hours}h ${mins}m ${secs}s" else "${hours}h ${mins}m ${secs}s"
 }
+*/
