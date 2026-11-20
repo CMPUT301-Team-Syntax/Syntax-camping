@@ -10,7 +10,7 @@ class DateRepository {
     fun addDateManager(documentId:String, dateManager: DateManager){
 
             db.collection("campsites").document(documentId)
-                .update("DateManager", dateManager)
+                .update("dateManager", dateManager)
                 .addOnSuccessListener {
 
                 }

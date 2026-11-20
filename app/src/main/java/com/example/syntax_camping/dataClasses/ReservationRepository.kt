@@ -133,20 +133,43 @@ class ReservationRepository {
                     .get()
                     .addOnSuccessListener { campDoc ->
                         val campsite = if (campDoc != null && campDoc.exists()) {
+                            val tagsList = campDoc.getString("tags")
+                                ?.takeIf { it.isNotBlank() }
+                                ?.split(",")
+                                ?.map { it.trim() }
+                                ?.toMutableList()
+                                ?: mutableListOf()
+
+                            val rawDateManagerMap = campDoc.get("dateManager") as? Map<*, *>
+                            val rawDatesList = (rawDateManagerMap?.get("dates") as? List<*>)
+                                ?: (campDoc.get("dates") as? List<*>)
+                                ?: emptyList<Any>()
+
+                            val parsedDates = rawDatesList.mapNotNull { item ->
+                                val map = item as? Map<*, *> ?: return@mapNotNull null
+                                Date(
+                                    maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
+                                    date = (map["date"] as? String) ?: ""
+                                )
+                            }
+                            val dateManager = DateManager(parsedDates.toMutableList())
+
                             Campsite(
                                 documentId = campDoc.id,
                                 name = campDoc.getString("name") ?: "",
                                 location = campDoc.getString("location") ?: "",
                                 description = campDoc.getString("description") ?: "",
                                 maxOcc = campDoc.getLong("maxOccupancy")?.toInt() ?: 0,
-                                tags = (campDoc.getString("tags") ?: "").split(",").toMutableList(),
+                                tags = tagsList,
                                 rating = campDoc.getDouble("rating") ?: 0.0,
                                 images = (campDoc.get("images") as? List<*>)
                                     ?.filterIsInstance<String>()
                                     ?.toMutableList()
                                     ?: mutableListOf()
                             ).apply {
-                                updateLotteryId(campDoc.getString("lotteryId")?.takeIf { it.isNotBlank() })
+                                updateLotteryId(
+                                    campDoc.getString("lotteryId")?.takeIf { it.isNotBlank() })
+                                updateDateManager(dateManager)
                             }
                         } else {
                             // Fallback minimal Campsite if the campsite document was deleted
@@ -159,7 +182,9 @@ class ReservationRepository {
                                 tags = mutableListOf(),
                                 rating = 0.0,
                                 images = mutableListOf()
-                            )
+                            ).apply {
+                                updateDateManager(DateManager(mutableListOf()))
+                            }
                         }
 
                         val reservation = Reservation(
@@ -177,9 +202,6 @@ class ReservationRepository {
                     .addOnFailureListener {
                         callback(null)
                     }
-            }
-            .addOnFailureListener {
-                callback(null)
             }
     }
 
