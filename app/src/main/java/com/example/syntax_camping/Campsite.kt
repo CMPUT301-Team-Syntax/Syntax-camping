@@ -110,6 +110,13 @@ class Campsite(documentId: String, name: String, location: String, description: 
         db.updateCampsite(this)
     }
 
+    // ADDED: lets a user delete their own review
+    fun removeRating(userId: String) {
+        _ratings.removeAll { it.userId == userId }
+        refreshRating()
+        db.updateCampsite(this)
+    }
+
 
 
     fun updateRaterList(raters: MutableList<Review>){

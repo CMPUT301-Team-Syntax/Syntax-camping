@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,7 +47,7 @@ import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.dataClasses.Review // CHANGED: added (his rating model)
+import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
@@ -69,30 +70,28 @@ fun CampsiteDetailsScreen(
     val scrollState = rememberScrollState()
     val lotteryFolder = remember { lotteryRepository() }
     val db = remember { Database() }
-    // CHANGED: removed `val firestore = ...`
 
     if (campsite == null) {
         return
     }
 
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
+
     // Real-time UI states for Rating
     var displayedRating by remember(campsite) { mutableDoubleStateOf(campsite.rating) }
     var displayedRaters by remember(campsite) { mutableIntStateOf(campsite.raters) }
     var showRatingInput by remember { mutableStateOf(false) }
     var showThankYouMessage by remember { mutableStateOf(false) }
     var showRatingPopup by remember { mutableStateOf(false) }
+    var showDeleteReviewDialog by remember { mutableStateOf(false) }
     var userReviewString by remember { mutableStateOf("") }
     var userReviewTextString by remember { mutableStateOf("") }
-    var userReview by remember { mutableStateOf(0.0) }
+    var ratingError by remember { mutableStateOf("") }
 
-    var ratingError by remember{mutableStateOf("")}
-    var review by remember{mutableStateOf<Review?>(null)}
-    var hasReviewed by remember{mutableStateOf(false)}
-
-    var previousUserRating by remember(campsite.documentId, userViewModel.deviceId) {
-        mutableStateOf<Double?>(campsite.ratings.find { it.userId == userViewModel.deviceId }?.rating)
-    }
+    // CHANGED: reviews are shown as a list; this counter makes the list rebuild after a submit / edit / delete
+    var reviewsVersion by remember { mutableIntStateOf(0) }
+    val reviews = remember(reviewsVersion, campsite) { campsite.ratings.toList() }
+    val myReview = reviews.find { it.userId == userViewModel.deviceId }
 
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
@@ -298,7 +297,7 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // OWNER LOTTERY CONTROLS vs ENTRANT LOTTERY CONTROLS
+                    // OWNER LOTTERY CONTROLS (join/leave now lives on the lottery info screen)
                     if (update || isOwner) {
                         if (isOwner && !update) {
                             Text(
@@ -318,9 +317,7 @@ fun CampsiteDetailsScreen(
                                     .padding(horizontal = 24.dp, vertical = 16.dp)
                                     .testTag("addLottery"),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF3E6B68
-                                    )
+                                    containerColor = Color(0xFF3E6B68)
                                 )
                             ) {
                                 Text(
@@ -343,9 +340,7 @@ fun CampsiteDetailsScreen(
                                     .padding(horizontal = 24.dp, vertical = 16.dp)
                                     .testTag("editLotteryButton"),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF3E6B68
-                                    )
+                                    containerColor = Color(0xFF3E6B68)
                                 )
                             ) {
                                 Text(
@@ -356,13 +351,15 @@ fun CampsiteDetailsScreen(
                             }
                         }
                     }
-                    }
-                }
+                } // end Lottery Section
 
-                // ================== RATING SECTION (Non-Owners Only) ==================
+                // ================== REVIEWS SECTION ==================
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(text = "Reviews", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Leave / edit form (non-owners only)
                 if (!isOwner && !update) {
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -379,31 +376,7 @@ fun CampsiteDetailsScreen(
                             )
                         }
 
-                        if (!showRatingInput) {
-                            val hasRatedBefore = previousUserRating != null
-                            Button(
-                                onClick = {
-                                    ratingError = ""
-                                    userReviewString = previousUserRating?.toString() ?: ""
-                                    showRatingInput = true
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                                    .testTag(if (hasRatedBefore) "editRatingPrompt" else "openRatingPrompt"),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF3E6B68
-                                    )
-                                )
-                            ) {
-                                Text(
-                                    text = if (hasRatedBefore) "Edit rating?" else "Do you want to leave a rating?",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        } else {
+                        if (showRatingInput) {
                             OutlinedTextField(
                                 value = userReviewString,
                                 onValueChange = { userReviewString = it },
@@ -412,6 +385,15 @@ fun CampsiteDetailsScreen(
                                     .fillMaxWidth()
                                     .testTag("campsite_name_input")
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = userReviewTextString,
+                                onValueChange = { userReviewTextString = it },
+                                label = { Text("Write a review (optional)") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("reviewTextInput")
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Button(
@@ -419,18 +401,20 @@ fun CampsiteDetailsScreen(
                                     val parsedRating = userReviewString.toDoubleOrNull()
                                     if (parsedRating != null) {
                                         if (parsedRating in 0.0..5.0) {
-                                            // CHANGED: ratings are Review objects now (review text left blank, this screen only asks for a number)
-                                            val newReview =
-                                                Review(parsedRating, userViewModel.deviceId, "")
-                                            if (previousUserRating == null) {
+                                            val newReview = Review(
+                                                parsedRating,
+                                                userViewModel.deviceId,
+                                                userReviewTextString.trim()
+                                            )
+                                            if (myReview == null) {
                                                 campsite.updateRating(newReview)
                                             } else {
                                                 campsite.replaceRating(newReview)
                                             }
 
-                                            previousUserRating = parsedRating
                                             displayedRating = campsite.rating
                                             displayedRaters = campsite.raters
+                                            reviewsVersion++
                                             ratingError = ""
                                             showRatingInput = false
                                             showThankYouMessage = true
@@ -448,9 +432,7 @@ fun CampsiteDetailsScreen(
                                     .padding(horizontal = 24.dp, vertical = 8.dp)
                                     .testTag("submitRatingButton"),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF3E6B68
-                                    )
+                                    containerColor = Color(0xFF3E6B68)
                                 )
                             ) {
                                 Text(
@@ -458,6 +440,16 @@ fun CampsiteDetailsScreen(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold
                                 )
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    ratingError = ""
+                                    showRatingInput = false
+                                },
+                                modifier = Modifier.testTag("cancelReviewButton")
+                            ) {
+                                Text("Cancel")
                             }
 
                             if (ratingError.isNotEmpty()) {
@@ -469,77 +461,135 @@ fun CampsiteDetailsScreen(
                                     modifier = Modifier.testTag("ratingErrorText")
                                 )
                             }
+                        } else if (myReview == null) {
+                            Button(
+                                onClick = {
+                                    ratingError = ""
+                                    userReviewString = ""
+                                    userReviewTextString = ""
+                                    showRatingInput = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .testTag("openRatingPrompt"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E6B68)
+                                )
+                            ) {
+                                Text(
+                                    text = "Do you want to leave a rating?",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                Button(
-                    onClick = {
-                        if (userReviewString.toDoubleOrNull() != null) {
-                            userReview = userReviewString.toDoubleOrNull()!!
-                            if ((userReview >= 0.0) && (userReview <= 5.0)) {
-                                if (userReviewTextString != "") {
-                                    for (review in campsite.ratings) {
-                                        if (userViewModel.deviceId == review.userId) {
-                                            hasReviewed == true
-                                        }
 
-                                    }
-                                    if (!hasReviewed) {
-                                        review = Review(
-                                            userReview,
-                                            userViewModel.deviceId,
-                                            userReviewTextString
+                // List of reviews: yours first, then everyone else's
+                if (reviews.isEmpty()) {
+                    Text(
+                        text = "No reviews yet",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.testTag("noReviewsText")
+                    )
+                } else {
+                    reviews
+                        .sortedByDescending { it.userId == userViewModel.deviceId }
+                        .forEach { r ->
+                            val isMine = r.userId == userViewModel.deviceId
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp)
+                                    .background(Color.White, RoundedCornerShape(16.dp))
+                                    .padding(16.dp)
+                                    .testTag("reviewCard_${r.userId}")
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (isMine) "Your review" else "Camper",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Rating(
+                                            r.rating,
+                                            modifier = Modifier.testTag("reviewStars_${r.userId}")
                                         )
-                                        campsite.updateRating(review!!)
-                                        ratingError = ""
-                                    } else {
-                                        ratingError = "You have already left a review"
+                                        Text(
+                                            text = " ${r.rating}",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
                                     }
-                                } else {
-                                    ratingError = "review Text must be entered"
                                 }
-                            } else {
-                                ratingError = "review must be between 0.0 and 5.0"
+                                if (r.reviewText.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = r.reviewText,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.testTag("reviewText_${r.userId}")
+                                    )
+                                }
+                                if (isMine && !showRatingInput) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                ratingError = ""
+                                                userReviewString = r.rating.toString()
+                                                userReviewTextString = r.reviewText
+                                                showRatingInput = true
+                                            },
+                                            modifier = Modifier.testTag("editRatingPrompt")
+                                        ) {
+                                            Text("Edit", color = Color(0xFF3E6B68))
+                                        }
+                                        TextButton(
+                                            onClick = { showDeleteReviewDialog = true },
+                                            modifier = Modifier.testTag("deleteReviewButton")
+                                        ) {
+                                            Text("Delete", color = Color(0xFFA13F3F))
+                                        }
+                                    }
+                                }
                             }
-
-                        } else {
-                            ratingError = "you must enter a rating before you can review"
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
-                ) {
-                    Text("Leave Review", color = Color.White, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                if (ratingError != "") {
 
+                // -- Campsite QR Code Section --
+                if (campsite.hasQRCode) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Campsite QR Code",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                    // -- Campsite QR Code Section --
-                    if (campsite.hasQRCode) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "Campsite QR Code",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            CampsiteQRCode(
-                                campsiteId = campsite.documentId
-                            )
-                        }
+                        CampsiteQRCode(
+                            campsiteId = campsite.documentId
+                        )
                     }
                 }
-            }
+            } // end padded Column
+        } // end scrolling Column
 
         // Rating Received Popup
         if (showRatingPopup) {
@@ -554,6 +604,39 @@ fun CampsiteDetailsScreen(
                         modifier = Modifier.testTag("ratingPopupOk")
                     ) {
                         Text("OK")
+                    }
+                }
+            )
+        }
+
+        // Delete review confirmation
+        if (showDeleteReviewDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteReviewDialog = false },
+                modifier = Modifier.testTag("deleteReviewDialog"),
+                title = { Text(text = "Delete your review?") },
+                text = { Text(text = "This removes your rating and review from this campsite.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            campsite.removeRating(userViewModel.deviceId)
+                            displayedRating = campsite.rating
+                            displayedRaters = campsite.raters
+                            reviewsVersion++
+                            showThankYouMessage = false
+                            showDeleteReviewDialog = false
+                        },
+                        modifier = Modifier.testTag("confirmDeleteReviewButton")
+                    ) {
+                        Text("Delete", color = Color(0xFFA13F3F), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteReviewDialog = false },
+                        modifier = Modifier.testTag("cancelDeleteReviewButton")
+                    ) {
+                        Text("Cancel")
                     }
                 }
             )
