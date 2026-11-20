@@ -10,15 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -48,19 +45,13 @@ import com.example.syntax_camping.Database
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
-import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.Review // CHANGED: added (his rating model)
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.lotteryJoinState
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.google.firebase.Timestamp
-// CHANGED: removed the FirebaseFirestore and SetOptions imports, this screen no longer talks to Firestore directly
 
 @Composable
 fun CampsiteDetailsScreen(
@@ -85,12 +76,6 @@ fun CampsiteDetailsScreen(
     }
 
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
-    var entryCount by remember { mutableIntStateOf(0) }
-    var waitlistCount by remember { mutableIntStateOf(0) }
-    var hasJoined by remember { mutableStateOf(false) }
-    var isActionLoading by remember { mutableStateOf(false) }
-    var popupMessage by remember { mutableStateOf<String?>(null) }
-
     // Real-time UI states for Rating
     var displayedRating by remember(campsite) { mutableDoubleStateOf(campsite.rating) }
     var displayedRaters by remember(campsite) { mutableIntStateOf(campsite.raters) }
@@ -105,30 +90,14 @@ fun CampsiteDetailsScreen(
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
 
-    fun refreshLotteryDetails(id: String) {
-        lotteryFolder.getLottery(id) { fetchedLottery ->
-            lotteryState = fetchedLottery?.takeIf { !it.status.isNullOrBlank() }
-        }
-        lotteryFolder.getEntries(id) { entries ->
-            entryCount = entries.size
-        }
-        lotteryFolder.getWaitlist(id) { waitlist ->
-            waitlistCount = waitlist.size
-        }
-        db.hasUserJoinedLottery(id, userViewModel.deviceId) { joined ->
-            hasJoined = joined
-        }
-    }
-
     val nonBlankLotteryId = campsite.lotteryId?.takeIf { it.isNotBlank() }
-    LaunchedEffect(nonBlankLotteryId, userViewModel.deviceId) {
+    LaunchedEffect(nonBlankLotteryId) {
         if (nonBlankLotteryId != null) {
-            refreshLotteryDetails(nonBlankLotteryId)
+            lotteryFolder.getLottery(nonBlankLotteryId) { fetchedLottery ->
+                lotteryState = fetchedLottery?.takeIf { !it.status.isNullOrBlank() }
+            }
         } else {
             lotteryState = null
-            entryCount = 0
-            waitlistCount = 0
-            hasJoined = false
         }
     }
 
@@ -371,165 +340,6 @@ fun CampsiteDetailsScreen(
                                 )
                             }
                         }
-                    } else {
-                        val joinState = lotteryJoinState(currentLottery?.status)
-
-                        when (joinState) {
-                            LotteryJoinState.ENDED -> {
-                                Text(
-                                    "Lottery ended",
-                                    color = Color(0xFFA13F3F),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                            }
-
-                            LotteryJoinState.CAN_ENTER_LOTTERY, LotteryJoinState.CAN_JOIN_WAITLIST -> {
-                                val currentActiveCount = if (joinState == LotteryJoinState.CAN_JOIN_WAITLIST) {
-                                    waitlistCount
-                                } else {
-                                    entryCount
-                                }
-                                val cap = currentLottery?.capacity
-                                val isAtCapacity = cap != null && currentActiveCount >= cap
-
-                                if (isActionLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .testTag("lotteryActionLoading")
-                                    )
-                                } else if (hasJoined) {
-                                    // LEAVE BUTTON
-                                    Button(
-                                        onClick = {
-                                            nonBlankLotteryId?.let { nonNullLotteryId ->
-                                                isActionLoading = true
-                                                db.removeLotteryEntry(
-                                                    nonNullLotteryId,
-                                                    LotteryEntry(
-                                                        userId = userViewModel.deviceId,
-                                                        joined = Timestamp.now()
-                                                    )
-                                                ) { success ->
-                                                    isActionLoading = false
-                                                    if (success) {
-                                                        hasJoined = false
-                                                        popupMessage = "Leave Successful"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-
-                                                        userViewModel.currentUser?.let { u ->
-                                                            val oldEntrant = u.entrantData ?: EntrantData()
-                                                            val updatedUser = u.copy(
-                                                                entrantData = oldEntrant.copy(
-                                                                    lotteryEntryIds = (oldEntrant.lotteryEntryIds - nonNullLotteryId).toMutableList()
-                                                                )
-                                                            )
-                                                            db.updateUser(userViewModel.deviceId, updatedUser) {
-                                                                userViewModel.refreshCurrentUser()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        popupMessage = "Unable to leave lottery."
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.testTag("leaveLotteryButton"),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Text(
-                                            text = if (joinState == LotteryJoinState.CAN_JOIN_WAITLIST) "Leave Waitlist" else "Leave Lottery",
-                                            color = Color.Black
-                                        )
-                                    }
-                                } else {
-                                    // JOIN BUTTON
-                                    Button(
-                                        onClick = {
-                                            if (isAtCapacity) {
-                                                popupMessage = "Lottery is at full capacity"
-                                                return@Button
-                                            }
-                                            nonBlankLotteryId?.let { nonNullLotteryId ->
-                                                isActionLoading = true
-                                                db.addLotteryEntry(
-                                                    nonNullLotteryId,
-                                                    LotteryEntry(
-                                                        userId = userViewModel.deviceId,
-                                                        joined = Timestamp.now()
-                                                    )
-                                                ) { success ->
-                                                    isActionLoading = false
-                                                    if (success) {
-                                                        hasJoined = true
-                                                        popupMessage = "Join Successful"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-
-                                                        userViewModel.currentUser?.let { u ->
-                                                            val oldEntrant = u.entrantData ?: EntrantData()
-                                                            val updatedIds = (oldEntrant.lotteryEntryIds + nonNullLotteryId).distinct().toMutableList()
-                                                            val updatedUser = u.copy(
-                                                                entrantData = oldEntrant.copy(
-                                                                    lotteryEntryIds = updatedIds
-                                                                )
-                                                            )
-                                                            db.updateUser(userViewModel.deviceId, updatedUser) {
-                                                                userViewModel.refreshCurrentUser()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        popupMessage = "Lottery is at full capacity"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        enabled = !isAtCapacity,
-                                        modifier = Modifier.testTag("joinLotteryButton"),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFF2C9C9)
-                                        ),
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Text(
-                                            text = when {
-                                                isAtCapacity -> "Lottery Full"
-                                                joinState == LotteryJoinState.CAN_JOIN_WAITLIST -> "Click to join waitlist!!"
-                                                else -> "Click to enter lottery!!"
-                                            },
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                val targetTime = if (currentLottery?.status == "booking") {
-                                    currentLottery.endTimeBooking
-                                } else {
-                                    currentLottery?.endTimeLottery ?: 0L
-                                }
-
-                                val daysLeft = if (targetTime > 0L) {
-                                    ((targetTime - System.currentTimeMillis()) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
-                                } else {
-                                    0L
-                                }
-
-                                Text(
-                                    text = "$waitlistCount people on waitlist\n$entryCount people in lottery\n$daysLeft days left",
-                                    fontSize = 12.sp,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.testTag("lotteryCountsAndTimer")
-                                )
-                            }
-
-                            LotteryJoinState.NONE -> {}
-                        }
                     }
                 }
 
@@ -655,24 +465,6 @@ fun CampsiteDetailsScreen(
                     }
                 }
             }
-        }
-
-        // Lottery Join / Leave Popup
-        if (popupMessage != null) {
-            AlertDialog(
-                onDismissRequest = { popupMessage = null },
-                modifier = Modifier.testTag("lotteryStatusPopup"),
-                title = { Text(text = popupMessage!!) },
-                text = { Text(text = popupMessage!!) },
-                confirmButton = {
-                    TextButton(
-                        onClick = { popupMessage = null },
-                        modifier = Modifier.testTag("lotteryStatusPopupOk")
-                    ) {
-                        Text("OK")
-                    }
-                }
-            )
         }
 
         // Rating Received Popup

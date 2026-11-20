@@ -79,8 +79,15 @@ fun LotteryDetailsScreen(
     val ownedIds = userViewModel.currentUser?.ownerData?.campsiteIds ?: emptyList()
     val isOwner = participating.any { it.documentId in ownedIds }
 
-    val (entryCount, waitlistCount) = getLotteryCounts(current)
-
+    // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
+    var entryCount by remember { mutableIntStateOf(0) }
+    var waitlistCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getEntries(lotteryId) { entries -> entryCount = entries.size }
+            lotteryRepository().getWaitlist(lotteryId) { waitlist -> waitlistCount = waitlist.size }
+        }
+    }
     fun removeSingleCampsiteFromLottery(campToRemove: Campsite, activeLottery: Lottery) {
         campToRemove.updateLotteryId("")
         CampsiteRepository.getCampsites().find { it.documentId == campToRemove.documentId }?.updateLotteryId("")
@@ -254,7 +261,9 @@ fun LotteryDetailsScreen(
                 } else {
                     LotteryEntrantSection(
                         lottery = current,
-                        userId = userViewModel.deviceId
+                        userId = userViewModel.deviceId,
+                        userViewModel = userViewModel,
+                        onChanged = { refreshTrigger++ }
                     )
                 }
 
