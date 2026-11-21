@@ -204,5 +204,64 @@ class ReservationRepository {
                     }
             }
     }
+    fun getPendingConfirmation(
+        pendingId: String,
+        callback: (PendingConfirmation?) -> Unit
+    ) {
+        if (pendingId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("pendingConfirmations")
+            .document(pendingId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val confirmation = PendingConfirmation(
+                        pendingId = document.id,
+                        lotteryId = document.getString("lotteryId") ?: "",
+                        userId = document.getString("userId") ?: ""
+                    )
+                    callback(confirmation)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+    fun deletePendingConfirmation(
+        pendingId: String,
+        userId: String,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (pendingId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        val batch = db.batch()
+
+        // Deletes the pending reservation for the regular collection of pendingConfirmations
+        val pendingRef = db.collection("pendingConfirmations").document(pendingId)
+        batch.delete(pendingRef)
+
+        // Deletes from the entrant data
+        if (userId.isNotBlank()) {
+            val entrantRef = db.collection("entrantData").document(userId)
+            batch.update(
+                entrantRef,
+                mapOf(
+                    "pendingConfirmationIds" to FieldValue.arrayRemove(pendingId)
+                )
+            )
+        }
+
+        batch.commit()
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
 
 }
