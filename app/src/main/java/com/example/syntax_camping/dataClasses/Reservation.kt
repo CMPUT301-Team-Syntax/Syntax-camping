@@ -19,7 +19,7 @@ data class Reservation (
     val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
-    fun createReservation() {
+    fun createReservation():Boolean {
         for (date in datesReserved) {
             reservationNotFull = dateManager!!.addReservation(date, numberGuests)
 
@@ -40,7 +40,7 @@ data class Reservation (
         }
 
         //Note should check status before adding reservation to user and campsite
-    }
+    return reservationSuccessful}
     fun updateReservationId(newId: String) {
         this.reservationId = newId
     }
