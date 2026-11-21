@@ -20,12 +20,12 @@ import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CalenderVeiw
 import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteCardOwner
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteCard
 import com.google.firebase.firestore.FirebaseFirestore
-import getLotteryCounts
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -202,6 +202,26 @@ fun LotteryDetailsScreen(
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
                     )
+                }
+
+                // ADDED: everyone sees the dates on offer before registering (view only, but you can flip months)
+                if (current.lotteryDates.isNotEmpty()) {
+                    Text(
+                        "Available dates",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    Text(
+                        "Dates in red are offered in this lottery.",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp, vertical = 4.dp)
+                            .testTag("lotteryDatesLegend")
+                    )
+                    CalenderVeiw(initialSelected = current.lotteryDates, readOnly = true)
+                    Spacer(Modifier.height(16.dp))
                 }
 
                 Text(

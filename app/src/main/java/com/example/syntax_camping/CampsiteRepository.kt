@@ -162,7 +162,9 @@ object CampsiteRepository {
                         Date(
                             maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
                             date = (map["date"] as? String) ?: ""
-                        )
+                        ).apply {
+                            currentOcc = (map["currentOcc"] as? Number)?.toInt() ?: 0
+                        }
                     }
                     val dateManager = DateManager(parsedDates.toMutableList())
                     campsite.updateDateManager(dateManager)

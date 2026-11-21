@@ -6,7 +6,9 @@ import android.R.attr.name
 import android.media.Rating
 import android.net.Uri
 import androidx.core.net.toUri
+import com.example.syntax_camping.dataClasses.Date
 import com.example.syntax_camping.dataClasses.DateManager
+import com.example.syntax_camping.dataClasses.DateRepository
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.Review
 /*
@@ -83,7 +85,22 @@ class Campsite(documentId: String, name: String, location: String, description: 
 
     }
     //Used in tandem with the getter for rating to ensure that it has most up to date rating
-
+    // ADDED: gives this campsite the dates a lottery owner picked. Dates it already has keep their bookings.
+    fun addLotteryDates(newDates: List<String>) {
+        val manager = _dateManager
+        val merged = mutableListOf<Date>()
+        if (manager != null) {
+            merged.addAll(manager.availableDates)
+            merged.addAll(manager.filledDates)
+        }
+        for (dateString in newDates) {
+            if (merged.none { it.dateString == dateString }) {
+                merged.add(Date(dateString, _maxOcc))
+            }
+        }
+        val newManager = DateManager(merged)
+        _dateManager = newManager
+        DateRepository().addDateManager(_documentId, newManager)}
 
     fun refreshRating(){
 

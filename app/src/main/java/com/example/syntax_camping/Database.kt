@@ -73,8 +73,7 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String): String{
-        //The two following values allow firebase to generate a unique lottery id
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList()): String{        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
@@ -89,15 +88,15 @@ class Database {
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity
+            "capacity" to capacity,
+            "lotteryDates" to lotteryDates
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String){
-        //The two following values allow firebase to generate a unique lottery id
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null){        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document(lotteryId)
         val lotteryId = lotteryReference.id
@@ -114,10 +113,9 @@ class Database {
             "name" to name,
             "capacity" to capacity,
 
-
             )
-        lotteryReference.update(data)
-
+        val finalData = if (lotteryDates != null) data + ("lotteryDates" to lotteryDates) else data
+        lotteryReference.update(finalData)
 
     }
     /*

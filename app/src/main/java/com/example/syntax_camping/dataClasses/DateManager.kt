@@ -18,6 +18,10 @@ class DateManager(dates: MutableList<Date>) {
             return _availableDates
         }
 
+    // ADDED: every date this manager holds, full or not, so the repository can save them all
+    val allDates: List<Date>
+        get() = _ownerSelectedDates
+
     fun updateFilledDates(){
         _filledDates.clear()
         for(date in _ownerSelectedDates){
