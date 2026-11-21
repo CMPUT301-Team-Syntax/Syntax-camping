@@ -133,20 +133,43 @@ class ReservationRepository {
                     .get()
                     .addOnSuccessListener { campDoc ->
                         val campsite = if (campDoc != null && campDoc.exists()) {
+                            val tagsList = campDoc.getString("tags")
+                                ?.takeIf { it.isNotBlank() }
+                                ?.split(",")
+                                ?.map { it.trim() }
+                                ?.toMutableList()
+                                ?: mutableListOf()
+
+                            val rawDateManagerMap = campDoc.get("dateManager") as? Map<*, *>
+                            val rawDatesList = (rawDateManagerMap?.get("dates") as? List<*>)
+                                ?: (campDoc.get("dates") as? List<*>)
+                                ?: emptyList<Any>()
+
+                            val parsedDates = rawDatesList.mapNotNull { item ->
+                                val map = item as? Map<*, *> ?: return@mapNotNull null
+                                Date(
+                                    maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
+                                    date = (map["date"] as? String) ?: ""
+                                )
+                            }
+                            val dateManager = DateManager(parsedDates.toMutableList())
+
                             Campsite(
                                 documentId = campDoc.id,
                                 name = campDoc.getString("name") ?: "",
                                 location = campDoc.getString("location") ?: "",
                                 description = campDoc.getString("description") ?: "",
                                 maxOcc = campDoc.getLong("maxOccupancy")?.toInt() ?: 0,
-                                tags = (campDoc.getString("tags") ?: "").split(",").toMutableList(),
+                                tags = tagsList,
                                 rating = campDoc.getDouble("rating") ?: 0.0,
                                 images = (campDoc.get("images") as? List<*>)
                                     ?.filterIsInstance<String>()
                                     ?.toMutableList()
                                     ?: mutableListOf()
                             ).apply {
-                                updateLotteryId(campDoc.getString("lotteryId")?.takeIf { it.isNotBlank() })
+                                updateLotteryId(
+                                    campDoc.getString("lotteryId")?.takeIf { it.isNotBlank() })
+                                updateDateManager(dateManager)
                             }
                         } else {
                             // Fallback minimal Campsite if the campsite document was deleted
@@ -159,7 +182,9 @@ class ReservationRepository {
                                 tags = mutableListOf(),
                                 rating = 0.0,
                                 images = mutableListOf()
-                            )
+                            ).apply {
+                                updateDateManager(DateManager(mutableListOf()))
+                            }
                         }
 
                         val reservation = Reservation(
@@ -178,9 +203,65 @@ class ReservationRepository {
                         callback(null)
                     }
             }
+    }
+    fun getPendingConfirmation(
+        pendingId: String,
+        callback: (PendingConfirmation?) -> Unit
+    ) {
+        if (pendingId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("pendingConfirmations")
+            .document(pendingId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val confirmation = PendingConfirmation(
+                        pendingId = document.id,
+                        lotteryId = document.getString("lotteryId") ?: "",
+                        userId = document.getString("userId") ?: ""
+                    )
+                    callback(confirmation)
+                } else {
+                    callback(null)
+                }
+            }
             .addOnFailureListener {
                 callback(null)
             }
+    }
+    fun deletePendingConfirmation(
+        pendingId: String,
+        userId: String,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (pendingId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        val batch = db.batch()
+
+        // Deletes the pending reservation for the regular collection of pendingConfirmations
+        val pendingRef = db.collection("pendingConfirmations").document(pendingId)
+        batch.delete(pendingRef)
+
+        // Deletes from the entrant data
+        if (userId.isNotBlank()) {
+            val entrantRef = db.collection("entrantData").document(userId)
+            batch.update(
+                entrantRef,
+                mapOf(
+                    "pendingConfirmationIds" to FieldValue.arrayRemove(pendingId)
+                )
+            )
+        }
+
+        batch.commit()
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
     }
 
 }
