@@ -87,6 +87,7 @@ fun CampsiteDetailsScreen(
     var userReviewString by remember { mutableStateOf("") }
     var userReviewTextString by remember { mutableStateOf("") }
     var ratingError by remember { mutableStateOf("") }
+    val reviewDateFormat = remember { java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()) }
 
     // CHANGED: reviews are shown as a list; this counter makes the list rebuild after a submit / edit / delete
     var reviewsVersion by remember { mutableIntStateOf(0) }
@@ -404,7 +405,9 @@ fun CampsiteDetailsScreen(
                                             val newReview = Review(
                                                 parsedRating,
                                                 userViewModel.deviceId,
-                                                userReviewTextString.trim()
+                                                userReviewTextString.trim(),
+                                                userViewModel.currentUser?.name ?: "",
+                                                System.currentTimeMillis()
                                             )
                                             if (myReview == null) {
                                                 campsite.updateRating(newReview)
@@ -514,11 +517,22 @@ fun CampsiteDetailsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = if (isMine) "Your review" else "Camper",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
+                                    Column {
+                                        Text(
+                                            text = r.reviewerName.ifBlank { "Camper" } + (if (isMine) " (you)" else ""),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.testTag("reviewerName_${r.userId}")
+                                        )
+                                        if (r.timestamp > 0L) {
+                                            Text(
+                                                text = reviewDateFormat.format(java.util.Date(r.timestamp)),
+                                                fontSize = 12.sp,
+                                                color = Color.Gray,
+                                                modifier = Modifier.testTag("reviewDate_${r.userId}")
+                                            )
+                                        }
+                                    }
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Rating(
                                             r.rating,
