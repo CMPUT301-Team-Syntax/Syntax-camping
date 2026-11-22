@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.User
-
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,8 +102,8 @@ class OwnerCampsiteUITest {
             rating = 4.2,
             images = mutableListOf() // Fixed compile error
         )
-        first.updateRaterList(mutableListOf((3.5).toDouble()))
-        second.updateRaterList(mutableListOf((4.2).toDouble()))
+        first.updateRaterList(mutableListOf(Review(3.5, "test-user", "")))
+        second.updateRaterList(mutableListOf(Review(4.2, "test-user", "")))
         val selected = AtomicReference<Campsite?>(null)
 
         composeRule.setContent {
@@ -137,7 +138,7 @@ class OwnerCampsiteUITest {
             rating = 4.6,
             images = mutableListOf() // Fixed compile error
         )
-        campsite.updateRaterList(mutableListOf((4.6).toDouble()))
+        campsite.updateRaterList(mutableListOf(Review(4.6, "test-user", "")))
         val edited = AtomicReference<Campsite?>(null)
 
         composeRule.setContent {

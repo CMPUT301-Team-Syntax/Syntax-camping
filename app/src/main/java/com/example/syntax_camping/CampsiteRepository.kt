@@ -5,6 +5,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.getField
 import kotlin.collections.toMutableList
 import kotlin.text.split
+import com.example.syntax_camping.dataClasses.Review
+import com.example.syntax_camping.dataClasses.Date
+import com.example.syntax_camping.dataClasses.DateManager
+import com.example.syntax_camping.dataClasses.Reservation
 
 // object CampsiteRepository
 // author: Andrew
@@ -84,7 +88,8 @@ object CampsiteRepository {
 
 
                 )
-                campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
+                campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)  //Adds QR Code check.
+                campsite.updateRaterList(document.get("ratings") as? MutableList<Review> ?:mutableListOf())
 
                 callback(campsite)
             }
@@ -127,9 +132,65 @@ object CampsiteRepository {
                             ?.toMutableList()
                             ?: mutableListOf()
                     )
-                    campsite.updateRaterList(document.get("ratings") as? MutableList<Double> ?:mutableListOf())
+                    /* ok so this big ol chunk of code that looks super complicated I know basically remaps the ratings reservatiosn adn datemanager bacck to
+                    campsite correctly. It seems complicated but all it is doing is mapping all the firebase objects to objects of the type they are maooing, then makes a lsit and updates
+                    the new campsite to have it(ie maps all the reservation values in firebase to a reservaiton objecct, makes a list of those, then attachesd it to cmapsite
+                     */
+                    val rawRatings = document.get("ratings") as? List<Map<String, Any>> ?: emptyList()
 
+                    // 2. Map those database items directly into instances of your custom Rating class
+                    val parsedRatings: MutableList<Review> = rawRatings.map { map ->
+                        Review(
+                            // Extract by database keys. Change "score" or "comment" to your exact database keys if they differ.
+                            rating = (map["rating"] as? Number)?.toDouble() ?: 0.0,
+                            userId = (map["userId"] as? String) ?: "",
+                            reviewText = (map["reviewText"] as? String) ?: "",
+                            reviewerName = (map["reviewerName"] as? String) ?: "",
+                            timestamp = (map["timestamp"] as? Number)?.toLong() ?: 0L
+                        )
+                    }.toMutableList()
+
+
+                    campsite.updateRaterList(parsedRatings)
+                    val rawDateManagerMap = document.get("dateManager") as? Map<*, *>
+                    val rawDatesList = (rawDateManagerMap?.get("dates") as? List<*>)
+                        ?: (document.get("dates") as? List<*>)
+                        ?: emptyList<Any>()
+
+                    val parsedDates = rawDatesList.mapNotNull { item ->
+                        val map = item as? Map<*, *> ?: return@mapNotNull null
+                        Date(
+                            maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
+                            date = (map["date"] as? String) ?: ""
+                        ).apply {
+                            currentOcc = (map["currentOcc"] as? Number)?.toInt() ?: 0
+                        }
+                    }
+                    val dateManager = DateManager(parsedDates.toMutableList())
+                    campsite.updateDateManager(dateManager)
+
+// 3. Parse Reservations
+                    val rawReservations = document.get("reservations") as? List<*> ?: emptyList<Any>()
+                    val parsedReservations = rawReservations.mapNotNull { item ->
+                        val map = item as? Map<*, *> ?: return@mapNotNull null
+                        Reservation(
+                            campsite = campsite,
+                            datesReserved = (map["datesReserved"] as? List<*>)
+                                ?.filterIsInstance<String>()
+                                ?.toMutableList()
+                                ?: mutableListOf(),
+                            numberGuests = (map["numberGuests"] as? Number)?.toInt() ?: 0,
+                            userId = (map["userId"] as? String) ?: "",
+                            status = (map["status"] as? String) ?: ""
+                        ).apply {
+                            this.reservationId = (map["reservationId"] as? String) ?: ""
+                        }
+                    }.toMutableList()
+                    campsite.updateReservations(parsedReservations)
                     campsite.updateLotteryId(document.getString("lotteryId")?.takeIf { it.isNotBlank() })
+
+                    // 4. Updates the QR Code check.
+                    campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)
 
                     loadedCampsites.add(campsite)
                 }

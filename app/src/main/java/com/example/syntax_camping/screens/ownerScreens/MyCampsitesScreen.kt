@@ -49,8 +49,8 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.TopBar
-import com.example.syntax_camping.screens.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

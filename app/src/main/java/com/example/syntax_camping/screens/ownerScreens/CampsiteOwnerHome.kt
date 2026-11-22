@@ -44,11 +44,11 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
-import com.example.syntax_camping.screens.CampsiteListScreenOwner
-import com.example.syntax_camping.screens.CustomBottomBar
-import com.example.syntax_camping.screens.LotteryListScreenOwner
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteListScreenOwner
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.filterOwnedCampsites
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.CampsiteLotteryCardView
 
 @Composable
 fun CampsiteOwnerHome(
@@ -62,8 +62,6 @@ fun CampsiteOwnerHome(
     var lotteriesOwned = remember { mutableStateListOf<Lottery>() }
     var ownerCampsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
-    //this is to be a commented as an ai prompt request, about testing this creation when its a data class
 
     //  Trigger a database refresh every time this screen appears
     LaunchedEffect(Unit) {
@@ -106,7 +104,8 @@ fun CampsiteOwnerHome(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White), // Set the background color to white
+            .background(Color.White) // Set the background color to white
+            .testTag("ownerHomeScreen"),
         containerColor = Color.White,
         topBar = { // top bar with back button and notification icon
             TopBar(
@@ -120,15 +119,17 @@ fun CampsiteOwnerHome(
 
         Column( modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
-            .padding(16.dp),
+            .padding(innerPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             Box(modifier = Modifier.weight(1f)) {
                 if (isLoading|| userViewModel.currentUser == null) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .testTag("ownerLoading"))
                 } else if (myCampsites.isNotEmpty()) {
 
                     Column(
@@ -157,10 +158,10 @@ fun CampsiteOwnerHome(
                                     modifier = Modifier
                                         .width(160.dp)
                                         .height(44.dp)
-                                        .testTag("owner_three_dots_menu")
+                                        .testTag("ownerThreeDotsMenu")
                                     ,
 
-                                ) {
+                                    ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.more_vertical),
                                         contentDescription = "add info",
@@ -174,7 +175,7 @@ fun CampsiteOwnerHome(
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Add Campsite") },
-                                        modifier = Modifier.testTag("add_campsite_menu_item"),
+                                        modifier = Modifier.testTag("addCampsiteMenuItem"),
                                         leadingIcon = {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.location_on),
@@ -190,6 +191,7 @@ fun CampsiteOwnerHome(
 
                                     DropdownMenuItem(
                                         text = { Text("Add Lottery") },
+                                        modifier = Modifier.testTag("addLotteryMenuItem"),
 
                                         leadingIcon = {
                                             Icon(
@@ -226,31 +228,32 @@ fun CampsiteOwnerHome(
                                 onLotteryClick = { clickedId ->
                                     navController.navigate("LotteryDetailsScreen/$clickedId")
                                 },
+                                modifier = Modifier.testTag("OwnerLotterySection")
                             )
 
-                        Text(
-                            text = "Your Campsites",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            Text(
+                                text = "Your Campsites",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
 
-                        )
-
-                        Box {
-                            CampsiteListScreenOwner(
-                                campsiteList = myCampsites,
-                                onItemClick = { clickedId ->
-                                    navController.navigate("ownerCampsiteDetails/$clickedId")
-                                },
-                                onUpdateClick = { clickedId ->
-                                    val clickedCamp =
-                                        ownerCampsites.find { it.documentId == clickedId }
-                                    onEditCampsite(clickedCamp)
-                                },
-                                onViewLotClick = { lotteryId ->
-                                    navController.navigate("LotteryDetailsScreen/$lotteryId")
-                                }
                             )
-                        }
+
+                            Box (modifier = Modifier.testTag("ownerCampsiteList")){
+                                CampsiteListScreenOwner(
+                                    campsiteList = myCampsites,
+                                    onItemClick = { clickedId ->
+                                        navController.navigate("ownerCampsiteDetails/$clickedId")
+                                    },
+                                    onUpdateClick = { clickedId ->
+                                        val clickedCamp =
+                                            ownerCampsites.find { it.documentId == clickedId }
+                                        onEditCampsite(clickedCamp)
+                                    },
+                                    onViewLotClick = { lotteryId ->
+                                        navController.navigate("LotteryDetailsScreen/$lotteryId")
+                                    }
+                                )
+                            }
                         }
                     }
                 }else {
@@ -263,7 +266,7 @@ fun CampsiteOwnerHome(
                         IconButton(onClick = { onEditCampsite(null) },
                             modifier = Modifier.
                             size(40.dp)
-                                .testTag("add_campsite_button")
+                                .testTag("addCampsiteButton")
 
                         )
 
@@ -273,10 +276,14 @@ fun CampsiteOwnerHome(
                                 painter = painterResource(id = R.drawable.add),
                                 contentDescription = "add campsite",
                                 tint = Color.Unspecified,
-                                )
+                                modifier = Modifier.testTag("addCampsite")
+                            )
                         }
                     }
-                    Text("No campsites found.", modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        "No campsites found.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
             }
         }
@@ -284,6 +291,7 @@ fun CampsiteOwnerHome(
         if (noLotteryAvailable) {
             AlertDialog(
                 onDismissRequest = { noLotteryAvailable = false },
+                modifier = Modifier.testTag("noLotteryDialog"),
                 title = {
                     Text(text = "No Lottery Slot Available")
                 },
@@ -292,7 +300,8 @@ fun CampsiteOwnerHome(
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = { noLotteryAvailable = false }
+                        onClick = { noLotteryAvailable = false },
+                        modifier = Modifier.testTag("noLotteryDialogOk")
                     ) {
                         Text("OK")
                     }

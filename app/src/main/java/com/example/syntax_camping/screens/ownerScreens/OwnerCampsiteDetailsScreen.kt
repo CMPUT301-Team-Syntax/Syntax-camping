@@ -41,6 +41,7 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
+import com.example.syntax_camping.screens.CampsiteQRCode
 
 /** US 02.01.04: renders the selected database campsite in one scrollable page. */
 @Composable
@@ -88,6 +89,23 @@ fun OwnerCampsiteDetailsScreen(
                     }
                 }
                 OwnerPhotoSection(campsite)
+
+                //Visible QR Code!
+                if (campsite.hasQRCode) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Campsite QR Code")
+
+                        CampsiteQRCode(
+                            campsiteId = campsite.documentId
+                        )
+                    }
+                }
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         .heightIn(min = 280.dp)
