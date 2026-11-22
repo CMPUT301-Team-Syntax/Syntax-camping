@@ -18,7 +18,8 @@ fun validateAndCreateLottery(
     finalMinute: String,
     numWinnersText: String,
     capacity: String,
-    selectedCampsites: MutableList<Campsite>
+    selectedCampsites: MutableList<Campsite>,
+    lotteryDates: List<String> = emptyList()
 
 ): Pair<Boolean, String>
 
@@ -83,6 +84,8 @@ fun validateAndCreateLottery(
         newLottery.lotteryId = editingLotteryId
     }
 
+    newLottery.lotteryDates = lotteryDates
+
     val success = newLottery.createLotteryTimer()
 
     if (!success) {
@@ -91,6 +94,11 @@ fun validateAndCreateLottery(
 
     selectedCampsites.forEach { campsite ->
         campsite.updateLotteryId(newLottery.lotteryId)
+    }
+
+    // ADDED: every campsite in the lottery gets the dates the owner picked
+    if (lotteryDates.isNotEmpty()) {
+        selectedCampsites.forEach { campsite -> campsite.addLotteryDates(lotteryDates) }
     }
 
     return Pair(true, "")

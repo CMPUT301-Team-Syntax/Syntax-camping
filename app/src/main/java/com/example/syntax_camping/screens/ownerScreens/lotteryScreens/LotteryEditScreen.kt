@@ -42,6 +42,7 @@ import java.util.Calendar
 import com.example.syntax_camping.dataClasses.DateManager
 import com.example.syntax_camping.dataClasses.Date
 import com.example.syntax_camping.dataClasses.DateRepository
+import com.example.syntax_camping.screens.CalenderVeiw
 
 
 @Composable
@@ -66,6 +67,7 @@ fun LotteryEditScreen(
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
     var capacity by remember { mutableStateOf("") }
+    var lotteryDates by remember { mutableStateOf<List<String>>(emptyList()) }
     var dateManager by remember{mutableStateOf<DateManager?>(null) }
     val selectedDatesString = remember { mutableStateListOf<String>() }
     val selectedDatesAsDate = remember { mutableStateListOf<Date>() }
@@ -78,6 +80,7 @@ fun LotteryEditScreen(
             numWinners = editingLottery.numWinners.toString()
             name = editingLottery.name
             capacity = editingLottery.capacity.toString()
+            lotteryDates = editingLottery.lotteryDates
 
             val startCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
             startDay = startCal.get(Calendar.DAY_OF_MONTH).toString()
@@ -279,6 +282,16 @@ fun LotteryEditScreen(
                 }
             }
 
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Dates offered (tap days, then press Confirm)")
+                CalenderVeiw(initialSelected = lotteryDates, onConfirm = { lotteryDates = it })
+                Text(
+                    text = if (lotteryDates.isEmpty()) "No dates confirmed yet"
+                    else "${lotteryDates.size} dates confirmed: ${lotteryDates.joinToString(", ")}",
+                    modifier = Modifier.testTag("lotteryDatesSummary")
+                )
+            }
+
             CampsiteSelectorDropdown(
                 myOwnedCampsites = myOwnedCampsites,
                 selectedCampsites = selectedCampsites
@@ -308,23 +321,12 @@ fun LotteryEditScreen(
                         finalMinute,
                         numWinners,
                         capacity,
-                        selectedCampsites
+                        selectedCampsites,
+                        lotteryDates
                     )
 
                     if (isSuccess) {
                         errorMessage = ""
-
-                        //Note, this for loop adds a Datemanager based on selected dates to each campsite, whoever makes Calendar, please just set the chosen dates as strings to selectedDatesString)
-                        for (campsite in selectedCampsites){
-                            for (date in selectedDatesString){
-                                newDate = Date(date, campsite.maxOcc)
-                                selectedDatesAsDate.add(newDate!!)
-
-                            }
-                            dateManager = DateManager(selectedDatesAsDate)
-                            campsite.updateDateManager(dateManager!!)
-                            drp.addDateManager(campsite.documentId, dateManager!!)
-                        }
                         navController.popBackStack()
                     } else {
                         errorMessage = errorText
@@ -332,7 +334,7 @@ fun LotteryEditScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Create Lottery")
+                Text(if (editingLottery != null) "Save Changes" else "Create Lottery")
             }
         }
     }

@@ -20,12 +20,12 @@ import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CalenderVeiw
 import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteCardOwner
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteCard
 import com.google.firebase.firestore.FirebaseFirestore
-import getLotteryCounts
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -45,7 +45,8 @@ fun LotteryDetailsScreen(
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     var campsitePendingLastRemoval by remember { mutableStateOf<Campsite?>(null) }
     var refreshTrigger by remember { mutableIntStateOf(0) }
-
+    var showParticipants by remember { mutableStateOf(false) }
+    var showWinners by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
     LaunchedEffect(lotteryId, refreshTrigger) {
@@ -79,8 +80,15 @@ fun LotteryDetailsScreen(
     val ownedIds = userViewModel.currentUser?.ownerData?.campsiteIds ?: emptyList()
     val isOwner = participating.any { it.documentId in ownedIds }
 
-    val (entryCount, waitlistCount) = getLotteryCounts(current)
-
+    // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
+    var entryCount by remember { mutableIntStateOf(0) }
+    var waitlistCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getEntries(lotteryId) { entries -> entryCount = entries.size }
+            lotteryRepository().getWaitlist(lotteryId) { waitlist -> waitlistCount = waitlist.size }
+        }
+    }
     fun removeSingleCampsiteFromLottery(campToRemove: Campsite, activeLottery: Lottery) {
         campToRemove.updateLotteryId("")
         CampsiteRepository.getCampsites().find { it.documentId == campToRemove.documentId }?.updateLotteryId("")
@@ -196,6 +204,26 @@ fun LotteryDetailsScreen(
                     )
                 }
 
+                // ADDED: everyone sees the dates on offer before registering (view only, but you can flip months)
+                if (current.lotteryDates.isNotEmpty()) {
+                    Text(
+                        "Available dates",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    Text(
+                        "Dates in red are offered in this lottery.",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp, vertical = 4.dp)
+                            .testTag("lotteryDatesLegend")
+                    )
+                    CalenderVeiw(initialSelected = current.lotteryDates, readOnly = true)
+                    Spacer(Modifier.height(16.dp))
+                }
+
                 Text(
                     "Participating Campsites",
                     fontSize = 22.sp,
@@ -234,6 +262,30 @@ fun LotteryDetailsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 if (isOwner) {
+                    Button(
+                        onClick = { showParticipants = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .testTag("viewParticipantsButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text("View participants", color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (current.status != "initialAccepting") {
+                        Button(
+                            onClick = { showWinners = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .testTag("seeWinnersButton"),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("See winners", color = Color.White)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     if (current.status == "initialAccepting") {
                         Button(
                             onClick = { onEditLottery(current) },
@@ -254,12 +306,39 @@ fun LotteryDetailsScreen(
                 } else {
                     LotteryEntrantSection(
                         lottery = current,
-                        userId = userViewModel.deviceId
+                        userId = userViewModel.deviceId,
+                        userViewModel = userViewModel,
+                        onChanged = { refreshTrigger++ }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+
+        if (showParticipants && current != null) {
+            NameListDialog(
+                title = "Participants",
+                emptyText = "Nobody has entered yet.",
+                loadUsers = { done ->
+                    lotteryRepository().getEntries(current.lotteryId) { list ->
+                        done(list.map { it.userId to "" })
+                    }
+                },
+                onDismiss = { showParticipants = false }
+            )
+        }
+        if (showWinners && current != null) {
+            NameListDialog(
+                title = "Winners",
+                emptyText = "No winners yet.",
+                loadUsers = { done ->
+                    lotteryRepository().getWinners(current.lotteryId) { list ->
+                        done(list.map { it.userID to (it.status ?: "") })
+                    }
+                },
+                onDismiss = { showWinners = false }
+            )
         }
 
         val pendingCamp = campsitePendingLastRemoval
@@ -304,4 +383,63 @@ private fun formatRemaining(millisLeft: Long): String {
     val mins = (totalSecs % 3600) / 60
     val secs = totalSecs % 60
     return if (days > 0) "${days}d ${hours}h ${mins}m ${secs}s" else "${hours}h ${mins}m ${secs}s"
+}
+
+@Composable
+private fun NameListDialog(
+    title: String,
+    emptyText: String,
+    loadUsers: ((List<Pair<String, String>>) -> Unit) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val db = remember { Database() }
+    var rows by remember { mutableStateOf<List<String>?>(null) }
+
+    LaunchedEffect(Unit) {
+        loadUsers { users ->
+            if (users.isEmpty()) {
+                rows = emptyList()
+            } else {
+                val names = mutableMapOf<String, String>()
+                users.forEach { (id, _) ->
+                    db.fetchUserDetails(id) { result ->
+                        names[id] = result.getOrNull()?.name?.takeIf { it.isNotBlank() } ?: id
+                        if (names.size == users.size) {
+                            rows = users.map { (uid, note) ->
+                                (names[uid] ?: uid) + if (note.isNotBlank()) " — $note" else ""
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("nameListDialog"),
+        title = { Text(title) },
+        text = {
+            val shown = rows
+            when {
+                shown == null -> CircularProgressIndicator()
+                shown.isEmpty() -> Text(emptyText)
+                else -> Column(Modifier.verticalScroll(rememberScrollState())) {
+                    shown.forEachIndexed { i, line ->
+                        Text(
+                            text = "${i + 1}. $line",
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .testTag("nameListItem_$i")
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("nameListClose")) {
+                Text("Close")
+            }
+        }
+    )
 }

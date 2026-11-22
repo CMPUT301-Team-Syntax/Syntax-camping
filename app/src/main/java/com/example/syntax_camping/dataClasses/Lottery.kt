@@ -21,6 +21,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
     val longDateConverter = dateConverterToLong()
     var capacity = capacity
     var name = name
+    var lotteryDates: List<String> = emptyList()   // ADDED: dates the owner offers, "dd/MM/yy"
     var endTimeLottery = endTimeLottery
     var endTimeBooking = endTimeBooking
     lateinit var readableEndTimeLottery: Timestamp
@@ -49,10 +50,11 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
         //i made this an if else statement one of the tests for lottery wasnt working for editing
         //so i just put it to a if blank then else uses the db update stuff
 
+        //added lotterydates to this call for all campsites tn lottery to get the dates  for its running
         if (lotteryId.isBlank()) {
-            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name)
+            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryDates)
         } else {
-            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId)
+            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId, lotteryDates)
         }
         for (campsite in campsites){
             campsite.updateLotteryId(lotteryId)

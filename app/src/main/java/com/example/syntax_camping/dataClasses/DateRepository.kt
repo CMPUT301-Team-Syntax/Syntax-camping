@@ -9,14 +9,19 @@ class DateRepository {
     val db = FirebaseFirestore.getInstance()
     fun addDateManager(documentId:String, dateManager: DateManager){
 
-            db.collection("campsites").document(documentId)
-                .update("dateManager", dateManager)
-                .addOnSuccessListener {
-
+        db.collection("campsites").document(documentId)
+            .update(
+                "dates",
+                dateManager.allDates.map {
+                    mapOf("date" to it.dateString, "maxOcc" to it.maxOcc, "currentOcc" to it.currentOcc)
                 }
-                .addOnFailureListener { e ->
+            )
+            .addOnSuccessListener {
 
-                }
+            }
+            .addOnFailureListener { e ->
+
+            }
 
     }
 

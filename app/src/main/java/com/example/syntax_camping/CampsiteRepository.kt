@@ -144,7 +144,9 @@ object CampsiteRepository {
                             // Extract by database keys. Change "score" or "comment" to your exact database keys if they differ.
                             rating = (map["rating"] as? Number)?.toDouble() ?: 0.0,
                             userId = (map["userId"] as? String) ?: "",
-                            reviewText = (map["reviewText"] as? String) ?: ""
+                            reviewText = (map["reviewText"] as? String) ?: "",
+                            reviewerName = (map["reviewerName"] as? String) ?: "",
+                            timestamp = (map["timestamp"] as? Number)?.toLong() ?: 0L
                         )
                     }.toMutableList()
 
@@ -160,7 +162,9 @@ object CampsiteRepository {
                         Date(
                             maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
                             date = (map["date"] as? String) ?: ""
-                        )
+                        ).apply {
+                            currentOcc = (map["currentOcc"] as? Number)?.toInt() ?: 0
+                        }
                     }
                     val dateManager = DateManager(parsedDates.toMutableList())
                     campsite.updateDateManager(dateManager)

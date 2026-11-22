@@ -45,10 +45,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun CalenderVeiw(onConfirm: (List<String>) -> Unit = {}) {
+fun CalenderVeiw(
+    onConfirm: (List<String>) -> Unit = {},
+    initialSelected: List<String> = emptyList(),   // ADDED: days that start out selected
+    readOnly: Boolean = false                      // ADDED: view only, no tapping, no Confirm button
+) {
     val currentMonth = remember { YearMonth.now() }
     val daysOfWeek = remember { daysOfWeek() }   // starts on the locale's first day
-    val selectedDate = remember { mutableStateListOf<LocalDate>() }
+    val selectedDate = remember(initialSelected) {
+        mutableStateListOf<LocalDate>().apply {
+            val f = DateTimeFormatter.ofPattern("dd/MM/yy")
+            addAll(initialSelected.mapNotNull { runCatching { LocalDate.parse(it, f) }.getOrNull() })
+        }
+    }
     var confirmedDate by remember { mutableStateOf<List<String>>(emptyList()) }
     val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yy") }
     val scope = rememberCoroutineScope()
@@ -62,8 +71,6 @@ fun CalenderVeiw(onConfirm: (List<String>) -> Unit = {}) {
     )
 
     val visibleMonth = state.firstVisibleMonth.yearMonth
-
-
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -107,25 +114,29 @@ fun CalenderVeiw(onConfirm: (List<String>) -> Unit = {}) {
                     day = day,
                     isSelected = day.date in selectedDate,
                     onClick = {
-                        if (it.date in selectedDate) selectedDate.remove(it.date)
-                        else selectedDate.add(it.date)
+                        if (!readOnly) {   // CHANGED: view-only calendars ignore taps
+                            if (it.date in selectedDate) selectedDate.remove(it.date)
+                            else selectedDate.add(it.date)
+                        }
                     }
                 )
             }
         )
 
-        Spacer(Modifier.height(12.dp))
+        if (!readOnly) {   // CHANGED: no Confirm button in view-only mode
+            Spacer(Modifier.height(12.dp))
 
-        Button(
-            onClick = {
-                val resulted = selectedDate.sorted().map { it.format(formatter) }
-                confirmedDate = resulted
-                onConfirm(resulted)
-            },
-            enabled = selectedDate.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Confirm")
+            Button(
+                onClick = {
+                    val resulted = selectedDate.sorted().map { it.format(formatter) }
+                    confirmedDate = resulted
+                    onConfirm(resulted)
+                },
+                enabled = selectedDate.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Confirm")
+            }
         }
     }
 
@@ -134,21 +145,22 @@ fun CalenderVeiw(onConfirm: (List<String>) -> Unit = {}) {
 @Composable
 fun Day(day: CalendarDay, isSelected: Boolean, onClick: (CalendarDay) -> Unit) {
     val inMonth = day.position == DayPosition.MonthDate
+    val isPast = day.date.isBefore(LocalDate.now())   // CHANGED
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .clickable(
-                enabled = inMonth){ onClick(day)  },
+            .clickable(enabled = inMonth && !isPast) { onClick(day) },   // CHANGED
         contentAlignment = Alignment.Center
     ) {
-        Text(text = day.date.dayOfMonth.toString(),
-            color = when{
+        Text(
+            text = day.date.dayOfMonth.toString(),
+            color = when {
                 isSelected -> Color.Red
+                isPast -> Color.LightGray   // CHANGED
                 inMonth -> Color.Blue
                 else -> Color.Black
             }
         )
-
     }
 }
 
