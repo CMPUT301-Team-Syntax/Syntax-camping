@@ -19,28 +19,58 @@ data class Reservation (
     val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
-    fun createReservation():Boolean {
-        for (date in datesReserved) {
-            reservationNotFull = dateManager!!.addReservation(date, numberGuests)
+    fun createReservation(callback: (Boolean) -> Unit = {}): Boolean {
+        val manager = dateManager
+        if (manager == null || datesReserved.isEmpty() || numberGuests <= 0) {
+            reservationSuccessful = false
+            callback(false)
+            return false
+        }
 
-            if (!reservationNotFull) {
+        // 1. Validate all dates before mutating occupancy
+        val allDatesFit = datesReserved.all { dateStr ->
+            val matchingDate = manager.allDates.find { it.dateString == dateStr }
+            matchingDate != null && (matchingDate.currentOcc + numberGuests) <= matchingDate.maxOcc
+        }
+
+        if (!allDatesFit) {
+            reservationNotFull = false
+            reservationSuccessful = false
+            callback(false)
+            return false
+        }
+
+        // 2. Apply occupancy to each requested date in memory
+        for (dateStr in datesReserved) {
+            if (!manager.addReservation(dateStr, numberGuests)) {
+                reservationNotFull = false
                 reservationSuccessful = false
+                callback(false)
+                return false
+            }
+        }
+
+        reservationNotFull = true
+        reservationSuccessful = true
+
+        // 3. Persist updated dates to Firestore, then save the reservation records
+        val dateRepository = DateRepository()
+        dateRepository.addDateManager(campsite.documentId, manager) { datesSaved ->
+            if (!datesSaved) {
+                callback(false)
+                return@addDateManager
             }
 
-        }
-        if (reservationSuccessful) {
-            val reservationId = reservationRepository.addReservation(
+            reservationRepository.addReservation(
                 documentId = campsite.documentId,
                 reservation = this
-            ) { success ->
-                if (success) {
-
-                }
+            ) { resSaved ->
+                callback(resSaved)
             }
         }
 
-        //Note should check status before adding reservation to user and campsite
-    return reservationSuccessful}
+        return true
+    }
     fun updateReservationId(newId: String) {
         this.reservationId = newId
     }
