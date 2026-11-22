@@ -27,6 +27,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val joiningLotteries = mutableSetOf<String>()
     private val lotteries = lotteryRepository()
     private val announcedPendingIds = mutableSetOf<String>()
+    private val announcedResults = mutableSetOf<String>()
     private var entrantListener: ListenerRegistration? = null
     var currentUser by mutableStateOf<User?>(null)
         private set  //can only change current user through the refreshCurrentUser function
@@ -87,10 +88,44 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // ADDED: tells entrants who were not picked that they are on the waitlist (or that the lottery is over)
+    private fun announceLostDraws(user: User) {
+        val entered = user.entrantData?.lotteryEntryIds ?: return
+        for (lotteryId in entered) {
+            if (!announcedResults.add(lotteryId)) continue
+            lotteries.getLottery(lotteryId) { lottery ->
+                if (lottery == null || lottery.status == "initialAccepting") {
+                    announcedResults.remove(lotteryId)   // not drawn yet, check again next time
+                    return@getLottery
+                }
+                lotteries.getWinners(lotteryId) { winners ->
+                    if (winners.any { it.userID == deviceId }) return@getWinners
+                    lotteries.getWaitlist(lotteryId) { waitlist ->
+                        val name = lottery.name.ifBlank { "a lottery" }
+                        val onWaitlist = waitlist.any { it.userID == deviceId }
+                        showNotification(
+                            NotificationData.Message(
+                                id = "lost:$lotteryId",
+                                title = if (onWaitlist) "You're on the waitlist" else "Lottery ended",
+                                message = if (onWaitlist)
+                                    "You weren't picked in $name. You're on the waitlist and will be offered a spot if one opens up."
+                                else
+                                    "You weren't picked in $name. Sorry, it's over."
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun refreshCurrentUser() {
         database.fetchUserDetails(deviceId) { result ->
             result.onSuccess { user ->
-                user?.let { announceWins(it) }
+                user?.let {
+                    announceWins(it)
+                    announceLostDraws(it)
+                }
                 currentUser = user
                 Log.d("UserDebug", "Successfully fetched current user")
             }.onFailure { error ->
