@@ -31,8 +31,6 @@ class MainActivity : ComponentActivity() {
          *val user = User(name, userId)
          */
 
-
-
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
                 Log.d("MainActivity", "Successfully loaded Campsites from database!")
@@ -47,6 +45,15 @@ class MainActivity : ComponentActivity() {
         val db = Database()
         val deviceId = db.getDeviceId(this)
 
+        /*db.getConversation(
+            "conversationExample",
+            onError = {
+                Log.e("MainActivity", "Couldn't fetch conversation!")
+            },
+            onSuccess = { convo ->
+                Log.d("MainActivity", "${convo.participants}")
+            }
+        )*/
 
         // For now, I just have a test user.
         val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"))
