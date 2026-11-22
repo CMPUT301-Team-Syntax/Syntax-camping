@@ -22,6 +22,7 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
     var capacity = capacity
     var name = name
     var lotteryDates: List<String> = emptyList()   // ADDED: dates the owner offers, "dd/MM/yy"
+    var startTime: Long = 0L   // when entries open
     var endTimeLottery = endTimeLottery
     var endTimeBooking = endTimeBooking
     lateinit var readableEndTimeLottery: Timestamp
@@ -52,9 +53,9 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
 
         //added lotterydates to this call for all campsites tn lottery to get the dates  for its running
         if (lotteryId.isBlank()) {
-            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryDates)
+            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryDates, startTime)
         } else {
-            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId, lotteryDates)
+            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId, lotteryDates, startTime)
         }
         for (campsite in campsites){
             campsite.updateLotteryId(lotteryId)

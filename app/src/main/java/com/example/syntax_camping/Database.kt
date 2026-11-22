@@ -73,7 +73,7 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList()): String{        //The two following values allow firebase to generate a unique lottery id
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList(), startTime: Long = 0L): String{        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
@@ -89,14 +89,15 @@ class Database {
             "campsites" to campsites,
             "name" to name,
             "capacity" to capacity,
-            "lotteryDates" to lotteryDates
+            "lotteryDates" to lotteryDates,
+            "startTimeLottery" to startTime
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null){        //The two following values allow firebase to generate a unique lottery id
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null,  startTime: Long? = null){        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document(lotteryId)
         val lotteryId = lotteryReference.id
@@ -114,7 +115,9 @@ class Database {
             "capacity" to capacity,
 
             )
-        val finalData = if (lotteryDates != null) data + ("lotteryDates" to lotteryDates) else data
+        var finalData: Map<String, Any?> = data
+        if (lotteryDates != null) finalData = finalData + ("lotteryDates" to lotteryDates)
+        if (startTime != null) finalData = finalData + ("startTimeLottery" to startTime)
         lotteryReference.update(finalData)
 
     }
@@ -144,6 +147,11 @@ class Database {
                 val lottery = db.collection("lotteries").document(lotteryId)
                 lottery.get()
                     .addOnSuccessListener { lotterySnapshot ->
+                        val opensAt = lotterySnapshot.getLong("startTimeLottery") ?: 0L
+                        if (opensAt > System.currentTimeMillis()) {
+                            onComplete(null)
+                            return@addOnSuccessListener
+                        }
                         val collectionName = when (lotterySnapshot.getString("status")) {
                             "initialAccepting" -> "entries"
                             "booking" -> "waitlist"

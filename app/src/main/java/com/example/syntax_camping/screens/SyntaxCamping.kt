@@ -23,6 +23,7 @@ import com.example.syntax_camping.UserScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
+import com.example.syntax_camping.UserScreens.BookCampsiteScreen
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
@@ -102,6 +103,15 @@ fun SyntaxCamping(
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
+            )
+        }
+
+        composable("bookCampsite/{campsiteId}/{lotteryId}") { backStackEntry ->
+            BookCampsiteScreen(
+                navController = navController,
+                campsiteId = backStackEntry.arguments?.getString("campsiteId"),
+                lotteryId = backStackEntry.arguments?.getString("lotteryId"),
+                userViewModel = userViewModel
             )
         }
 

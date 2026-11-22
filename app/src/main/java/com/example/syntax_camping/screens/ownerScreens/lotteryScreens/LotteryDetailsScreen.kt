@@ -92,7 +92,7 @@ fun LotteryDetailsScreen(
     // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
     var entryCount by remember { mutableIntStateOf(0) }
     var waitlistCount by remember { mutableIntStateOf(0) }
-
+    val notOpenYet = current != null && current.startTime > now
     val drawPassed = current != null && now > current.endTimeLottery
     LaunchedEffect(drawPassed, current?.status) {
         if (drawPassed && current?.status == "initialAccepting") {
@@ -190,12 +190,17 @@ fun LotteryDetailsScreen(
                     )
                     Spacer(Modifier.height(8.dp))
 
-                                        val targetTime = if (!drawPassed) current.endTimeLottery else current.endTimeBooking
+                    val targetTime = when {
+                        notOpenYet -> current.startTime
+                        !drawPassed -> current.endTimeLottery
+                        else -> current.endTimeBooking
+                    }
                     if (current.status != "complete") {
                         val millisLeft = targetTime - now
                         if (millisLeft > 0) {
                             Text(
                                 when {
+                                    notOpenYet -> "Lottery starts in: ${formatRemaining(millisLeft)}"
                                     !drawPassed -> "Draw in: ${formatRemaining(millisLeft)}"
                                     myWinnerStatus == "pending" -> "Booking window closes in: ${formatRemaining(millisLeft)}"
                                     else -> "Booking closes in: ${formatRemaining(millisLeft)}"
@@ -216,6 +221,7 @@ fun LotteryDetailsScreen(
 
                     Spacer(Modifier.height(16.dp))
                     Text("Draws: ${dateFormat.format(current.getReadableLotteryEndTime())}")
+                    if (current.startTime > 0) Text("Opens: ${dateFormat.format(java.util.Date(current.startTime))}")
                     Text("Book by: ${dateFormat.format(current.getReadableBookingEndTime())}")
                     Text("Capacity: ${current.capacity?.toString() ?: "Unlimited"}")
 
@@ -337,7 +343,18 @@ fun LotteryDetailsScreen(
                             color = Color.DarkGray
                         )
                     }
-                } else if (myWinnerStatus == null){
+                }
+                else if (notOpenYet) {
+                    Text(
+                        "Come back on ${dateFormat.format(java.util.Date(current.startTime))} to join the lottery. Good luck!",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .testTag("lotteryNotOpenText")
+                    )
+                }
+
+                else if (myWinnerStatus == null){
                     LotteryEntrantSection(
                         lottery = current,
                         userId = userViewModel.deviceId,

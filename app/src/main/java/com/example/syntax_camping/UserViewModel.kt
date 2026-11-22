@@ -78,7 +78,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
                     val lotteryName = lottery?.name?.takeIf { it.isNotBlank() } ?: "a lottery"
                     showNotification(
                         NotificationData.Message(
-                            id = "won:$pendingId",
+                            id = "won:${pending.lotteryId}:$pendingId",
                             title = "You won the lottery!",
                             message = "You were picked in $lotteryName. Open the lottery to choose a campsite and your dates."
                         )

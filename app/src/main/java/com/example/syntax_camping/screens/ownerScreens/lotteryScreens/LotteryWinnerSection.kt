@@ -1,5 +1,6 @@
 package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,9 +40,12 @@ fun LotteryWinnerSection(
     windowClosed: Boolean,
     onChanged: () -> Unit
 ) {
-    var showWinDialog by remember { mutableStateOf(true) }
     var showDeclineConfirm by remember { mutableStateOf(false) }
-    var accepted by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("lotteryAccepts", Context.MODE_PRIVATE) }
+    val acceptKey = "accepted_${lottery.lotteryId}_$userId"
+    var accepted by remember { mutableStateOf(prefs.getBoolean(acceptKey, false)) }
+    var showWinDialog by remember { mutableStateOf(!accepted) }
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
     val isPending = status == "pending"
@@ -102,6 +107,7 @@ fun LotteryWinnerSection(
                 Button(
                     onClick = {
                         showWinDialog = false
+                        prefs.edit().putBoolean(acceptKey, true).apply()
                         accepted = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68)),
