@@ -310,15 +310,6 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    if (currentLottery != null && currentLottery.lotteryDates.isNotEmpty()) {
-                        Text(
-                            text = "Dates offered by this lottery",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                        CalenderVeiw(initialSelected = currentLottery.lotteryDates, readOnly = true)
-                    }
-
                     if (!update && !isOwner && currentLottery != null &&
                         myWinnerStatus == "pending" &&
                         currentLottery.status != "complete" &&
@@ -394,6 +385,25 @@ fun CampsiteDetailsScreen(
                         }
                     }
                 } // end Lottery Section
+
+                val lotteryDatesShown = currentLottery?.lotteryDates ?: emptyList()
+                val ownDatesShown = campsite.dateManager?.allDates?.map { it.dateString } ?: emptyList()
+                val calendarDates = if (lotteryDatesShown.isNotEmpty()) lotteryDatesShown else ownDatesShown
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = if (lotteryDatesShown.isNotEmpty()) "Dates offered by this lottery" else "Available dates",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (calendarDates.isEmpty()) {
+                    Text("No available dates yet", color = Color.Gray, modifier = Modifier.testTag("noAvailableDatesText"))
+                } else {
+                    CalenderVeiw(
+                        initialSelected = calendarDates,
+                        readOnly = true,
+                        selectedColor = Color(0xFF2E7D32)
+                    )
+                }
 
                 // ================== REVIEWS SECTION ==================
                 Spacer(modifier = Modifier.height(24.dp))

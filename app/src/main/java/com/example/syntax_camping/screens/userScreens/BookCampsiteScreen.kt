@@ -43,6 +43,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 private val bookingFormat = DateTimeFormatter.ofPattern("dd/MM/yy")
 
@@ -95,9 +96,14 @@ fun BookCampsiteScreen(
 
     val c = campsite
     val lot = lottery
-    val offered = remember(lot) {
-        lot?.lotteryDates?.mapNotNull { runCatching { LocalDate.parse(it, bookingFormat) }.getOrNull() }?.toSet()
-            ?: emptySet()
+    val offered = remember(lot, c) {
+        val fromLottery = lot?.lotteryDates
+            ?.mapNotNull { runCatching { LocalDate.parse(it, bookingFormat) }.getOrNull() }
+            ?.toSet() ?: emptySet()
+        if (fromLottery.isNotEmpty()) fromLottery
+        else c?.dateManager?.allDates
+            ?.mapNotNull { runCatching { LocalDate.parse(it.dateString, bookingFormat) }.getOrNull() }
+            ?.toSet() ?: emptySet()
     }
     // spots left per date, from the campsite's own dates (maxOcc - currentOcc)
     val spots = remember(c) {
@@ -323,7 +329,7 @@ private fun BookingCalendar(
         ) {
             TextButton(onClick = { scope.launch { state.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) { Text("<") }
             Text(
-                "${visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${visibleMonth.year}",
+                "${visibleMonth.month.getDisplayName(TextStyle.FULL, LocalLocale.current.platformLocale)} ${visibleMonth.year}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -332,7 +338,7 @@ private fun BookingCalendar(
         Row(Modifier.fillMaxWidth()) {
             daysOfWeek().forEach { dow ->
                 Text(
-                    dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                    dow.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale),
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )

@@ -24,15 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import com.google.firebase.firestore.FirebaseFirestore
-//TO be added to the correct Navigation calss (ie syntax camping
-/*
-At Top var selectedCampsite by remember {
-        mutableStateOf<Campsite?>(null)
-    }
-composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
-            campsite = selectedCampsite)}
-
-* */
 import androidx.navigation.NavController
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +39,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +49,12 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import com.example.syntax_camping.dataClasses.DateRepository
+import com.example.syntax_camping.screens.CalenderVeiw
 
 //import androidx.compose.ui.Modifier
 /*
@@ -90,9 +88,14 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
+    var page by rememberSaveable { mutableIntStateOf(1) }
+    var pickMode by rememberSaveable { mutableStateOf("available") }   // "available" or "unavailable"
+    var pickedDates by remember { mutableStateOf<List<String>>(emptyList()) }
+    var datesConfirmed by remember { mutableStateOf(false) }
     var currImage: Uri?
     currImage = null
 
+    LaunchedEffect(page) { scrollState.scrollTo(0) }
     //Note the following is a list of selected photos, initialized as empty
    // var  selectedPhotos by remember {
     //    mutableStateOf<List<Uri>>(emptyList())
@@ -132,6 +135,9 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
             newTags.clear()
             newTags.addAll(campsite.tags)
+            pickedDates = campsite.dateManager?.allDates?.map { it.dateString } ?: emptyList()
+            pickMode = "available"
+            datesConfirmed = pickedDates.isNotEmpty()
 
         }
     }
@@ -217,6 +223,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (page == 1) {
             //These first few rows handle the Name and location textboxes
             Row(
                 modifier = Modifier.fillMaxWidth()
@@ -407,12 +414,97 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     Text("Remove Image")
                 }
             }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier.padding(vertical = 12.dp).testTag("nextPageButton"),
+                        onClick = {
+                            if (newTags.isNotEmpty() && newCampName != "" && newCampLocation != "" &&
+                                newCampDescription != "" && newMaxOcc != ""
+                            ) {
+                                if (newMaxOcc.toIntOrNull() == null) {
+                                    error = "Max occupancy must be a number"
+                                } else {
+                                    error = ""
+                                    page = 2
+                                }
+                            } else {
+                                error = "All fields must be filled in"
+                            }
+                        }
+                    ) {
+                        Text("Next")
+                    }
+                }
+            }   // end of page 1
+
+            if (page == 2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = qrCodeChecked,
+                        onCheckedChange = { checked -> qrCodeChecked = checked }
+                    )
+                    Text(text = "Generate QR Code")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Availability", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Choose what kind of dates you will tap, then tap them and press Confirm.")
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { if (pickMode != "available") { pickMode = "available"; pickedDates = emptyList() } },
+                        enabled = !datesConfirmed,
+                        modifier = Modifier.weight(1f).testTag("pickAvailableMode"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pickMode == "available") Color(0xFF2E7D32) else Color.LightGray,
+                            disabledContainerColor = if (pickMode == "available") Color(0xFF2E7D32) else Color.LightGray
+                        )
+                    ) { Text("Pick available dates", color = Color.White) }
+                    Button(
+                        onClick = { if (pickMode != "unavailable") { pickMode = "unavailable"; pickedDates = emptyList() } },
+                        enabled = !datesConfirmed,
+                        modifier = Modifier.weight(1f).testTag("pickUnavailableMode"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pickMode == "unavailable") Color(0xFFA13F3F) else Color.LightGray,
+                            disabledContainerColor = if (pickMode == "unavailable") Color(0xFFA13F3F) else Color.LightGray
+                        )
+                    ) { Text("Pick unavailable dates", color = Color.White) }
+                }
+                Text(
+                    if (pickMode == "available")
+                        "Green dates are available. Every other date is unavailable."
+                    else
+                        "Red dates are unavailable. Every other date in the next 6 months is available.",
+                    modifier = Modifier.testTag("availabilityHint")
+                )
+                CalenderVeiw(
+                    initialSelected = pickedDates,
+                    selectedColor = if (pickMode == "available") Color(0xFF2E7D32) else Color(0xFFA13F3F),
+                    startLocked = datesConfirmed,
+                    onConfirm = { pickedDates = it; datesConfirmed = true },
+                    onEdit = { datesConfirmed = false }
+                )
+                TextButton(
+                    onClick = { page = 1 },
+                    modifier = Modifier.testTag("backToDetailsButton")
+                ) { Text("Back") }
+            }
             //The following is to handle updating/creating the cmapsite
             //Each button has a couple of if statemnets to make sure none of the required fields are blank/max occupancy entered is a number
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
+                if (page == 2) {
                 if(campsite == null) {
 
 
@@ -421,6 +513,10 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                             .testTag("createCampsiteButton")
                         ,
                         onClick = {
+                            if (!datesConfirmed || pickedDates.isEmpty()) {
+                                error = "Confirm at least one date on the calendar first"
+                                return@Button
+                            }
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
                                 val intNewMaxOcc = newMaxOcc.toIntOrNull()
                                 error = ""
@@ -457,6 +553,9 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                                     tags = newTags.toMutableList(),
                                                     rating = 0.0,
                                                     images = imageUrls.toMutableList()
+                                                )
+                                                newCampsite.updateDateManager(
+                                                    buildCampsiteDates(null, datesForMode(pickMode, pickedDates), intNewMaxOcc)
                                                 )
                                                 newCampsite.updateQRCode(qrCodeChecked)  //New QR Code update.
                                                 db.createNewCampsite(newCampsite)
@@ -511,6 +610,10 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                     Button(
                         modifier = Modifier.padding(vertical = 12.dp).testTag("createCampsiteButton"),
                         onClick = {
+                            if (!datesConfirmed || pickedDates.isEmpty()) {
+                                error = "Confirm at least one date on the calendar first"
+                                return@Button
+                            }
                             val db = Database()
                             if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
                                 intNewMaxOcc = newMaxOcc.toIntOrNull()
@@ -536,6 +639,13 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                             campsite.updateMaxOcc(intNewMaxOcc!!)
                                             campsite.updateTag(newTags.toMutableList())
                                             campsite.updateQRCode(qrCodeChecked)  //QR CODE
+                                            val newManager = buildCampsiteDates(
+                                                campsite.dateManager,
+                                                datesForMode(pickMode, pickedDates),
+                                                intNewMaxOcc!!
+                                            )
+                                            campsite.updateDateManager(newManager)
+                                            DateRepository().addDateManager(campsite.documentId, newManager)
 
                                             // Replace the old image list with the final URLs.
                                             campsite.images.clear()
@@ -568,6 +678,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 //If there is na error in the info entered by the user, tells them
 
 
+            }
             }
             if( (error != "") ){
                 Row(

@@ -627,7 +627,10 @@ class Database {
                     "images" to campsite.getImagesAsStrs(),    // same with images
                     "lotteryId" to "",
                     "ratings" to campsite.ratings,
-                    "hasQRCode" to campsite.hasQRCode
+                    "hasQRCode" to campsite.hasQRCode,
+                    "dates" to (campsite.dateManager?.allDates?.map {
+                        mapOf("date" to it.dateString, "maxOcc" to it.maxOcc, "currentOcc" to it.currentOcc)
+                    } ?: emptyList<Map<String, Any>>())
                 )
             )
     }
