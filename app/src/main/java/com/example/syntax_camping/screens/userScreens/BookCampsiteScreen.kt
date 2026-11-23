@@ -44,8 +44,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import androidx.compose.ui.platform.LocalLocale
+import com.example.syntax_camping.screens.CalenderVeiw
 
 private val bookingFormat = DateTimeFormatter.ofPattern("dd/MM/yy")
+private val typedFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
 /** True if this user already pressed Accept on the win popup for this lottery (saved on the phone by LotteryWinnerSection). */
 fun winnerAccepted(context: Context, lotteryId: String, userId: String): Boolean =
@@ -76,6 +78,9 @@ fun BookCampsiteScreen(
     var error by remember { mutableStateOf("") }
     var tapped by remember { mutableStateOf("") }
     var booking by remember { mutableStateOf(false) }
+    var startText by rememberSaveable { mutableStateOf("") }
+    var endText by rememberSaveable { mutableStateOf("") }
+    var rangeError by remember { mutableStateOf("") }
 
     LaunchedEffect(campsiteId, lotteryId) {
         CampsiteRepository.refreshCampsiteCache {
@@ -107,12 +112,15 @@ fun BookCampsiteScreen(
     }
     // spots left per date, from the campsite's own dates (maxOcc - currentOcc)
     val spots = remember(c) {
+        ->
         c?.dateManager?.allDates?.mapNotNull { d ->
+            val cap = if (d.maxOcc > 0) d.maxOcc else (c.maxOcc)
             runCatching { LocalDate.parse(d.dateString, bookingFormat) }.getOrNull()
-                ?.let { it to (d.maxOcc - d.currentOcc) }
+                ?.let { it to (cap - d.currentOcc) }
         }?.toMap() ?: emptyMap()
     }
-    fun spotsLeft(d: LocalDate) = spots[d] ?: 0
+
+    fun spotsLeft(d: LocalDate) = spots[d] ?: (c?.maxOcc ?: 0)
     fun bookable(d: LocalDate) = d in offered && !d.isBefore(LocalDate.now()) && spotsLeft(d) > 0
 
     val start = startEpoch?.let { LocalDate.ofEpochDay(it) }
@@ -130,20 +138,36 @@ fun BookCampsiteScreen(
             System.currentTimeMillis() <= lot.endTimeBooking && lot.status != "complete"
 
     fun onDayTap(d: LocalDate) {
-        error = ""
+        error = ""; rangeError = ""
         tapped = "${d.format(bookingFormat)}: ${spotsLeft(d)} spot(s) left"
         val s = start
         if (s == null || end != null || d.isBefore(s)) {
             startEpoch = d.toEpochDay(); endEpoch = null
+            startText = d.format(typedFormat); endText = ""
         } else {
             val days = generateSequence(s) { it.plusDays(1) }.takeWhile { !it.isAfter(d) }.toList()
             if (days.all { bookable(it) }) {
-                endEpoch = d.toEpochDay()
+                endEpoch = d.toEpochDay(); endText = d.format(typedFormat)
             } else {
                 error = "Every date in your stay must be available. Pick a different range."
                 startEpoch = d.toEpochDay(); endEpoch = null
+                startText = d.format(typedFormat); endText = ""
             }
         }
+    }
+
+    // called when the user types in the start / end boxes
+    fun onDatesTyped() {
+        val s = runCatching { LocalDate.parse(startText, typedFormat) }.getOrNull()
+        val e = runCatching { LocalDate.parse(endText, typedFormat) }.getOrNull()
+        startEpoch = null; endEpoch = null; error = ""
+        if (s == null || e == null) { rangeError = "Enter both dates as dd/mm/yyyy."; return }
+        if (e.isBefore(s)) { rangeError = "The end date can't be before the start date."; return }
+        val days = generateSequence(s) { it.plusDays(1) }.takeWhile { !it.isAfter(e) }.toList()
+        if (days.any { it !in offered }) { rangeError = "Every date must be offered by this lottery, with no gaps."; return }
+        if (days.any { !bookable(it) }) { rangeError = "Some of those dates are full or in the past."; return }
+        rangeError = ""
+        startEpoch = s.toEpochDay(); endEpoch = e.toEpochDay()
     }
 
     fun book() {
@@ -162,7 +186,7 @@ fun BookCampsiteScreen(
                 val m = item as? Map<*, *> ?: return@map item
                 val d = m["date"] as? String ?: ""
                 if (d in dateStrings) {
-                    val max = (m["maxOcc"] as? Number)?.toInt() ?: 0
+                    val max = ((m["maxOcc"] as? Number)?.toInt() ?: 0).let { if (it > 0) it else cs.maxOcc }
                     val cur = (m["currentOcc"] as? Number)?.toInt() ?: 0
                     if (cur + numGuests > max) {
                         throw FirebaseFirestoreException("Not enough spots", FirebaseFirestoreException.Code.ABORTED)
@@ -170,7 +194,11 @@ fun BookCampsiteScreen(
                     mapOf("date" to d, "maxOcc" to max, "currentOcc" to cur + numGuests)
                 } else item
             }
-            tx.update(ref, "dates", updated)
+            val existingDates = raw.mapNotNull { (it as? Map<*, *>)?.get("date") as? String }
+            val added = dateStrings
+                .filter { it !in existingDates }
+                .map { mapOf("date" to it, "maxOcc" to cs.maxOcc, "currentOcc" to numGuests) }
+            tx.update(ref, "dates", updated + added)
             null
         }.addOnSuccessListener {
             val reservation = Reservation(cs, dateStrings.toMutableList(), numGuests, userViewModel.deviceId, "upcoming")
@@ -224,26 +252,44 @@ fun BookCampsiteScreen(
                     Spacer(Modifier.height(4.dp))
                     Text("Tap your first date, then your last date. Dates must run one after another.")
                     Spacer(Modifier.height(8.dp))
-                    BookingCalendar(
-                        bookable = { bookable(it) },
-                        selected = { it in rangeDays },
-                        onTap = { onDayTap(it) }
+                    val bookableStrings = offered.filter { bookable(it) }.sorted().map { it.format(bookingFormat) }
+                    CalenderVeiw(
+                        initialSelected = bookableStrings,
+                        selectedColor = Color(0xFF2E7D32),
+                        onPick = { onDayTap(it) },
+                        pickedDates = rangeDays
                     )
+                    Text("Green dates are open. Grey dates are full, past, or not part of this lottery. Tap your first date, then your last date.", fontSize = 13.sp, color = Color.DarkGray)
                     if (tapped.isNotEmpty()) Text(tapped, color = Color.DarkGray, modifier = Modifier.testTag("spotsLeftText"))
                     if (error.isNotEmpty()) Text(error, color = Color(0xFFA13F3F), modifier = Modifier.testTag("bookingError"))
                     Spacer(Modifier.height(12.dp))
-                    Text(
-                        if (start == null) "No dates picked yet"
-                        else "From ${start.format(bookingFormat)} to ${(end ?: start).format(bookingFormat)} (${rangeDays.size} day(s))",
-                        fontWeight = FontWeight.Bold
-                    )
+
+                    Text("Your stay", fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = startText,
+                            onValueChange = { startText = it; onDatesTyped() },
+                            label = { Text("Start dd/mm/yyyy") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f).testTag("startDateInput")
+                        )
+                        OutlinedTextField(
+                            value = endText,
+                            onValueChange = { endText = it; onDatesTyped() },
+                            label = { Text("End dd/mm/yyyy") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f).testTag("endDateInput")
+                        )
+                    }
+                    if (rangeError.isNotEmpty()) Text(rangeError, color = Color(0xFFA13F3F), modifier = Modifier.testTag("rangeError"))
+                    if (start != null && end != null) Text("${rangeDays.size} day(s) selected", fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(12.dp))
                     Button(
                         onClick = { onConfirmStage = true },
-                        enabled = rangeDays.isNotEmpty() && (end != null || start != null),
+                        enabled = start != null && end != null,
                         modifier = Modifier.fillMaxWidth().testTag("continueBookingButton"),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
-                    ) { Text("Continue", color = Color.White) }
+                    ) { Text("Confirm dates", color = Color.White) }
                 }
                 else -> {
                     Text("Confirm your booking", fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -302,77 +348,5 @@ fun BookCampsiteScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BookingCalendar(
-    bookable: (LocalDate) -> Boolean,
-    selected: (LocalDate) -> Boolean,
-    onTap: (LocalDate) -> Unit
-) {
-    val currentMonth = remember { YearMonth.now() }
-    val scope = rememberCoroutineScope()
-    val state = rememberCalendarState(
-        startMonth = currentMonth,
-        endMonth = currentMonth.plusMonths(24),
-        firstVisibleMonth = currentMonth,
-        firstDayOfWeek = daysOfWeek().first()
-    )
-    val visibleMonth = state.firstVisibleMonth.yearMonth
-
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TextButton(onClick = { scope.launch { state.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) { Text("<") }
-            Text(
-                "${visibleMonth.month.getDisplayName(TextStyle.FULL, LocalLocale.current.platformLocale)} ${visibleMonth.year}",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = { scope.launch { state.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) { Text(">") }
-        }
-        Row(Modifier.fillMaxWidth()) {
-            daysOfWeek().forEach { dow ->
-                Text(
-                    dow.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale),
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-        HorizontalCalendar(
-            state = state,
-            dayContent = { day ->
-                val inMonth = day.position == DayPosition.MonthDate
-                val ok = inMonth && bookable(day.date)
-                val sel = inMonth && selected(day.date)
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .padding(2.dp)
-                        .clip(CircleShape)
-                        .background(if (sel) Color(0xFF3E6B68) else Color.Transparent)
-                        .clickable(enabled = ok) { onTap(day.date) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (inMonth) {
-                        Text(
-                            day.date.dayOfMonth.toString(),
-                            color = when {
-                                sel -> Color.White
-                                ok -> Color(0xFF3E6B68)
-                                else -> Color.LightGray
-                            },
-                            fontWeight = if (ok) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        )
-        Text("Green dates are open. Grey dates are full, past, or not part of this lottery.", fontSize = 13.sp, color = Color.DarkGray)
     }
 }

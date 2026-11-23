@@ -53,7 +53,10 @@ fun CalenderVeiw(
     readOnly: Boolean = false,
     selectedColor: Color = Color.Red,       // colour of picked dates
     startLocked: Boolean = false,           // start already confirmed (read-only with an Edit button)
-    onEdit: () -> Unit = {}                 // called when Edit is tapped
+    onEdit: () -> Unit = {},               // called when Edit is tapped
+    onPick: ((LocalDate) -> Unit)? = null,   // booking mode: tapping a lit date calls this instead of toggling it
+    pickedDates: List<LocalDate> = emptyList(),
+    pickedColor: Color = Color(0xFF1565C0)
 
 // ADDED: view only, no tapping, no Confirm button
 ) {
@@ -119,12 +122,15 @@ fun CalenderVeiw(
         HorizontalCalendar(
             state = state,
             dayContent = { day ->
+                val picked = day.date in pickedDates
                 Day(
                     day = day,
-                    isSelected = day.date in selectedDate,
-                    selectedColor = selectedColor,
+                    isSelected = picked || day.date in selectedDate,
+                    selectedColor = if (picked) pickedColor else selectedColor,
                     onClick = {
-                        if (!isReadOnly) {   // CHANGED: view-only calendars ignore taps
+                        if (onPick != null) {
+                            if (it.date in selectedDate) onPick(it.date)
+                        } else if (!isReadOnly) {
                             if (it.date in selectedDate) selectedDate.remove(it.date)
                             else selectedDate.add(it.date)
                         }
@@ -133,7 +139,7 @@ fun CalenderVeiw(
             }
         )
 
-        if (!readOnly) {   // CHANGED: no buttons at all in a permanently view-only calendar
+        if (!readOnly && onPick == null) {   // CHANGED: no buttons at all in a permanently view-only calendar
             Spacer(Modifier.height(12.dp))
 
             if (!locked) {
