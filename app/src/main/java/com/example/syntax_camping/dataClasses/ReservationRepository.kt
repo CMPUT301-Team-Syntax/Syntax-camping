@@ -147,10 +147,13 @@ class ReservationRepository {
 
                             val parsedDates = rawDatesList.mapNotNull { item ->
                                 val map = item as? Map<*, *> ?: return@mapNotNull null
-                                Date(
-                                    maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
-                                    date = (map["date"] as? String) ?: ""
-                                )
+                                val dateStr = (map["date"] as? String) ?: ""
+                                val maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0
+                                val currentOcc = (map["currentOcc"] as? Number)?.toInt() ?: 0
+
+                                Date(date = dateStr, maxOcc = maxOcc).apply {
+                                    this.currentOcc = currentOcc
+                                }
                             }
                             val dateManager = DateManager(parsedDates.toMutableList())
 
@@ -262,6 +265,94 @@ class ReservationRepository {
         batch.commit()
             .addOnSuccessListener { callback(true) }
             .addOnFailureListener { callback(false) }
+    }
+
+    fun cancelReservation(
+        reservationId: String,
+        lotteryId: String? = null,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (reservationId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        getReservation(reservationId) { reservation ->
+            if (reservation == null) {
+                callback(false)
+                return@getReservation
+            }
+
+            val campsiteId = reservation.campsite.documentId
+            val userId = reservation.userId
+            val manager = reservation.dateManager
+
+            // 1. Remove guests from each reserved date in memory
+            if (manager != null && reservation.numberGuests > 0) {
+                for (dateStr in reservation.datesReserved) {
+                    manager.removeReservation(dateStr, reservation.numberGuests)
+                }
+            }
+
+            // 2. Save updated occupancy dates back to Firestore
+            val persistDatesAndCleanup = {
+                val batch = db.batch()
+
+                if (campsiteId.isNotBlank()) {
+                    val campsiteResRef = db.collection("campsites")
+                        .document(campsiteId)
+                        .collection("reservations")
+                        .document(reservationId)
+                    batch.delete(campsiteResRef)
+                }
+
+                val topLevelResRef = db.collection("reservations").document(reservationId)
+                batch.delete(topLevelResRef)
+
+                if (userId.isNotBlank()) {
+                    val entrantRef = db.collection("entrantData").document(userId)
+                    batch.set(
+                        entrantRef,
+                        mapOf("entrantReservationIds" to FieldValue.arrayRemove(reservationId)),
+                        SetOptions.merge()
+                    )
+                }
+
+                batch.commit()
+                    .addOnSuccessListener {
+                        // 3. If tied to a lottery, set winner status to "cancelled" so the TS script picks a replacement
+                        val resolvedLotteryId = lotteryId?.takeIf { it.isNotBlank() }
+                            ?: reservation.campsite.lotteryId?.takeIf { it.isNotBlank() }
+
+                        if (resolvedLotteryId != null && userId.isNotBlank()) {
+                            lotteryRepository().updateWinnerStatus(
+                                resolvedLotteryId,
+                                userId,
+                                "cancelled"
+                            ) { statusUpdated ->
+                                callback(statusUpdated)
+                            }
+                        } else {
+                            callback(true)
+                        }
+                    }
+                    .addOnFailureListener {
+                        callback(false)
+                    }
+            }
+
+            if (manager != null && campsiteId.isNotBlank()) {
+                DateRepository().addDateManager(campsiteId, manager) { datesSaved ->
+                    if (!datesSaved) {
+                        callback(false)
+                        return@addDateManager
+                    }
+                    persistDatesAndCleanup()
+                }
+            } else {
+                persistDatesAndCleanup()
+            }
+        }
     }
 
 }
