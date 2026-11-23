@@ -48,7 +48,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.OwnerData
@@ -305,65 +308,45 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 )
             }
             //THe following few rows handle tags, displaying current tags and letting users add and remove tags at their whim
+            // Tags: type one and press +. Every added tag gets its own line with a − to remove it.
+            Text(text = "Tags", fontWeight = FontWeight.Bold)
             Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Text(
-                    text = "Please enter a tag you wish to have added or removed, then press the corresponding button"
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Text(
-                    text = "current tags: "
-                )
-                Text(
-                    text = newTags.joinToString(", ")
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
                     value = newTag,
                     onValueChange = { newTag = it },
                     label = { Text("Enter a tag") },
+                    singleLine = true,
                     modifier = Modifier.weight(1f).testTag("campsiteTagInput")
-
                 )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
                 Button(
-                    modifier = Modifier.padding(vertical = 12.dp).testTag("addTagButton"),
+                    modifier = Modifier.padding(start = 8.dp).testTag("addTagButton"),
                     onClick = {
-                        if (newTag.isNotBlank() and (newTag !in newTags)) {
-                            newTags.add(newTag)
-                            newTag = ""
-
+                        val cleaned = newTag.replace(",", "").trim()
+                        if (cleaned.isNotBlank() && cleaned !in newTags) {
+                            newTags.add(cleaned)
                         }
+                        newTag = ""
                     }
                 ) {
-                    Text("Add Tag")
+                    Text("+")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    modifier = Modifier.padding(vertical = 12.dp)
-                        ,
-                    onClick = {
-                        if (newTag.isNotBlank() and (newTag in newTags)) {
-                            newTags.remove(newTag)
-                            newTag = ""
-                        }
-                    }
+            }
+            newTags.toList().forEach { tag ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().testTag("tagRow_$tag"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("remove Tag")
+                    Text(text = tag)
+                    TextButton(
+                        onClick = { newTags.remove(tag) },
+                        modifier = Modifier.testTag("removeTag_$tag")
+                    ) {
+                        Text("−", fontSize = 22.sp)
+                    }
                 }
             }
             //The following will Handle images

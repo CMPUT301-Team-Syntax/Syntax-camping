@@ -48,6 +48,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.material3)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.10.1")
     implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
