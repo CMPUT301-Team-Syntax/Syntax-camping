@@ -1,5 +1,6 @@
 package com.example.syntax_camping.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,67 +23,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.syntax_camping.dataClasses.Conversation
+import com.example.syntax_camping.dataClasses.Message
 
 @Composable
-fun ConversationScreen(conversation: Conversation) {
+fun MessageDisplay(msg: Message) {
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth()
+            .background(Color.White)
     ) {
-        Text("Participants", style = MaterialTheme.typography.titleLarge)
-        Text(conversation.participants.joinToString().ifBlank { "No participants" })
 
-        Text(
-            "Messages (${conversation.messages.size})",
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        if (conversation.messages.isEmpty()) {
-            Text("No messages yet")
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(conversation.messages) { message ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = message.sender.ifBlank { "(empty sender)" },
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            Text(message.contents.ifBlank { "(empty message)" })
-                        }
-                    }
-                }
-            }
-        }
+        Text(msg.contents)
     }
+
 }
 
 @Composable
-fun ConversationRoute(conversationId: String) {
-    val db = remember { Database() }
-    var conversation by remember(conversationId) { mutableStateOf<Conversation?>(null) }
-    var error by remember(conversationId) { mutableStateOf<Exception?>(null) }
+fun ConversationDisplay(convo: Conversation) {
 
-    LaunchedEffect(conversationId) {
-        db.getConversation(
-            conversationId,
-            onSuccess = { loaded -> conversation = loaded },
-            onError = { failure -> error = failure }
-        )
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        for (message in convo.messages) {
+
+            MessageDisplay(message)
+
+        }
+
     }
 
-    val loaded = conversation
-    when {
-        loaded != null -> ConversationScreen(conversation = loaded)
-        error != null -> Text("Could not load conversation")
-        else -> Text("Loading conversation…")
-    }
 }
 
 @Preview
 @Composable
-private fun LiveConversationPreview() {
-    ConversationRoute(conversationId = "conservationExample")
+fun ConversationDisplayPreview() {
+
+    val msg1 = Message("msgId1", "John Smith", "Hello! I am message 1")
+    val msg2 = Message("msgId2", "John Smith", "Greetings! I am message 2")
+    val msg3 = Message("msgId3", "John Smith", "I am message 3. Goodbye!")
+
+    val messages = mutableListOf<Message>(msg1, msg2, msg3)
+    val participants = mutableListOf<String>("deviceId1", "deviceId2")
+
+    val convo = Conversation(participants, messages)
+
+    ConversationDisplay(convo)
+
 }

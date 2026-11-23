@@ -7,11 +7,8 @@ import android.util.Log
 import com.example.syntax_camping.dataClasses.Conversation
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
-<<<<<<< HEAD
 import com.example.syntax_camping.dataClasses.Message
-=======
 import com.example.syntax_camping.dataClasses.NotificationData
->>>>>>> 86ad9cc5827645fee1eab5f7a11146e8b6baa6c9
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.User
@@ -641,6 +638,13 @@ class Database {
                 // Optional: Handle the error
             }
     }
+
+    fun updateConversation(convoId: String, convo: Conversation) {
+
+        // todo
+
+    }
+
     fun updateCampsite(campsite: Campsite) {
 
 
@@ -698,41 +702,4 @@ class Database {
                 callback(Result.failure(exception))
             }
     }
-
-    fun getConversation(conversationId: String,
-        onSuccess: (Conversation) -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-            val conversationRef = FirebaseFirestore.getInstance()
-                .collection("conversations")
-                .document(conversationId)
-
-            conversationRef.get()
-                .addOnSuccessListener { conversation ->
-                    if (!conversation.exists()) {
-                        onError(NoSuchElementException("Conversation '$conversationId' was not found"))
-                        return@addOnSuccessListener
-                    }
-
-                    val participants = (conversation.get("participants") as? List<*>)
-                        .orEmpty()
-                        .filterIsInstance<String>()
-
-                    conversationRef.collection("messages").get()
-                        .addOnSuccessListener { snapshot ->
-                            val messages = snapshot.documents.map { document ->
-                                Message(
-                                    document.id,
-                                    contents = document.getString("contents").orEmpty(),
-                                    sender = document.getString("sender").orEmpty()
-                                )
-                            }
-
-                            onSuccess(Conversation(participants.toMutableList(), messages.toMutableList()))
-                        }
-                        .addOnFailureListener { error -> onError(error) }
-                }
-                .addOnFailureListener { error -> onError(error) }
-
-                }
 }
