@@ -1,6 +1,8 @@
 package com.example.syntax_camping.UserScreens
 
+import android.R.id.checkbox
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,8 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -62,21 +67,39 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
     var StartDateRange by remember { mutableStateOf("") }
     var EndDateRange by remember { mutableStateOf("") }
     var numGuests by remember { mutableStateOf(1) }
+    var selectedCamps by remember { mutableStateOf(setOf<String>()) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                NavigationDrawerItem(
-                    label = { Text("Location") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Number  of Guests") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } }
-                )
+                Text("Location ", modifier = Modifier.padding(start = 16.dp, top = 16.dp))
+                LazyColumn( modifier = Modifier.height(300.dp)) {
+                    items(realCampsites) { campsite ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedCamps = if (campsite.location in selectedCamps) {
+                                        selectedCamps - campsite.location
+                                    } else {
+                                        selectedCamps + campsite.location
+                                    }
+                                }
+                        ) {
+                            Checkbox(
+                                checked = campsite.location in selectedCamps,
+                                onCheckedChange = { checked ->
+                                    selectedCamps = if (checked) selectedCamps + campsite.location
+                                    else selectedCamps - campsite.location
+                                }
+                            )
+                            Text(text = campsite.location)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
 
                 Row() {
                     TextField(
@@ -99,6 +122,9 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Number of Guests",modifier = Modifier.padding(start = 16.dp, top = 16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -135,9 +161,14 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
 
                 Row( modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center){
-                    Button(onClick = { /*TODO*/ }) {
+                    Button(onClick = {
+                        FlitteredCampsiteList = realCampsites.filter { it.location in selectedCamps }
+                        displayFillereted = true
+                        scope.launch { drawerState.close() }
+                    }) {
                         Text(text = "Apply Fliter")
                     }
+
                 }
 
             }
