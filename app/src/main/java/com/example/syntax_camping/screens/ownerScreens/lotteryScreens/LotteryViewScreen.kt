@@ -3,6 +3,8 @@ package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
+
+const val BOOKING_LENGTH_UNIT_MS = 60_000L   // booking length is entered in MINUTES while testing; use 86_400_000L for days
 fun validateAndCreateLottery(
     editingLotteryId: String? = null,
     name: String,
@@ -19,7 +21,8 @@ fun validateAndCreateLottery(
     numWinnersText: String,
     capacity: String,
     selectedCampsites: MutableList<Campsite>,
-    lotteryDates: List<String> = emptyList()
+    lotteryDates: List<String> = emptyList(),
+    bookingLength: String = ""
 
 ): Pair<Boolean, String>
 
@@ -67,8 +70,16 @@ fun validateAndCreateLottery(
     }
 
     val dateLongConverter = dateConverterToLong()
-    val endTimeLottery = dateLongConverter.convertDateToLong(sYear, sMonth, sDay, sHour, sMin)
-    val endTimeBooking = dateLongConverter.convertDateToLong(fYear, fMonth, fDay, fHour, fMin)
+    val opensAt = dateLongConverter.convertDateToLong(sYear, sMonth, sDay, sHour, sMin)        // entries open
+    val endTimeLottery = dateLongConverter.convertDateToLong(fYear, fMonth, fDay, fHour, fMin)  // the draw
+    val length = bookingLength.trim().toLongOrNull()
+    if (length == null || length <= 0) {
+        return Pair(false, "Booking length must be a number greater than 0")
+    }
+    if (opensAt >= endTimeLottery) {
+        return Pair(false, "The lottery must open before it draws")
+    }
+    val endTimeBooking = endTimeLottery + length * BOOKING_LENGTH_UNIT_MS
 
     val newLottery = Lottery(
         endTimeLottery = endTimeLottery,
@@ -85,6 +96,7 @@ fun validateAndCreateLottery(
     }
 
     newLottery.lotteryDates = lotteryDates
+    newLottery.startTime = opensAt
 
     val success = newLottery.createLotteryTimer()
 

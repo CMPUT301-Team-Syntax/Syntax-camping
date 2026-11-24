@@ -43,6 +43,7 @@ import com.example.syntax_camping.dataClasses.DateManager
 import com.example.syntax_camping.dataClasses.Date
 import com.example.syntax_camping.dataClasses.DateRepository
 import com.example.syntax_camping.screens.CalenderVeiw
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.BOOKING_LENGTH_UNIT_MS
 
 
 @Composable
@@ -68,6 +69,7 @@ fun LotteryEditScreen(
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
     var capacity by remember { mutableStateOf("") }
     var lotteryDates by remember { mutableStateOf<List<String>>(emptyList()) }
+    var bookingLength by remember { mutableStateOf("") }
     var dateManager by remember{mutableStateOf<DateManager?>(null) }
     val selectedDatesString = remember { mutableStateListOf<String>() }
     val selectedDatesAsDate = remember { mutableStateListOf<Date>() }
@@ -82,14 +84,17 @@ fun LotteryEditScreen(
             capacity = editingLottery.capacity.toString()
             lotteryDates = editingLottery.lotteryDates
 
-            val startCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            val startCal = Calendar.getInstance().apply {
+                timeInMillis = if (editingLottery.startTime > 0) editingLottery.startTime else System.currentTimeMillis()
+            }
             startDay = startCal.get(Calendar.DAY_OF_MONTH).toString()
             startMonth = (startCal.get(Calendar.MONTH) + 1).toString()
             startYear = startCal.get(Calendar.YEAR).toString()
             startHour = startCal.get(Calendar.HOUR_OF_DAY).toString()
             startMinute = startCal.get(Calendar.MINUTE).toString()
 
-            val finalCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
+            val finalCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            bookingLength = ((editingLottery.endTimeBooking - editingLottery.endTimeLottery) / BOOKING_LENGTH_UNIT_MS).toString()
             finalDay = finalCal.get(Calendar.DAY_OF_MONTH).toString()
             finalMonth = (finalCal.get(Calendar.MONTH) + 1).toString()
             finalYear = finalCal.get(Calendar.YEAR).toString()
@@ -140,7 +145,7 @@ fun LotteryEditScreen(
         ) {
             // --- Start Date Sections ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Start Date and Time")
+                Text("Lottery Opens Date and Time")
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
@@ -208,7 +213,7 @@ fun LotteryEditScreen(
 
             // --- Final Date Sections ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Final Date and Time")
+                Text("Draw date and time (entries close)")
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
@@ -270,6 +275,16 @@ fun LotteryEditScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
+                TextField(
+                    value = bookingLength,
+                    onValueChange = { bookingLength = it },
+                    label = { Text("Booking length after the draw (minutes)") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("lotteryBookingLength"),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
                         value = capacity,
@@ -322,7 +337,8 @@ fun LotteryEditScreen(
                         numWinners,
                         capacity,
                         selectedCampsites,
-                        lotteryDates
+                        lotteryDates,
+                        bookingLength
                     )
 
                     if (isSuccess) {

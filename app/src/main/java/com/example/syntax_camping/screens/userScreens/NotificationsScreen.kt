@@ -1,5 +1,6 @@
 package com.example.syntax_camping.screens.userScreens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,8 +69,17 @@ private fun NotificationsScreen(navController: NavController, notifications: Lis
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(notifications, key = { it.id }) { notification ->
+                    val idParts = notification.id.split(":")
+                    val targetLotteryId =
+                        if (idParts.size >= 2 && (idParts[0] == "won" || idParts[0] == "lost")) idParts[1] else null
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (targetLotteryId != null) Modifier.clickable {
+                                    navController.navigate("LotteryDetailsScreen/$targetLotteryId")
+                                } else Modifier
+                            ),
                         shape = RoundedCornerShape(25.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = Color(0xFFF2C9C9),
