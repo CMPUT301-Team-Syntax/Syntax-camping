@@ -38,6 +38,7 @@ class lotteryRepository {
                     ).apply {
                         this.lotteryId = document.id
                         this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        this.startTime = document.getLong("startTimeLottery") ?: 0L
                     }
 
                     lotteriesList.add(lottery)
@@ -78,6 +79,7 @@ class lotteryRepository {
                     ).apply {
                         this.lotteryId = document.id
                         this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        this.startTime = document.getLong("startTimeLottery") ?: 0L
                     }
                 }
 
@@ -227,6 +229,7 @@ class lotteryRepository {
                 status = (map["status"] as? String) ?: ""
             ).apply {
                 this.reservationId = (map["reservationId"] as? String) ?: ""
+
             }
         }.toMutableList()
         campsite.updateReservations(parsedReservations)

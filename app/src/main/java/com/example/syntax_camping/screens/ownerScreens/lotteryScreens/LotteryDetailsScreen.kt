@@ -47,6 +47,7 @@ fun LotteryDetailsScreen(
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var showParticipants by remember { mutableStateOf(false) }
     var showWinners by remember { mutableStateOf(false) }
+    var myWinnerStatus by remember { mutableStateOf<String?>(null) }
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
     LaunchedEffect(lotteryId, refreshTrigger) {
@@ -59,6 +60,14 @@ fun LotteryDetailsScreen(
             }
         } else {
             isLoading = false
+        }
+    }
+
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getWinners(lotteryId) { list ->
+                myWinnerStatus = list.firstOrNull { it.userID == userViewModel.deviceId }?.status
+            }
         }
     }
 
@@ -83,6 +92,17 @@ fun LotteryDetailsScreen(
     // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
     var entryCount by remember { mutableIntStateOf(0) }
     var waitlistCount by remember { mutableIntStateOf(0) }
+    val notOpenYet = current != null && current.startTime > now
+    val drawPassed = current != null && now > current.endTimeLottery
+    LaunchedEffect(drawPassed, current?.status) {
+        if (drawPassed && current?.status == "initialAccepting") {
+            while (true) {
+                delay(5000L)
+                refreshTrigger++
+            }
+        }
+    }
+
     LaunchedEffect(lotteryId, refreshTrigger) {
         if (!lotteryId.isNullOrBlank()) {
             lotteryRepository().getEntries(lotteryId) { entries -> entryCount = entries.size }
@@ -170,19 +190,28 @@ fun LotteryDetailsScreen(
                     )
                     Spacer(Modifier.height(8.dp))
 
-                    val targetTime = if (current.status == "initialAccepting") current.endTimeLottery else current.endTimeBooking
-                    if (current.status == "initialAccepting" || current.status == "booking") {
+                    val targetTime = when {
+                        notOpenYet -> current.startTime
+                        !drawPassed -> current.endTimeLottery
+                        else -> current.endTimeBooking
+                    }
+                    if (current.status != "complete") {
                         val millisLeft = targetTime - now
                         if (millisLeft > 0) {
                             Text(
-                                "Closes in: ${formatRemaining(millisLeft)}",
+                                when {
+                                    notOpenYet -> "Lottery starts in: ${formatRemaining(millisLeft)}"
+                                    !drawPassed -> "Draw in: ${formatRemaining(millisLeft)}"
+                                    myWinnerStatus == "pending" -> "Booking window closes in: ${formatRemaining(millisLeft)}"
+                                    else -> "Booking closes in: ${formatRemaining(millisLeft)}"
+                                },
                                 fontSize = 24.sp,
                                 color = Color(0xFF3E6B68),
                                 fontWeight = FontWeight.Bold
                             )
                         } else {
                             Text(
-                                "Time's up!",
+                                "Booking has closed",
                                 fontSize = 24.sp,
                                 color = Color.Red,
                                 fontWeight = FontWeight.Bold
@@ -192,6 +221,7 @@ fun LotteryDetailsScreen(
 
                     Spacer(Modifier.height(16.dp))
                     Text("Draws: ${dateFormat.format(current.getReadableLotteryEndTime())}")
+                    if (current.startTime > 0) Text("Opens: ${dateFormat.format(java.util.Date(current.startTime))}")
                     Text("Book by: ${dateFormat.format(current.getReadableBookingEndTime())}")
                     Text("Capacity: ${current.capacity?.toString() ?: "Unlimited"}")
 
@@ -201,6 +231,16 @@ fun LotteryDetailsScreen(
                         fontSize = 14.sp,
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
+                    )
+                }
+
+                if (!isOwner) {
+                    LotteryWinnerSection(
+                        lottery = current,
+                        userId = userViewModel.deviceId,
+                        status = myWinnerStatus,
+                        windowClosed = current.status == "complete" || now > current.endTimeBooking,
+                        onChanged = { refreshTrigger++ }
                     )
                 }
 
@@ -303,7 +343,18 @@ fun LotteryDetailsScreen(
                             color = Color.DarkGray
                         )
                     }
-                } else {
+                }
+                else if (notOpenYet) {
+                    Text(
+                        "Come back on ${dateFormat.format(java.util.Date(current.startTime))} to join the lottery. Good luck!",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .testTag("lotteryNotOpenText")
+                    )
+                }
+
+                else if (myWinnerStatus == null){
                     LotteryEntrantSection(
                         lottery = current,
                         userId = userViewModel.deviceId,

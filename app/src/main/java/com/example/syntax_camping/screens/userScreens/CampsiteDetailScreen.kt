@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +50,7 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CalenderVeiw
 import com.example.syntax_camping.screens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
@@ -109,6 +111,16 @@ fun CampsiteDetailsScreen(
     }
 
     val currentLottery = lotteryState
+
+    val context = LocalContext.current
+    var myWinnerStatus by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(nonBlankLotteryId) {
+        if (nonBlankLotteryId != null) {
+            lotteryFolder.getWinners(nonBlankLotteryId) { list ->
+                myWinnerStatus = list.firstOrNull { it.userID == userViewModel.deviceId }?.status
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -298,6 +310,26 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    if (!update && !isOwner && currentLottery != null &&
+                        myWinnerStatus == "pending" &&
+                        currentLottery.status != "complete" &&
+                        System.currentTimeMillis() <= currentLottery.endTimeBooking &&
+                        winnerAccepted(context, currentLottery.lotteryId, userViewModel.deviceId)
+                    ) {
+                        Button(
+                            onClick = {
+                                navController.navigate("bookCampsite/${campsite.documentId}/${currentLottery.lotteryId}")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                .testTag("bookCampsiteButton"),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("Book this campsite", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
                     // OWNER LOTTERY CONTROLS (join/leave now lives on the lottery info screen)
                     if (update || isOwner) {
                         if (isOwner && !update) {
@@ -353,6 +385,25 @@ fun CampsiteDetailsScreen(
                         }
                     }
                 } // end Lottery Section
+
+                val lotteryDatesShown = currentLottery?.lotteryDates ?: emptyList()
+                val ownDatesShown = campsite.dateManager?.allDates?.map { it.dateString } ?: emptyList()
+                val calendarDates = if (lotteryDatesShown.isNotEmpty()) lotteryDatesShown else ownDatesShown
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = if (lotteryDatesShown.isNotEmpty()) "Dates offered by this lottery" else "Available dates",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (calendarDates.isEmpty()) {
+                    Text("No available dates yet", color = Color.Gray, modifier = Modifier.testTag("noAvailableDatesText"))
+                } else {
+                    CalenderVeiw(
+                        initialSelected = calendarDates,
+                        readOnly = true,
+                        selectedColor = Color(0xFF2E7D32)
+                    )
+                }
 
                 // ================== REVIEWS SECTION ==================
                 Spacer(modifier = Modifier.height(24.dp))
