@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,15 +25,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.Reservation
-import com.example.syntax_camping.dataClasses.ReservationRepository
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.DayPosition
@@ -73,6 +72,7 @@ fun BookCampsiteScreen(
     var onConfirmStage by rememberSaveable { mutableStateOf(false) }
     var guests by rememberSaveable { mutableIntStateOf(1) }
     var agreed by rememberSaveable { mutableStateOf(false) }
+    var confirmedCampsite by rememberSaveable { mutableStateOf<String?>(null) }
     var bookingName by rememberSaveable { mutableStateOf(userViewModel.currentUser?.name ?: "") }
 
     var error by remember { mutableStateOf("") }
@@ -112,7 +112,6 @@ fun BookCampsiteScreen(
     }
     // spots left per date, from the campsite's own dates (maxOcc - currentOcc)
     val spots = remember(c) {
-        ->
         c?.dateManager?.allDates?.mapNotNull { d ->
             val cap = if (d.maxOcc > 0) d.maxOcc else (c.maxOcc)
             runCatching { LocalDate.parse(d.dateString, bookingFormat) }.getOrNull()
@@ -173,50 +172,26 @@ fun BookCampsiteScreen(
     fun book() {
         val cs = c ?: return
         val l = lot ?: return
-        val dateStrings = rangeDays.map { it.format(bookingFormat) }
-        val numGuests = shownGuests
+        if (!agreed || booking || bookingName.isBlank() || !windowOpen ||
+            start == null || end == null || rangeDays.any { !bookable(it) }
+        ) return
+
+        val dates = rangeDays.map { it.format(bookingFormat) }.toMutableList()
+        val reservation = Reservation(cs, dates, shownGuests, userViewModel.deviceId, "upcoming")
         booking = true
         error = ""
-        val fs = FirebaseFirestore.getInstance()
-        val ref = fs.collection("campsites").document(cs.documentId)
-        fs.runTransaction { tx ->
-            val snap = tx.get(ref)
-            val raw = snap.get("dates") as? List<*> ?: emptyList<Any>()
-            val updated = raw.map { item ->
-                val m = item as? Map<*, *> ?: return@map item
-                val d = m["date"] as? String ?: ""
-                if (d in dateStrings) {
-                    val max = ((m["maxOcc"] as? Number)?.toInt() ?: 0).let { if (it > 0) it else cs.maxOcc }
-                    val cur = (m["currentOcc"] as? Number)?.toInt() ?: 0
-                    if (cur + numGuests > max) {
-                        throw FirebaseFirestoreException("Not enough spots", FirebaseFirestoreException.Code.ABORTED)
-                    }
-                    mapOf("date" to d, "maxOcc" to max, "currentOcc" to cur + numGuests)
-                } else item
-            }
-            val existingDates = raw.mapNotNull { (it as? Map<*, *>)?.get("date") as? String }
-            val added = dateStrings
-                .filter { it !in existingDates }
-                .map { mapOf("date" to it, "maxOcc" to cs.maxOcc, "currentOcc" to numGuests) }
-            tx.update(ref, "dates", updated + added)
-            null
-        }.addOnSuccessListener {
-            val reservation = Reservation(cs, dateStrings.toMutableList(), numGuests, userViewModel.deviceId, "upcoming")
-            ReservationRepository().addReservation(cs.documentId, reservation) { saved ->
-                if (!saved) {
-                    booking = false
-                    error = "Your dates were held but saving the reservation failed. Please try again."
-                    return@addReservation
-                }
-                lotteryRepository().updateWinnerStatus(l.lotteryId, userViewModel.deviceId, "confirmed") {
-                    userViewModel.refreshCurrentUser()
-                    navController.navigate("Reservations") { popUpTo("Search") }
-                }
-            }
-        }.addOnFailureListener {
+        reservation.reservationRepository.confirmLotteryBooking(
+            reservation = reservation,
+            lotteryId = l.lotteryId,
+            rulesAcknowledged = agreed
+        ) { saved ->
             booking = false
-            error = "Those dates just filled up. Please pick again."
-            startEpoch = null; endEpoch = null; onConfirmStage = false
+            if (saved) {
+                confirmedCampsite = cs.name
+                userViewModel.refreshCurrentUser()
+            } else {
+                error = context.getString(R.string.reservation_confirmation_error)
+            }
         }
     }
 
@@ -233,7 +208,16 @@ fun BookCampsiteScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            val confirmedName = confirmedCampsite
             when {
+                confirmedName != null && start != null && end != null -> {
+                    ReservationConfirmedContent(
+                        campsiteName = confirmedName,
+                        checkIn = start.format(bookingFormat),
+                        checkOut = end.plusDays(1).format(bookingFormat),
+                        onReservations = { navController.navigate("Reservations") { popUpTo("Search") } }
+                    )
+                }
                 !loaded -> CircularProgressIndicator()
                 c == null || lot == null -> Text("Campsite not found.")
                 !windowOpen -> {
@@ -292,10 +276,11 @@ fun BookCampsiteScreen(
                     ) { Text("Confirm dates", color = Color.White) }
                 }
                 else -> {
-                    Text("Confirm your booking", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.reservation_confirm), fontSize = 26.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Text(c.name, fontWeight = FontWeight.Bold)
-                    Text("Dates: ${rangeDays.first().format(bookingFormat)} to ${rangeDays.last().format(bookingFormat)} (${rangeDays.size} day(s))")
+                    Text(stringResource(R.string.reservation_check_in, rangeDays.first().format(bookingFormat)))
+                    Text(stringResource(R.string.reservation_check_out, rangeDays.last().plusDays(1).format(bookingFormat)))
                     Spacer(Modifier.height(12.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -321,28 +306,23 @@ fun BookCampsiteScreen(
                     )
                     Spacer(Modifier.height(12.dp))
 
-                    CampsiteRulesLink(navController)
-                    Spacer(Modifier.height(4.dp))
-                    CancellationPolicyLink(navController)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = agreed,
-                            onCheckedChange = { agreed = it },
-                            modifier = Modifier.testTag("agreeRulesCheckbox")
-                        )
-                        Text("I agree to the campsite rules and cancellation policy")
+                    ReservationConfirmationControls(
+                        navController = navController,
+                        acknowledged = agreed,
+                        onAcknowledgementChange = { agreed = it },
+                        bookingNameEntered = bookingName.isNotBlank(),
+                        submitting = booking,
+                        onConfirm = ::book
+                    )
+                    if (error.isNotEmpty()) {
+                        Text(error, color = Color(0xFFA13F3F), modifier = Modifier.testTag("bookingError"))
                     }
-                    if (error.isNotEmpty()) Text(error, color = Color(0xFFA13F3F), modifier = Modifier.testTag("bookingError"))
-                    Spacer(Modifier.height(12.dp))
-
-                    Button(
-                        onClick = { book() },
-                        enabled = agreed && bookingName.isNotBlank() && !booking,
-                        modifier = Modifier.fillMaxWidth().testTag("payNowButton"),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
-                    ) { Text(if (booking) "Booking..." else "Pay now", color = Color.White) }
                     TextButton(
-                        onClick = { onConfirmStage = false },
+                        onClick = {
+                            onConfirmStage = false
+                            agreed = false
+                        },
+                        enabled = !booking,
                         modifier = Modifier.testTag("changeDatesButton")
                     ) { Text("Change dates") }
                 }

@@ -27,9 +27,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.syntax_camping.dataClasses.NotificationData
-import com.example.syntax_camping.screens.LocalHasUnreadNotifications
 import com.example.syntax_camping.screens.NotificationBannerHost
-import com.example.syntax_camping.screens.TopBar
+import com.example.syntax_camping.screens.tabs.LocalHasUnreadNotifications
+import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import java.util.UUID
