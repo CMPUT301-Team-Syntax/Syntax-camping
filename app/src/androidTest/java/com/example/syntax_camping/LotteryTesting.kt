@@ -1,42 +1,33 @@
 package com.example.syntax_camping
 
-
-import com.google.firebase.firestore.FirebaseFirestore
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
-import com.example.syntax_camping.CampsiteRepository
-import android.net.Uri
-import com.google.firebase.firestore.FieldPath.documentId
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.LotteryEntry
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
 import java.sql.Timestamp as jsqlTimestamp
-import junit.framework.TestCase.assertTrue
-import junit.framework.TestCase.assertFalse
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import com.example.syntax_camping.dataClasses.LotteryEntry
-import org.junit.Assert.*
+import java.util.concurrent.atomic.AtomicReference
+
 class LotteryTesting {
     private lateinit var testCampsite: Campsite
     private lateinit var db: Database
     private lateinit var testLottery: Lottery
     private lateinit var lr: lotteryRepository
 
-
-    // Set up a new wizard before every single test
     @Before
     fun setUp() {
-
-
         lr = lotteryRepository()
         db = Database()
         val documentID = FirebaseFirestore.getInstance()
             .collection("campsites")
             .document()
             .id
-        val mutableTags = mutableListOf<String>("yep", "tags", "you wish you had tags this cool")
+        val mutableTags = mutableListOf("yep", "tags", "you wish you had tags this cool")
         testCampsite = Campsite(
             documentID,
             "campNametest",
@@ -50,49 +41,73 @@ class LotteryTesting {
             2051222400000,
             2051222600000,
             2,
-            mutableListOf<Campsite>(testCampsite),
+            mutableListOf(testCampsite),
             2,
             "name",
             "initialBooking"
         )
-
-
     }
 
+    /**
+     * Runs assertions safely inside async Firebase callbacks so any AssertionError
+     * is captured and rethrown on the main JUnit test thread.
+     */
+
+    private fun runAsyncAssert(
+        failureRef: AtomicReference<Throwable>,
+        latch: CountDownLatch,
+        lotteryIdToClean: String? = null,
+        block: () -> Unit
+    ) {
+        try {
+            block()
+        } catch (t: Throwable) {
+            failureRef.compareAndSet(null, t)
+        } finally {
+            if (lotteryIdToClean != null) {
+                FirebaseFirestore.getInstance().collection("lotteries")
+                    .document(lotteryIdToClean)
+                    .delete()
+                    .addOnCompleteListener { latch.countDown() }
+            } else {
+                latch.countDown()
+            }
+        }
+    }
+
+    private fun awaitAndVerify(latch: CountDownLatch, failureRef: AtomicReference<Throwable>, timeoutSec: Long = 10) {
+        val finished = latch.await(timeoutSec, TimeUnit.SECONDS)
+        failureRef.get()?.let { throw it }
+        assertTrue("Test timed out after $timeoutSec seconds", finished)
+    }
 
     @Test
     fun testLotteryCreationInDbAndLotteryRepsoitorygetLottery() {
+        val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
+
         testLottery.createLotteryTimer()
         lr.getLottery(testLottery.lotteryId) { lottery ->
-            if (lottery == null) {
-                throw AssertionError("Lottery was null")
+            runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                assertNotNull("Lottery was null", lottery)
+                assertEquals(testLottery.endTimeLottery, lottery!!.endTimeLottery)
+                assertEquals(testLottery.endTimeBooking, lottery.endTimeBooking)
+                assertEquals(testLottery.name, lottery.name)
+                assertEquals(testLottery.numWinners, lottery.numWinners)
+                assertEquals(testLottery.capacity, lottery.capacity)
             }
-
-
-
-
-            assert((lottery.endTimeLottery == testLottery.endTimeLottery) && (lottery.endTimeBooking == testLottery.endTimeBooking) && (lottery.name == testLottery.name) && (lottery.numWinners == testLottery.numWinners) && (lottery.capacity == testLottery.capacity))
         }
 
-
-        //cleanup
-        FirebaseFirestore.getInstance().collection("lotteries")
-            .document(testLottery.lotteryId)
-            .delete()
-            .addOnSuccessListener {
-
-
-            }
-            .addOnFailureListener { e ->
-                // Handle any potential deletion failure if needed
-            }
+        awaitAndVerify(latch, failureRef)
     }
-
 
     @Test
     fun testLotteryUpdateAndMulitLottery() {
+        val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
+
         testLottery.createLotteryTimer()
-        val campsiteList = mutableListOf<Campsite>(
+        val campsiteList = mutableListOf(
             testLottery.campsites[0],
             Campsite(
                 "docId",
@@ -100,10 +115,11 @@ class LotteryTesting {
                 "campLocation2",
                 "descriptive description2",
                 900,
-                mutableListOf<String>("wabbafett"),
+                mutableListOf("wabbafett"),
                 1.0
             )
         )
+
         db.updateDrawTimer(
             testLottery.endTimeLottery + 10000,
             testLottery.endTimeBooking + 200000,
@@ -111,76 +127,60 @@ class LotteryTesting {
             campsiteList,
             3,
             "newName",
-            "initialBooking"
+            testLottery.lotteryId
         )
 
+        // Small delay so async updateDrawTimer write settles before fetching
+        Thread.sleep(1000)
 
         lr.getLottery(testLottery.lotteryId) { lottery ->
-            if (lottery == null) {
-                throw AssertionError("Lottery was null")
+            runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                assertNotNull("Lottery was null", lottery)
+                assertEquals(testLottery.endTimeLottery + 10000, lottery!!.endTimeLottery)
+                assertEquals(testLottery.endTimeBooking + 200000, lottery.endTimeBooking)
+                assertEquals("newName", lottery.name)
+                assertEquals(1, lottery.numWinners)
+                assertEquals(3, lottery.capacity)
             }
-
-
-
-
-            assert((lottery.endTimeLottery == testLottery.endTimeLottery + 10000) && (lottery.endTimeBooking == testLottery.endTimeBooking + 200000) && (lottery.name == "newName") && (lottery.numWinners == 1) && (lottery.capacity == 3))
         }
 
-
-        //cleanup
-        FirebaseFirestore.getInstance().collection("lotteries")
-            .document(testLottery.lotteryId)
-            .delete()
-            .addOnSuccessListener {
-
-
-            }
-            .addOnFailureListener { e ->
-                // Handle any potential deletion failure if needed
-            }
+        awaitAndVerify(latch, failureRef)
     }
-
 
     @Test
     fun testLotteryJoin() {
-
+        val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
 
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
+
         testLottery.addEntry(littleLotteryGuy) { success ->
-            lr.getEntries(testLottery.lotteryId) { entries ->
-                if (entries == null) {
-                    throw AssertionError("entries was null")
+            if (!success) {
+                runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                    fail("Failed to add entry")
                 }
-
-
-
-
-                assert(entries == mutableListOf<LotteryEntry>(littleLotteryGuy))
+                return@addEntry
             }
-            FirebaseFirestore.getInstance().collection("lotteries")
-                .document(testLottery.lotteryId)
-                .delete()
-                .addOnSuccessListener {
 
-
+            lr.getEntries(testLottery.lotteryId) { entries ->
+                runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                    assertNotNull("Entries was null", entries)
+                    assertEquals(mutableListOf(littleLotteryGuy), entries)
                 }
-                .addOnFailureListener { e ->
-                    // Handle any potential deletion failure if needed
-                }
+            }
         }
-    }
 
+        awaitAndVerify(latch, failureRef)
+    }
 
     @Test
     fun testGetReadables() {
-
-
         val readableLottery = testLottery.getReadableLotteryEndTime()
         val readableBooking = testLottery.getReadableBookingEndTime()
-        assert((readableLottery is jsqlTimestamp) && (readableBooking is jsqlTimestamp))
+        assertTrue("Readable lottery end time should be a SQL Timestamp", readableLottery is jsqlTimestamp)
+        assertTrue("Readable booking end time should be a SQL Timestamp", readableBooking is jsqlTimestamp)
     }
-
 
     @Test
     fun testLotteryInThePast() {
@@ -188,174 +188,237 @@ class LotteryTesting {
             22400000,
             22600000,
             2,
-            mutableListOf<Campsite>(testCampsite),
+            mutableListOf(testCampsite),
             2,
             "name",
             "initialBooking"
         )
         val worked = testLottery.createLotteryTimer()
-
-
-        assert(worked == false)
-
-
+        assertFalse("Lottery in the past should not be created", worked)
     }
-
 
     @Test
     fun testLotteryJoinAtCapacity() {
-
+        val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
 
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
         val littleLotteryGuy2 = LotteryEntry("madeupuserId2", Timestamp.now())
         val littleLotteryGuy3 = LotteryEntry("madeUpUserId3", Timestamp.now())
+
         testLottery.addEntry(littleLotteryGuy) { success1 ->
-            assertTrue("First entry should succeed", success1)
+            try {
+                assertTrue("First entry should succeed", success1)
+            } catch (t: Throwable) {
+                failureRef.compareAndSet(null, t)
+                latch.countDown()
+                return@addEntry
+            }
+
             testLottery.addEntry(littleLotteryGuy2) { success2 ->
-                assertTrue("second entry should succeed", success2)
+                try {
+                    assertTrue("Second entry should succeed", success2)
+                } catch (t: Throwable) {
+                    failureRef.compareAndSet(null, t)
+                    latch.countDown()
+                    return@addEntry
+                }
+
                 testLottery.addEntry(littleLotteryGuy3) { success3 ->
-                    assertFalse("third entry fails", success3)
-
-
-                    FirebaseFirestore.getInstance().collection("lotteries")
-                        .document(testLottery.lotteryId)
-                        .delete()
-                        .addOnSuccessListener {
-
-
-                        }
-                        .addOnFailureListener { e ->
-                            // Handle any potential deletion failure if needed
-                        }
+                    runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                        assertFalse("Third entry should fail at capacity", success3)
+                    }
                 }
             }
         }
+
+        awaitAndVerify(latch, failureRef)
     }
 
     @Test
     fun testLotteryJoinAtalreadyatjoined() {
-
+        val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
 
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
 
-
         testLottery.addEntry(littleLotteryGuy) { success1 ->
-            assertTrue("First entry should succeed", success1)
+            try {
+                assertTrue("First entry should succeed", success1)
+            } catch (t: Throwable) {
+                failureRef.compareAndSet(null, t)
+                latch.countDown()
+                return@addEntry
+            }
+
             testLottery.addEntry(littleLotteryGuy) { success2 ->
-                assertFalse("second entry should succeed", success2)
-
-
-
-
-                FirebaseFirestore.getInstance().collection("lotteries")
-                    .document(testLottery.lotteryId)
-                    .delete()
-                    .addOnSuccessListener {
-
-
-                    }
-                    .addOnFailureListener { e ->
-                        // Handle any potential deletion failure if needed
-                    }
-
-
+                runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                    assertFalse("Duplicate entry should fail", success2)
+                }
             }
         }
-    }
 
+        awaitAndVerify(latch, failureRef)
+    }
 
     @Test
     fun testLotteryRemoval() {
         testLottery.createLotteryTimer()
         val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
         val latch = CountDownLatch(1)
+        val failureRef = AtomicReference<Throwable>()
 
         testLottery.addEntry(littleLotteryGuy) { success ->
-            assertTrue("Failed to add entry", success)
+            try {
+                assertTrue("Failed to add entry", success)
+            } catch (t: Throwable) {
+                failureRef.compareAndSet(null, t)
+                latch.countDown()
+                return@addEntry
+            }
 
             lr.getEntries(testLottery.lotteryId) { entries ->
-                assertNotNull("Entries was null", entries)
-                assertEquals(1, entries?.size)
-
+                try {
+                    assertNotNull("Entries was null", entries)
+                    assertEquals(1, entries?.size)
+                } catch (t: Throwable) {
+                    failureRef.compareAndSet(null, t)
+                    latch.countDown()
+                    return@getEntries
+                }
 
                 testLottery.removeEntry(littleLotteryGuy) { removeSuccess ->
-                    assertTrue("Failed to remove entry", removeSuccess)
+                    try {
+                        assertTrue("Failed to remove entry", removeSuccess)
+                    } catch (t: Throwable) {
+                        failureRef.compareAndSet(null, t)
+                        latch.countDown()
+                        return@removeEntry
+                    }
 
-                    // Fetch and assert entries after removal
                     lr.getEntries(testLottery.lotteryId) { updatedEntries ->
-                        assertNotNull("Updated entries was null", updatedEntries)
-                        assertTrue(
-                            "Entry was not removed from Firebase",
-                            updatedEntries.isNullOrEmpty()
-                        )
-
-                        // Cleanup and finish test
-                        FirebaseFirestore.getInstance().collection("lotteries")
-                            .document(testLottery.lotteryId)
-                            .delete()
-                            .addOnCompleteListener {
-                                latch.countDown()
-                            }
+                        runAsyncAssert(failureRef, latch, testLottery.lotteryId) {
+                            assertNotNull("Updated entries was null", updatedEntries)
+                            assertTrue(
+                                "Entry was not removed from Firebase",
+                                updatedEntries.isNullOrEmpty()
+                            )
+                        }
                     }
                 }
             }
         }
 
-        val finished = latch.await(10, TimeUnit.SECONDS)
-        assertTrue("Test timed out", finished)
+        awaitAndVerify(latch, failureRef)
     }
-    //checks if the automatic draw works and that there is one person in winners and one in waitlist(since winners is one and two added, this meaans they are being drawn
-    @Test
-    fun testLotteryDraw() {
-        val timeInMillis = System.currentTimeMillis()
-        val littleLotteryGuy = LotteryEntry("madeUpUserId", Timestamp.now())
-        val littleLotteryGuy2 = LotteryEntry("madeupuserId2", Timestamp.now())
 
-        val drawLotteryId = db.addDrawTimer(
-            timeInMillis,
-            timeInMillis + 30000000,
-            1,
-            mutableListOf(testCampsite),
-            null,
-            "testingthewaters"
-        )
+    // Checks if the automatic draw works and puts one person in winners and one in waitlist THis one takes a wminute to run just cause of firebase delays
+@Test
+fun testLotteryDraw() {
+    val latch = CountDownLatch(2) // 1 for winners, 1 for waitlist
+    val failureRef = AtomicReference<Throwable>()
 
-        lr.getLottery(drawLotteryId) { lottery ->
-            if (lottery == null) {
-                throw AssertionError("Lottery was null")
+    val runSuffix = java.util.UUID.randomUUID().toString().take(8)
+    val timeInMillis = System.currentTimeMillis() - 3600000L
+    val littleLotteryGuy = LotteryEntry("testUser1_$runSuffix", Timestamp.now())
+    val littleLotteryGuy2 = LotteryEntry("testUser2_$runSuffix", Timestamp.now())
+
+    // 30s buffer guarantees addDrawTimer + scheduleLotteryDraw cold start + both addEntry calls
+    // all complete well before runLotteryDraw executes
+    val drawLotteryId = db.addDrawTimer(
+        timeInMillis + 30000,
+        timeInMillis + 30000000,
+        1,
+        mutableListOf(testCampsite),
+        null,
+        "testingthewaters_$runSuffix"
+    )
+
+    Thread.sleep(2000)
+
+    lr.getLottery(drawLotteryId) { lottery ->
+        if (lottery == null) {
+            failureRef.compareAndSet(null, AssertionError("Lottery was null"))
+            repeat(2) { latch.countDown() }
+            return@getLottery
+        }
+
+        lottery.addEntry(littleLotteryGuy) { success1 ->
+            if (!success1) {
+                failureRef.compareAndSet(null, AssertionError("First entry should succeed"))
+                repeat(2) { latch.countDown() }
+                return@addEntry
             }
-            assert(lottery.status == "booking")
 
-            // Use the fetched lottery object instead of 'testLottery'
-            lottery.addEntry(littleLotteryGuy) { success1 ->
-                assertTrue("First entry should succeed", success1)
+            lottery.addEntry(littleLotteryGuy2) { success2 ->
+                if (!success2) {
+                    failureRef.compareAndSet(null, AssertionError("Second entry should succeed"))
+                    repeat(2) { latch.countDown() }
+                    return@addEntry
+                }
 
-                // Added second user entry so waitlist has data
-                lottery.addEntry(littleLotteryGuy2) { success2 ->
-                    assertTrue("Second entry should succeed", success2)
+                // Poll on a background thread so we NEVER block Android's Main Thread
+                Thread {
+                    var statusFlipped = false
+                    var lastSeenStatus: String? = null
+                    for (attempt in 1..180) {
+                        Thread.sleep(1000)
+                        val checkLatch = CountDownLatch(1)
 
-                    // Fetch and check winners
+                        lr.getLottery(drawLotteryId) { updatedLottery ->
+                            lastSeenStatus = updatedLottery?.status
+                            checkLatch.countDown()
+                        }
+                        checkLatch.await()
+
+                        if (lastSeenStatus == "booking") {
+                            statusFlipped = true
+                            break
+                        }
+                    }
+
+                    if (!statusFlipped) {
+                        failureRef.compareAndSet(
+                            null,
+                            AssertionError("Timed out after 180s waiting for status to change from '$lastSeenStatus' to 'booking'")
+                        )
+                        repeat(2) { latch.countDown() }
+                        return@Thread
+                    }
+
+                    // Small buffer in case subcollection writes settle right after status update
+                    Thread.sleep(1000)
+
                     lr.getWinners(drawLotteryId) { updatedWinners ->
-                        assertNotNull("Updated winners was null", updatedWinners)
-                        assertTrue(
-                            "Winners list should not be empty",
-                            !updatedWinners.isNullOrEmpty()
-                        )
+                        runAsyncAssert(failureRef, latch) {
+                            assertNotNull("Updated winners was null", updatedWinners)
+                            assertEquals("Should have 1 winner", 1, updatedWinners!!.size)
+                        }
                     }
 
-                    // Fetch and check waitlist
                     lr.getWaitlist(drawLotteryId) { updatedWaitlist ->
-                        assertNotNull("Updated waitlist was null", updatedWaitlist)
-                        assertTrue(
-                            "Waitlist should not be empty",
-                            !updatedWaitlist.isNullOrEmpty()
-                        )
+                        runAsyncAssert(failureRef, latch) {
+                            assertNotNull("Updated waitlist was null", updatedWaitlist)
+                            assertEquals("Should have 1 person in waitlist", 1, updatedWaitlist!!.size)
+                        }
                     }
-                }
+                }.start()
             }
         }
     }
-    //endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String
+
+    try {
+        awaitAndVerify(latch, failureRef, timeoutSec = 195)
+    } finally {
+        val docRef = FirebaseFirestore.getInstance().collection("lotteries").document(drawLotteryId)
+        docRef.collection("winners").document(littleLotteryGuy.userId).delete()
+        docRef.collection("winners").document(littleLotteryGuy2.userId).delete()
+        docRef.collection("waitlist").document(littleLotteryGuy.userId).delete()
+        docRef.collection("waitlist").document(littleLotteryGuy2.userId).delete()
+        docRef.delete()
+    }
+}
+
 }
