@@ -202,6 +202,7 @@ fun BookCampsiteScreen(
             null
         }.addOnSuccessListener {
             val reservation = Reservation(cs, dateStrings.toMutableList(), numGuests, userViewModel.deviceId, "upcoming")
+            reservation.bookingName = bookingName.trim()
             ReservationRepository().addReservation(cs.documentId, reservation) { saved ->
                 if (!saved) {
                     booking = false

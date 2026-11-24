@@ -16,6 +16,7 @@ data class Reservation (
     var dateManager = campsite.dateManager
     //Note this oes not exist yet as I have nto done firebase
     var reservationId = ""
+    var bookingName = ""
     val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
