@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.QRCodeScreens
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text

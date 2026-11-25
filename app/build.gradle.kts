@@ -83,4 +83,6 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.mapbox.maps:android-ndk27:11.35.2")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.35.2")
 }
