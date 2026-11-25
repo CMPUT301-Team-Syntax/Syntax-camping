@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +40,7 @@ import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.screens.userScreens.profileScreen.DeleteProfilePopUp
 
 @Composable
-fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
+fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, modifier: Modifier = Modifier) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -81,11 +82,15 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
+                    val shapeModifier = modifier
+                        .width(96.dp)
+                        .height(96.dp)
+                        .clip(RoundedCornerShape(16.dp))
+
                     Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF2994A))
+                        modifier = shapeModifier
+                            .background(Color(0xFFF4E8D5))
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))

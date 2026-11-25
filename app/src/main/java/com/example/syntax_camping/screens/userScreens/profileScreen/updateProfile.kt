@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.UserViewModel
 import android.util.Log
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.Database
 
 
@@ -85,15 +87,15 @@ fun UpdateProfileScreen(navController: NavController, userViewModel: UserViewMod
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally // 👈 Centers circle + text!
             ){
+                val shapeModifier = modifier
+                    .width(96.dp)
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(16.dp))
+
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFF2994A)) // Orange placeholder
-
-
-                ){}
+                    modifier = shapeModifier
+                        .background(Color(0xFFF4E8D5))
+                )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
