@@ -37,6 +37,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CampsiteThumbnail
 import com.example.syntax_camping.screens.Rating
 
 @Composable
@@ -79,12 +80,7 @@ fun CampsiteCard(campsite: Campsite, onClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFF2994A))
-            )
+            CampsiteThumbnail(campsite)
 
             Spacer(modifier = Modifier.width(16.dp))
 
