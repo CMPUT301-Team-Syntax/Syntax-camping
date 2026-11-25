@@ -1,6 +1,7 @@
 package com.example.syntax_camping.UserScreens
 
 import android.content.Context
+import com.example.syntax_camping.ui.components.PromptCsvDownload
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -74,7 +75,8 @@ fun BookCampsiteScreen(
     var guests by rememberSaveable { mutableIntStateOf(1) }
     var agreed by rememberSaveable { mutableStateOf(false) }
     var bookingName by rememberSaveable { mutableStateOf(userViewModel.currentUser?.name ?: "") }
-
+    var csvToDownload by remember { mutableStateOf<String?>(null) }
+    var csvFileName by remember { mutableStateOf("reservation.csv") }
     var error by remember { mutableStateOf("") }
     var tapped by remember { mutableStateOf("") }
     var booking by remember { mutableStateOf(false) }
@@ -177,48 +179,57 @@ fun BookCampsiteScreen(
         val numGuests = shownGuests
         booking = true
         error = ""
-        val fs = FirebaseFirestore.getInstance()
-        val ref = fs.collection("campsites").document(cs.documentId)
-        fs.runTransaction { tx ->
-            val snap = tx.get(ref)
-            val raw = snap.get("dates") as? List<*> ?: emptyList<Any>()
-            val updated = raw.map { item ->
-                val m = item as? Map<*, *> ?: return@map item
-                val d = m["date"] as? String ?: ""
-                if (d in dateStrings) {
-                    val max = ((m["maxOcc"] as? Number)?.toInt() ?: 0).let { if (it > 0) it else cs.maxOcc }
-                    val cur = (m["currentOcc"] as? Number)?.toInt() ?: 0
-                    if (cur + numGuests > max) {
-                        throw FirebaseFirestoreException("Not enough spots", FirebaseFirestoreException.Code.ABORTED)
-                    }
-                    mapOf("date" to d, "maxOcc" to max, "currentOcc" to cur + numGuests)
-                } else item
-            }
-            val existingDates = raw.mapNotNull { (it as? Map<*, *>)?.get("date") as? String }
-            val added = dateStrings
-                .filter { it !in existingDates }
-                .map { mapOf("date" to it, "maxOcc" to cs.maxOcc, "currentOcc" to numGuests) }
-            tx.update(ref, "dates", updated + added)
-            null
-        }.addOnSuccessListener {
-            val reservation = Reservation(cs, dateStrings.toMutableList(), numGuests, userViewModel.deviceId, "upcoming")
-            reservation.bookingName = bookingName.trim()
-            ReservationRepository().addReservation(cs.documentId, reservation) { saved ->
-                if (!saved) {
-                    booking = false
-                    error = "Your dates were held but saving the reservation failed. Please try again."
-                    return@addReservation
+
+        val reservation = Reservation(
+            campsite = cs,
+            datesReserved = dateStrings.toMutableList(),
+            numberGuests = numGuests,
+            userId = userViewModel.deviceId,
+            status = "upcoming"
+        )
+
+        val accepted = reservation.createReservation { created, csv ->
+            if (!created) {
+                booking = false
+                error = if (!reservation.reservationNotFull) {
+                    "Those dates just filled up. Please pick again."
+                } else {
+                    "Could not complete your reservation. Please try again."
                 }
-                lotteryRepository().updateWinnerStatus(l.lotteryId, userViewModel.deviceId, "confirmed") {
-                    userViewModel.refreshCurrentUser()
+                startEpoch = null
+                endEpoch = null
+                onConfirmStage = false
+                return@createReservation
+            }
+
+            lotteryRepository().updateWinnerStatus(l.lotteryId, userViewModel.deviceId, "confirmed") {
+                userViewModel.refreshCurrentUser()
+                if (csv != null) {
+                    csvFileName = "reservation_${reservation.reservationId}.csv"
+                    csvToDownload = csv
+                } else {
+                    booking = false
                     navController.navigate("Reservations") { popUpTo("Search") }
                 }
             }
-        }.addOnFailureListener {
-            booking = false
-            error = "Those dates just filled up. Please pick again."
-            startEpoch = null; endEpoch = null; onConfirmStage = false
         }
+
+        if (!accepted) {
+            booking = false
+            error = if (!reservation.reservationNotFull) {
+                "Those dates just filled up. Please pick again."
+            } else {
+                "Selected dates are not available for booking."
+            }
+            startEpoch = null
+            endEpoch = null
+            onConfirmStage = false
+
+    }
+
+
+//THis is a kind of updated call, not it is just so you can see how stuff is returned kind of, as you will still need to keep whatever old code was in th ecallback already as well
+
     }
 
     Scaffold(
@@ -227,6 +238,15 @@ fun BookCampsiteScreen(
         topBar = { TopBar(navController) },
         bottomBar = { CustomBottomBar(navController, "BookCampsite", Color(0xFF3E6B68)) }
     ) { innerPadding ->
+    PromptCsvDownload(
+        csvContent = csvToDownload,
+        defaultFileName = csvFileName,
+        onDismiss = {
+            csvToDownload = null
+            booking = false
+            navController.navigate("Reservations") { popUpTo("Search") }
+        }
+    )
         Column(
             Modifier
                 .fillMaxSize()
