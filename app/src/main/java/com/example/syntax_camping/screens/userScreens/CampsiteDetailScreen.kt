@@ -310,8 +310,9 @@ fun CampsiteDetailsScreen(
                                 fontSize = 16.sp
                             )
                             currentLottery.status?.let {
+
                                 Text(
-                                    text = it,
+                                    text = if (it == "initialAccepting") "Open" else if (it == "complete") "Ended" else it,
                                     color = Color(0xFFA13F3F),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
