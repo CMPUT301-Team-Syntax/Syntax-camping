@@ -46,6 +46,7 @@ import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryLis
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.Campsite
+import com.google.firebase.firestore.FirebaseFirestore
 import com.example.syntax_camping.dataClasses.Reservation
 @Composable
 fun ReservationsScreen(navController: NavController, userViewModel: UserViewModel) {
@@ -283,7 +284,11 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 8.dp),
+                                        .padding(horizontal = 8.dp)
+                                        .testTag("reservationCard_$reservationId")
+                                        .clickable(enabled = res != null) {
+                                            res?.let { navController.navigate("campsiteDetails/${it.campsite.documentId}") }
+                                        },
                                     shape = RoundedCornerShape(20.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF4E8D5))
                                 ) {
@@ -295,6 +300,7 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                                             fontWeight = FontWeight.Bold
                                         )
                                         if (r != null) {
+                                            if (r.bookingName.isNotBlank()) Text("Booked under: ${r.bookingName}")
                                             Text("Dates: ${r.datesReserved.firstOrNull() ?: ""} to ${r.datesReserved.lastOrNull() ?: ""}")
                                             Text("Guests: ${r.numberGuests}")
                                             Text("Status: ${r.status}")
