@@ -51,9 +51,8 @@ import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CalenderVeiw
-import com.example.syntax_camping.screens.CampsiteQRCode
+import com.example.syntax_camping.screens.QRCodeScreens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
-import com.example.syntax_camping.screens.ownerScreens.openInGoogleMaps
 import com.example.syntax_camping.screens.ownerScreens.openInGoogleMaps
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar

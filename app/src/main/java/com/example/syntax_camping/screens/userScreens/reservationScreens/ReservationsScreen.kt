@@ -1,5 +1,4 @@
 package com.example.syntax_camping.UserScreens
-import com.example.syntax_camping.screens.CalenderVeiw
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,8 +44,6 @@ import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryCard
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.example.syntax_camping.Campsite
-import com.google.firebase.firestore.FirebaseFirestore
 import com.example.syntax_camping.dataClasses.Reservation
 @Composable
 fun ReservationsScreen(navController: NavController, userViewModel: UserViewModel) {

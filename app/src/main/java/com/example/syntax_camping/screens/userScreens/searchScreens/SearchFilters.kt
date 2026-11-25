@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.userScreens.searchScreens
 
 import android.location.Location
 import com.example.syntax_camping.Campsite
@@ -12,6 +12,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private val typedDatePattern = Regex("""^\d{1,2}/\d{1,2}/\d{4}$""")
+
+///THIS IS FOR MAP SEARCH FILTER FOR DISTANCE
 
 /** Reads a typed date like 05/08/2026. Gives null if it isn't a real date in that shape. */
 fun parseSearchDate(text: String): Calendar? {

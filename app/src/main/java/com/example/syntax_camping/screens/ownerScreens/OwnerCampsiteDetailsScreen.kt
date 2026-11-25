@@ -41,7 +41,7 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
-import com.example.syntax_camping.screens.CampsiteQRCode
+import com.example.syntax_camping.screens.QRCodeScreens.CampsiteQRCode
 
 /** US 02.01.04: renders the selected database campsite in one scrollable page. */
 @Composable

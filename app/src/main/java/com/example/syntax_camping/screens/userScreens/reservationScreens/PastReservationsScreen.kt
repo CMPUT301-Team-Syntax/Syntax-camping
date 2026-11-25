@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens.userScreens
+package com.example.syntax_camping.screens.userScreens.reservationScreens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

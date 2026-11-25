@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.userScreens.searchScreens
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column

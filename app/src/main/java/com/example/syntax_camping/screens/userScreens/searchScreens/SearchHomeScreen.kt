@@ -1,7 +1,6 @@
 package com.example.syntax_camping.UserScreens
 
 import android.Manifest
-import android.R.id.checkbox
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,19 +60,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.testTag
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.CalenderVeiw
-import com.example.syntax_camping.screens.CampsiteSearchMap
-import com.example.syntax_camping.screens.campsiteHasRoom
-import com.example.syntax_camping.screens.distanceKm
+import com.example.syntax_camping.screens.userScreens.searchScreens.CampsiteSearchMap
+import com.example.syntax_camping.screens.userScreens.searchScreens.campsiteHasRoom
+import com.example.syntax_camping.screens.userScreens.searchScreens.distanceKm
 import com.example.syntax_camping.screens.fetchCurrentLocation
 import com.example.syntax_camping.screens.hasLocationPermission
-import com.example.syntax_camping.screens.parseSearchDate
-import com.example.syntax_camping.screens.parseSearchLocalDate
-import com.example.syntax_camping.screens.searchDaysBetween
+import com.example.syntax_camping.screens.userScreens.searchScreens.parseSearchDate
+import com.example.syntax_camping.screens.userScreens.searchScreens.parseSearchLocalDate
+import com.example.syntax_camping.screens.userScreens.searchScreens.searchDaysBetween
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
