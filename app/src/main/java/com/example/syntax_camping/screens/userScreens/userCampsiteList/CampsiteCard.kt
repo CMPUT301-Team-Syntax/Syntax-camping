@@ -116,6 +116,16 @@ fun CampsiteCard(campsite: Campsite, onClick: () -> Unit) {
                     )
                 }
 
+                val shownTags = campsite.tags.filter { it.isNotBlank() }
+                if (shownTags.isNotEmpty()) {
+                    Text(
+                        text = shownTags.joinToString("  ") { "#$it" },
+                        fontSize = 12.sp,
+                        color = Color(0xFF3E6B68),
+                        modifier = Modifier.testTag("campsiteTags_${campsite.documentId}")
+                    )
+                }
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = R.drawable.occupancy),

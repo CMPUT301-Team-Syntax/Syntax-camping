@@ -621,6 +621,8 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
@@ -655,6 +657,8 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.

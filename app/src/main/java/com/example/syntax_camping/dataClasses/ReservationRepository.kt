@@ -27,7 +27,8 @@ class ReservationRepository {
             "datesReserved" to reservation.datesReserved,
             "numberGuests" to reservation.numberGuests,
             "userId" to reservation.userId,
-            "status" to reservation.status
+            "status" to reservation.status,
+            "bookingName" to reservation.bookingName
         )
 
         reservationReference.set(data)
@@ -75,7 +76,8 @@ class ReservationRepository {
             "datesReserved" to reservation.datesReserved,
             "numberGuests" to reservation.numberGuests,
             "userId" to reservation.userId,
-            "status" to reservation.status
+            "status" to reservation.status,
+            "bookingName" to reservation.bookingName  //the name the reservation is saved under when booking
         )
 
         docRef.set(data)
@@ -130,6 +132,7 @@ class ReservationRepository {
                 val numberGuests = resDoc.getLong("numberGuests")?.toInt() ?: 0
                 val userId = resDoc.getString("userId") ?: ""
                 val status = resDoc.getString("status") ?: ""
+                val bookingName = resDoc.getString("bookingName") ?: ""
 
                 // Fetch the associated Campsite so we can construct the full Reservation object
                 db.collection("campsites")
@@ -202,6 +205,7 @@ class ReservationRepository {
                             status = status
                         ).apply {
                             updateReservationId(resDoc.id)
+                            this.bookingName = bookingName
                         }
 
                         callback(reservation)
