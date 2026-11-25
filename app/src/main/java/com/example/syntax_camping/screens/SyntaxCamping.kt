@@ -35,6 +35,7 @@ import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
 fun SyntaxCamping(
@@ -208,6 +209,11 @@ fun SyntaxCamping(
 
         composable("adminComplaints") {
             AdminComplaints(navController)
+        }
+
+        composable("reservationInfo/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationInfoScreen(navController, reservationId)
         }
 
     }

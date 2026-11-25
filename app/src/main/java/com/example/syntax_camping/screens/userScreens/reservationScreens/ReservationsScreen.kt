@@ -45,6 +45,8 @@ import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryLis
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 import com.example.syntax_camping.dataClasses.Reservation
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationCard
+
 @Composable
 fun ReservationsScreen(navController: NavController, userViewModel: UserViewModel) {
     val db = remember { Database() }
@@ -274,36 +276,10 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             currentReservations.forEach { reservationId ->
-                                var res by remember(reservationId) { mutableStateOf<Reservation?>(null) }
-                                LaunchedEffect(reservationId) {
-                                    ReservationRepository().getReservation(reservationId) { res = it }
-                                }
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp)
-                                        .testTag("reservationCard_$reservationId")
-                                        .clickable(enabled = res != null) {
-                                            res?.let { navController.navigate("campsiteDetails/${it.campsite.documentId}") }
-                                        },
-                                    shape = RoundedCornerShape(20.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF4E8D5))
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        val r = res
-                                        Text(
-                                            text = r?.campsite?.name?.ifBlank { "Campsite" } ?: "Loading...",
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        if (r != null) {
-                                            if (r.bookingName.isNotBlank()) Text("Booked under: ${r.bookingName}")
-                                            Text("Dates: ${r.datesReserved.firstOrNull() ?: ""} to ${r.datesReserved.lastOrNull() ?: ""}")
-                                            Text("Guests: ${r.numberGuests}")
-                                            Text("Status: ${r.status}")
-                                        }
-                                    }
-                                }
+                                ReservationCard(
+                                    reservationId = reservationId,
+                                    onClick = { navController.navigate("reservationInfo/$reservationId") }
+                                )
                             }
                         }
                     }
