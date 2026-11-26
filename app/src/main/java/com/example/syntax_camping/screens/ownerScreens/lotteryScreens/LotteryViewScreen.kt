@@ -22,7 +22,9 @@ fun validateAndCreateLottery(
     numWinnersText: String,
     capacity: String,
     selectedCampsites: MutableList<Campsite>,
-    lotteryDates: List<String> = emptyList()
+    lotteryDates: List<String> = emptyList(),
+    ownerId: String = "",
+    isJoinable: Boolean = false
 
 ): Pair<Boolean, String>
 
@@ -93,7 +95,8 @@ fun validateAndCreateLottery(
 
     newLottery.lotteryDates = lotteryDates
     newLottery.startTime = 0L   // no separate opening time: entries are open as soon as the lottery exists
-
+    newLottery.ownerId = ownerId
+    newLottery.isJoinable = isJoinable
     val success = newLottery.createLotteryTimer()
 
     if (!success) {

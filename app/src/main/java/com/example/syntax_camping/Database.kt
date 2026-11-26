@@ -73,15 +73,24 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList(), startTime: Long = 0L): String{        //The two following values allow firebase to generate a unique lottery id
-
+    fun addDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryDates: List<String> = emptyList(),
+        startTime: Long = 0L,
+        ownerId: String = "",
+        isJoinable: Boolean = false
+    ): String {
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
@@ -90,36 +99,46 @@ class Database {
             "name" to name,
             "capacity" to capacity,
             "lotteryDates" to lotteryDates,
-            "startTimeLottery" to startTime
-
+            "startTimeLottery" to startTime,
+            "ownerId" to ownerId,
+            "isJoinable" to isJoinable
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null,  startTime: Long? = null){        //The two following values allow firebase to generate a unique lottery id
-
+    fun updateDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryId: String,
+        lotteryDates: List<String>? = null,
+        startTime: Long? = null,
+        ownerId: String? = null,
+        isJoinable: Boolean? = null
+    ) {
         val lotteryReference = db.collection("lotteries").document(lotteryId)
-        val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity,
-
-            )
+            "capacity" to capacity
+        )
         var finalData: Map<String, Any?> = data
         if (lotteryDates != null) finalData = finalData + ("lotteryDates" to lotteryDates)
         if (startTime != null) finalData = finalData + ("startTimeLottery" to startTime)
+        if (!ownerId.isNullOrBlank()) finalData = finalData + ("ownerId" to ownerId)
+        if (isJoinable != null) finalData = finalData + ("isJoinable" to isJoinable)
         lotteryReference.update(finalData)
-
     }
     /*
     * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
@@ -705,6 +724,50 @@ class Database {
             }
             .addOnFailureListener { exception ->
                 callback(Result.failure(exception))
+            }
+    }
+
+    // Creates or updates the top-level ownerId field on campsites/{campsiteId} without overwriting other fields
+    fun updateCampsiteOwnerId(
+        campsiteId: String,
+        ownerId: String,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (campsiteId.isBlank() || ownerId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
+
+    // Retrieves the ownerId string for a given campsiteId if it exists in Firestore
+    fun getCampsiteOwnerId(
+        campsiteId: String,
+        callback: (String?) -> Unit
+    ) {
+        if (campsiteId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val ownerId = document.getString("ownerId")?.takeIf { it.isNotBlank() }
+                    callback(ownerId)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
             }
     }
 
