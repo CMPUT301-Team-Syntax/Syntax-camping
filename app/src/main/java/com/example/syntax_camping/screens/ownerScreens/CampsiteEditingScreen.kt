@@ -642,8 +642,10 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                                     newCampsite.updateQRCode(qrCodeChecked)  //New QR Code update.
                                                     db.createNewCampsite(newCampsite)
 
-                                                    val oldOwnerData = user.ownerData ?: OwnerData()
+// <-- PUT IT RIGHT HERE (or inside updateUser's onSuccess below)
+                                                    db.updateCampsiteOwnerId(newCampsite.documentId, userViewModel.deviceId)
 
+                                                    val oldOwnerData = user.ownerData ?: OwnerData()
                                                     val updatedUser = user.copy(
                                                         ownerData = oldOwnerData.copy(
                                                             campsiteIds = (
@@ -661,7 +663,6 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                                             userViewModel.refreshCurrentUser()
                                                             navController.popBackStack()
                                                         }
-
                                                         updateResult.onFailure { exception ->
                                                             error = exception.message
                                                                 ?: "Failed to update owner data"
@@ -739,6 +740,8 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
 
                                                 // Save the updated campsite to Firestore.
                                                 db.updateCampsite(campsite)
+                                                val ownerIdToSave = userViewModel.currentUser?.userId ?: userViewModel.deviceId
+                                                db.updateCampsiteOwnerId(campsite.documentId, ownerIdToSave)
                                                 navController.popBackStack()
                                             }
 

@@ -39,6 +39,8 @@ class lotteryRepository {
                         this.lotteryId = document.id
                         this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                         this.startTime = document.getLong("startTimeLottery") ?: 0L
+                        this.ownerId = document.getString("ownerId") ?: ""
+                        this.isJoinable = document.getBoolean("isJoinable") ?: false
                     }
 
                     lotteriesList.add(lottery)
@@ -80,6 +82,9 @@ class lotteryRepository {
                         this.lotteryId = document.id
                         this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                         this.startTime = document.getLong("startTimeLottery") ?: 0L
+                        this.ownerId = document.getString("ownerId") ?: ""
+                        this.isJoinable = document.getBoolean("isJoinable") ?: false
+
                     }
                 }
 
@@ -176,18 +181,30 @@ class lotteryRepository {
     }
     //Basically prevents having to have repeated code for getting a campsite from firebase, especially cause the ratings, reservatiojns etc makes that code a beast
     private fun parseCampsiteFromMap(campsiteMap: Map<*, *>): Campsite {
+        val tagsList = when (val rawTags = campsiteMap["tags"]) {
+            is List<*> -> rawTags.filterIsInstance<String>().toMutableList()
+            is String -> if (rawTags.isBlank()) mutableListOf() else rawTags.split(",").toMutableList()
+            else -> mutableListOf()
+        }
+
+        val imagesList = when (val rawImages = campsiteMap["imagesAsStrs"] ?: campsiteMap["images"]) {
+            is List<*> -> rawImages.mapNotNull { it?.toString() }.toMutableList()
+            is String -> if (rawImages.isBlank()) mutableListOf() else rawImages.split(",").toMutableList()
+            else -> mutableListOf()
+        }
+
         val campsite = Campsite(
             documentId = campsiteMap["documentId"] as? String ?: "",
             name = campsiteMap["name"] as? String ?: "",
             location = campsiteMap["location"] as? String ?: "",
             description = campsiteMap["description"] as? String ?: "",
-            maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
-            tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
+            maxOcc = ((campsiteMap["maxOcc"] ?: campsiteMap["maxOccupancy"]) as? Number)?.toInt() ?: 0,
+            tags = tagsList,
             rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
-            images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
+            images = imagesList
         )
 
-        //Gets the ratings
+        // 1. Ratings
         val rawRatings = campsiteMap["ratings"] as? List<*> ?: emptyList<Any>()
         val parsedRatings = rawRatings.mapNotNull { item ->
             val map = item as? Map<*, *> ?: return@mapNotNull null
@@ -199,22 +216,23 @@ class lotteryRepository {
         }.toMutableList()
         campsite.updateRaterList(parsedRatings)
 
-        // gets the datemaager
+        // 2. DateManager
         val rawDateManagerMap = campsiteMap["dateManager"] as? Map<*, *>
-        val rawDatesList = (rawDateManagerMap?.get("dates") as? List<*>)
+        val rawDatesList = (rawDateManagerMap?.get("allDates") as? List<*>)
+            ?: (rawDateManagerMap?.get("dates") as? List<*>)
             ?: (campsiteMap["dates"] as? List<*>)
             ?: emptyList<Any>()
 
         val parsedDates = rawDatesList.mapNotNull { item ->
             val map = item as? Map<*, *> ?: return@mapNotNull null
             Date(
-                maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
-                date = (map["date"] as? String) ?: ""
+                date = (map["dateString"] as? String) ?: (map["date"] as? String) ?: "",
+                maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0
             )
         }.toMutableList()
         campsite.updateDateManager(DateManager(parsedDates))
 
-        // 3. gets the reservations
+        // 3. Reservations
         val rawReservations = campsiteMap["reservations"] as? List<*> ?: emptyList<Any>()
         val parsedReservations = rawReservations.mapNotNull { item ->
             val map = item as? Map<*, *> ?: return@mapNotNull null
@@ -229,12 +247,15 @@ class lotteryRepository {
                 status = (map["status"] as? String) ?: ""
             ).apply {
                 this.reservationId = (map["reservationId"] as? String) ?: ""
-
             }
         }.toMutableList()
         campsite.updateReservations(parsedReservations)
 
-        // Optional: preserve lotteryId if stored inside the nested campsite map
+        // 4. Coordinates & lotteryId
+        val lat = (campsiteMap["latitude"] as? Number)?.toDouble()
+        val lng = (campsiteMap["longitude"] as? Number)?.toDouble()
+        campsite.updateCoordinates(lat, lng)
+
         val nestedLotteryId = (campsiteMap["lotteryId"] as? String)?.takeIf { it.isNotBlank() }
         campsite.updateLotteryId(nestedLotteryId)
 
@@ -343,6 +364,96 @@ class lotteryRepository {
                 }
             }
             .addOnFailureListener { callback(null) }
+    }
+    fun updateLotteryJoinable(
+        lotteryId: String,
+        isJoinable: Boolean,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        if (lotteryId.isBlank()) {
+            onComplete(false)
+            return
+        }
+
+        db.collection("lotteries")
+            .document(lotteryId)
+            .update("isJoinable", isJoinable)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
+    fun addCampsitesToLottery(
+        lotteryId: String,
+        newCampsites: List<Campsite>,
+        requesterUserId: String = "",
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        if (lotteryId.isBlank() || newCampsites.isEmpty()) {
+            onComplete(false)
+            return
+        }
+
+        val lotteryRef = db.collection("lotteries").document(lotteryId)
+
+        lotteryRef.get()
+            .addOnSuccessListener { document ->
+                if (document == null || !document.exists()) {
+                    onComplete(false)
+                    return@addOnSuccessListener
+                }
+
+                val isJoinable = document.getBoolean("isJoinable") ?: false
+                val ownerId = document.getString("ownerId") ?: ""
+                val isOwner = requesterUserId.isNotBlank() && requesterUserId == ownerId
+
+                if (!isJoinable && !isOwner) {
+                    onComplete(false)
+                    return@addOnSuccessListener
+                }
+
+                val existingRaw = document.get("campsites") as? List<*> ?: emptyList<Any>()
+                val existingIds = existingRaw
+                    .mapNotNull { (it as? Map<*, *>)?.get("documentId") as? String }
+                    .toSet()
+
+                val lotteryDates = (document.get("lotteryDates") as? List<*>)
+                    ?.filterIsInstance<String>()
+                    ?: emptyList()
+
+                val batch = db.batch()
+                val addedCampsites = mutableListOf<Campsite>()
+
+                for (campsite in newCampsites) {
+                    if (campsite.documentId.isBlank() || campsite.documentId in existingIds) continue
+
+                    campsite.updateLotteryId(lotteryId)
+                    if (lotteryDates.isNotEmpty()) {
+                        campsite.addLotteryDates(lotteryDates)
+                    }
+
+                    addedCampsites.add(campsite)
+
+                    val campsiteRef = db.collection("campsites").document(campsite.documentId)
+                    batch.update(campsiteRef, "lotteryId", lotteryId)
+                }
+
+                if (addedCampsites.isEmpty()) {
+                    onComplete(false)
+                    return@addOnSuccessListener
+                }
+
+                batch.update(
+                    lotteryRef,
+                    "campsites",
+                    FieldValue.arrayUnion(*addedCampsites.toTypedArray())
+                )
+
+                batch.commit()
+                    .addOnSuccessListener { onComplete(true) }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
     }
 }
 

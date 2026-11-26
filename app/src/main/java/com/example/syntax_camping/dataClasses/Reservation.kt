@@ -75,4 +75,25 @@ data class Reservation (
     fun updateReservationId(newId: String) {
         this.reservationId = newId
     }
+    fun rejectByOwner(
+        lotteryId: String? = null,
+        rejectedStatus: String = "rejected",
+        callback: (Boolean, String?) -> Unit = { _, _ -> }
+    ) {
+        if (reservationId.isBlank()) {
+            callback(false, null)
+            return
+        }
+
+        val resolvedStatus = rejectedStatus.ifBlank { "rejected" }
+        this.status = resolvedStatus
+
+        reservationRepository.rejectReservationByOwner(
+            reservationId = reservationId,
+            lotteryId = lotteryId,
+            rejectedStatus = resolvedStatus,
+            callback = callback
+        )
+    }
+
 }
