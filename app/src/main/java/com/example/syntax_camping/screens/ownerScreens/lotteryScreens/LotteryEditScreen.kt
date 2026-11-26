@@ -55,6 +55,8 @@ fun LotteryEditScreen(
     var name by remember { mutableStateOf("") }
     // draw (the countdown ends here)
     var drawDay by remember { mutableStateOf("") }
+    var isJoinable by remember { mutableStateOf(true) }
+    var ownerId by remember {mutableStateOf("")}
     var drawMonth by remember { mutableStateOf("") }
     var drawYear by remember { mutableStateOf("") }
     var drawHour by remember { mutableStateOf("") }
@@ -83,7 +85,7 @@ fun LotteryEditScreen(
             name = editingLottery.name
             capacity = editingLottery.capacity.toString()
             lotteryDates = editingLottery.lotteryDates
-
+            isJoinable = editingLottery.isJoinable
             val drawCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
             drawDay = drawCal.get(Calendar.DAY_OF_MONTH).toString()
             drawMonth = (drawCal.get(Calendar.MONTH) + 1).toString()
@@ -103,6 +105,7 @@ fun LotteryEditScreen(
 
 
         }  else {
+            isJoinable = false //Note just a default value, will be updated before is actually passes to what user sets
             selectedCampsites.clear()
             // a new lottery started from a campsite's page begins with that campsite already in the list
             preselectedCampsite?.let { selectedCampsites.add(it) }
@@ -327,7 +330,9 @@ fun LotteryEditScreen(
                         numWinners,
                         capacity,
                         selectedCampsites,
-                        lotteryDates
+                        lotteryDates,
+                        ownerId = userViewModel.deviceId,
+                        isJoinable = isJoinable
                     )
 
                     if (isSuccess) {

@@ -18,6 +18,10 @@ import java.time.ZoneId
 class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsites: MutableList<Campsite>, capacity: Int?, name: String, status: String?) {
     var lotteryId = ""
     var status = status
+    var ownerId: String = ""
+
+    var isJoinable: Boolean = false
+    private val repository = lotteryRepository()
     val longDateConverter = dateConverterToLong()
     var capacity = capacity
     var name = name
@@ -53,9 +57,9 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
 
         //added lotterydates to this call for all campsites tn lottery to get the dates  for its running
         if (lotteryId.isBlank()) {
-            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryDates, startTime)
+            lotteryId = db.addDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryDates, startTime,ownerId,isJoinable)
         } else {
-            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId, lotteryDates, startTime)
+            db.updateDrawTimer(endTimeLottery, endTimeBooking, numWinners, campsites, capacity, name, lotteryId, lotteryDates, startTime,ownerId,isJoinable)
         }
         for (campsite in campsites){
             campsite.updateLotteryId(lotteryId)
@@ -64,6 +68,17 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
 
 
         return true
+    }
+    // Updates whether entrants can join this lottery and syncs to Firestore if already created
+    fun updateJoinable(joinable: Boolean, onComplete: ((Boolean) -> Unit)? = null) {
+        isJoinable = joinable
+        if (lotteryId.isNotBlank()) {
+            repository.updateLotteryJoinable(lotteryId, joinable) { success ->
+                onComplete?.invoke(success)
+            }
+        } else {
+            onComplete?.invoke(true)
+        }
     }
     //Works with the display screens to make sure that the time displayed is a more readable timestamp and not a long
     fun getReadableLotteryEndTime():Timestamp{
@@ -87,5 +102,35 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
     fun removeEntry(entry: LotteryEntry, onResult: (Boolean) -> Unit) {
         db.removeLotteryEntry( lotteryId, entry){ success ->
             onResult(success)}
+    }
+    fun addCampsites(
+        newCampsites: List<Campsite>,
+        requesterUserId: String = "",
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        if (lotteryId.isBlank() || newCampsites.isEmpty()) {
+            onResult(false)
+            return
+        }
+        if (!isJoinable && (requesterUserId.isBlank() || requesterUserId != ownerId)) {
+            onResult(false)
+            return
+        }
+
+        repository.addCampsitesToLottery(lotteryId, newCampsites, requesterUserId) { success ->
+            if (success) {
+                val existingIds = campsites.map { it.documentId }.toSet()
+                for (campsite in newCampsites) {
+                    if (campsite.documentId !in existingIds) {
+                        campsite.updateLotteryId(lotteryId)
+                        if (lotteryDates.isNotEmpty()) {
+                            campsite.addLotteryDates(lotteryDates)
+                        }
+                        campsites.add(campsite)
+                    }
+                }
+            }
+            onResult(success)
+        }
     }
 }
