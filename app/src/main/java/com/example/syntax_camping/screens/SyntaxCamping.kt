@@ -27,7 +27,6 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.AdminRepository
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.screens.adminScreens.AdminAccess
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseCampsites
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseImages
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseProfiles
@@ -204,36 +203,32 @@ fun SyntaxCamping(
 
         composable("adminUserInfo/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId").orEmpty()
-            AdminAccess(navController) {
-                var details by remember(userId) { mutableStateOf<AdminUserDetails?>(null) }
-                LaunchedEffect(userId) {
-                    if (userId.isNotBlank()) {
-                        Database().fetchUserDetails(userId) { result ->
-                            details = result.getOrNull()?.let {
-                                AdminUserDetails(it.name, it.email, it.phoneNumber, it.adminStatus())
-                            }
+            var details by remember(userId) { mutableStateOf<AdminUserDetails?>(null) }
+            LaunchedEffect(userId) {
+                if (userId.isNotBlank()) {
+                    Database().fetchUserDetails(userId) { result ->
+                        details = result.getOrNull()?.let {
+                            AdminUserDetails(it.name, it.email, it.phoneNumber, it.adminStatus())
                         }
                     }
                 }
-                AdminViewUserScreen(navController, userId, details)
             }
+            AdminViewUserScreen(navController, userId, details)
         }
 
         composable("adminBrowseProfiles") {
-            AdminAccess(navController) {
-                var users by remember { mutableStateOf<List<AdminUserItem>?>(null) }
-                LaunchedEffect(Unit) {
-                    AdminRepository().getAllUsers { loaded ->
-                        users = loaded.sortedBy { it.name.lowercase() }
-                            .map { AdminUserItem(it.userId, it.name, it.adminStatus()) }
-                    }
+            var users by remember { mutableStateOf<List<AdminUserItem>?>(null) }
+            LaunchedEffect(Unit) {
+                AdminRepository().getAllUsers { loaded ->
+                    users = loaded.sortedBy { it.name.lowercase() }
+                        .map { AdminUserItem(it.userId, it.name, it.adminStatus()) }
                 }
-                AdminBrowseProfiles(navController, users.orEmpty(), loading = users == null)
             }
+            AdminBrowseProfiles(navController, users.orEmpty(), loading = users == null)
         }
 
         composable("adminBrowseCampsites") {
-            AdminAccess(navController) { AdminBrowseCampsites(navController) }
+            AdminBrowseCampsites(navController)
         }
 
         composable("adminBrowseImages") {

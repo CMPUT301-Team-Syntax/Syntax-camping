@@ -53,10 +53,8 @@ internal fun NavGraphBuilder.adminNotificationLogsDestination(navController: Nav
         val id = entry.arguments?.getString("id").orEmpty()
         val scope = NotificationLogScope.entries.find { it.route == entry.arguments?.getString("scope") }
         if (scope != null && id.isNotBlank()) {
-            AdminAccess(navController) {
-                val repository = remember { AdminNotificationLogsRepository() }
-                AdminNotificationLogsScreen(navController, scope, id, repository::load)
-            }
+            val repository = remember { AdminNotificationLogsRepository() }
+            AdminNotificationLogsScreen(navController, scope, id, repository::load)
         }
     }
 }

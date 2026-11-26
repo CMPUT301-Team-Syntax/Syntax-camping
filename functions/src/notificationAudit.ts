@@ -144,10 +144,6 @@ export const logLotteryOutcome = onDocumentUpdated(
 );
 
 export const getAdminNotificationLogs = onCall(async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to review notification logs.");
-    if (request.auth.token.admin !== true) {
-        throw new HttpsError("permission-denied", "An administrator account is required.");
-    }
 
     const {scope, id, cursor} = request.data ?? {};
     if ((scope !== "campsite" && scope !== "owner") || !validId(id)) {
