@@ -41,10 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import android.net.Uri
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.TextButton
-import com.example.syntax_camping.R
 import coil3.compose.AsyncImage
+import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
@@ -104,49 +102,57 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF2994A))
-                            .clickable {
-                                photoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        modifier = Modifier.size(80.dp)
+                    ) {
+                        // Profile Avatar Box
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(Color(0xFFF2994A))
+                                .clickable {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (imageUri != null) {
+                                AsyncImage(
+                                    model = imageUri,
+                                    contentDescription = "Selected image",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.account),
+                                    contentDescription = "Default profile icon",
+                                    modifier = Modifier.size(60.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                    ){
+                        }
+
+                        // Delete badge on top (TopEnd) when image is selected
                         if (imageUri != null) {
-                            AsyncImage(
-                                model = imageUri,
-                                contentDescription = "Selected image",
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(id = R.drawable.account),
-                                contentDescription = "Default profile icon",
-                                modifier = Modifier.size(60.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .align(Alignment.TopEnd)
+                                    .clip(CircleShape)
+                                    .background(Color.Red)
+                                    .clickable { imageUri = null },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.delete_2_svgrepo_com),
+                                    contentDescription = "Remove photo",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color.White
+                                )
+                            }
                         }
-                    }
-
-                    SmallFloatingActionButton(
-                        onClick = {
-                            photoPickerLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_plus),
-                            contentDescription = "Change photo"
-                        )
-                    }
-
-                    if (imageUri != null) {
-                        TextButton(
-                            onClick ={}
-                        ){{}}
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
