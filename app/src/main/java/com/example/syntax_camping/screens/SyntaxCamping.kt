@@ -16,9 +16,9 @@ import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
 import com.example.syntax_camping.UserScreens.campsiteInformationDestinations
 import com.example.syntax_camping.screens.userScreens.reservationScreens.PastReservationsScreen
-import com.example.syntax_camping.UserScreens.ProfileScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
-import com.example.syntax_camping.UserScreens.SearchHomeScreen
+import com.example.syntax_camping.UserScreens.searchScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserScreens.BookCampsiteScreen
 import com.example.syntax_camping.UserViewModel
@@ -35,6 +35,7 @@ import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
 import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
@@ -214,6 +215,10 @@ fun SyntaxCamping(
         composable("reservationInfo/{reservationId}") { backStackEntry ->
             val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
             ReservationInfoScreen(navController, reservationId)
+        }
+
+        composable("History"){
+            VeiwSearchHistory(history = userViewModel.searchHistory, { query -> /* navigate or handle click */ }, navController)
         }
 
     }

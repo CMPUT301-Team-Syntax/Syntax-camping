@@ -32,6 +32,15 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     var currentUser by mutableStateOf<User?>(null)
         private set  //can only change current user through the refreshCurrentUser function
 
+    var searchHistory by mutableStateOf<List<String>>(emptyList())
+        private set
+
+    fun addSearchQuery(query: String) {
+        if (query.isNotBlank()) {
+            searchHistory = searchHistory + query
+        }
+    }
+
     init {
         refreshCurrentUser()
         // ADDED: when our entrantData changes in Firestore (e.g. the draw picks us), reload the user so win notifications appear
