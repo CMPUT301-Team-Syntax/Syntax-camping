@@ -151,6 +151,10 @@ fun SyntaxCamping(
         composable("Profile") {
             ProfileScreen(navController, userViewModel)
         }
+
+        composable("adminSettings") {
+            SettingsScreen(navController, userViewModel, adminMode = true)
+        }
         composable("CampsiteOwnerHome") {
             CampsiteOwnerHome(
                 navController,

@@ -549,6 +549,30 @@ class ReservationRepository {
     ) {
         getReservationsForUserByStatuses(userId, listOf(targetStatus), callback)
     }
+    // ADDED: true when every reserved date is before today
+    fun hasEnded(reservation: Reservation): Boolean {
+        val format = java.text.SimpleDateFormat("dd/MM/yy", java.util.Locale.getDefault())
+        val startOfToday = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val lastDate = reservation.datesReserved
+            .mapNotNull { runCatching { format.parse(it)?.time }.getOrNull() }
+            .maxOrNull() ?: return false
+        return lastDate < startOfToday
+    }
+
+    // ADDED: the user's completed reservations (status "past", or all dates already over)
+    fun getCompletedReservationsForUser(
+        userId: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForUserByStatuses(userId, listOf("past", "upcoming", "current")) { list ->
+            callback(list.filter { it.status.trim().equals("past", ignoreCase = true) || hasEnded(it) })
+        }
+    }
 
     fun getPastReservationsForUser(
         userId: String,
@@ -570,6 +594,8 @@ class ReservationRepository {
     ) {
         getReservationsForUserByStatus(userId, "upcoming", callback)
     }
+
+
 
     // ADDED: the user's cancelled reservations (cancelled by them or rejected by the owner)
     fun getCancelledReservationsForUser(

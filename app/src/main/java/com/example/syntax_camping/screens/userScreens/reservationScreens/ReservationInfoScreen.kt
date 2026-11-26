@@ -105,8 +105,8 @@ fun ReservationInfoScreen(
             else -> {
                 val isCancelled = r.status.trim().equals("cancelled", ignoreCase = true) ||
                         r.status.trim().equals("rejected", ignoreCase = true)
-                val canCancel = !isCancelled && !r.status.trim().equals("past", ignoreCase = true)
-
+                val canCancel = !isCancelled && !r.status.trim().equals("past", ignoreCase = true) &&
+                        !repo.hasEnded(r)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

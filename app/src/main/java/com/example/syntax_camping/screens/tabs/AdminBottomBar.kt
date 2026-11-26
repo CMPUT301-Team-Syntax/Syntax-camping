@@ -27,7 +27,7 @@ enum class AdminTab(
     Profiles("adminBrowseProfiles", com.example.syntax_camping.R.drawable.account, com.example.syntax_camping.R.drawable.account_tapped),
     Images("adminBrowseImages", vector = Icons.Outlined.Image),
     Complaints("adminComplaints", vector = Icons.Outlined.Report),
-    Settings("Settings", com.example.syntax_camping.R.drawable.ic_settings, com.example.syntax_camping.R.drawable.settings_tapped)
+    Settings("adminSettings", com.example.syntax_camping.R.drawable.ic_settings, com.example.syntax_camping.R.drawable.settings_tapped)
 }
 
 @Composable
