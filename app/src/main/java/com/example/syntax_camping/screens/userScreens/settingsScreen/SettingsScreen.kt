@@ -1,6 +1,7 @@
 package com.example.syntax_camping.UserScreens
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -12,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +34,31 @@ private val LinkBlue = Color(0xFF6093B5)
 fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
     var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
+    var showAdminDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showAdminDialog) {
+        AlertDialog(
+            onDismissRequest = { showAdminDialog = false },
+            title = { Text("Login as admin") },
+            text = { Text("Do you want to log in as an admin?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showAdminDialog = false
+                        navController.navigate("adminBrowseProfiles") { launchSingleTop = true }
+                    },
+                    modifier = Modifier.testTag("adminLoginYes")
+                ) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showAdminDialog = false },
+                    modifier = Modifier.testTag("adminLoginNo")
+                ) { Text("No") }
+            },
+            modifier = Modifier.testTag("adminLoginDialog")
+        )
+    }
 
     SettingsPagesLayout(navController) { innerPadding ->
         Column(
@@ -75,6 +102,11 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
                 "Report a Problem", "About Syntax Camping").forEach { label ->
                 SettingsMenuRow(label)
             }
+            SettingsMenuRow(
+                label = "Login as admin",
+                modifier = Modifier.testTag("settingsLoginAsAdmin"),
+                onClick = { showAdminDialog = true }
+            )
             TextButton(
                 onClick = { navController.navigate(APP_GUIDELINES_ROUTE) { launchSingleTop = true } },
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
@@ -89,9 +121,16 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
 
 /** Other menu destinations are intentionally left for the team's later settings work. */
 @Composable
-private fun SettingsMenuRow(label: String) {
+private fun SettingsMenuRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 50.dp)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {

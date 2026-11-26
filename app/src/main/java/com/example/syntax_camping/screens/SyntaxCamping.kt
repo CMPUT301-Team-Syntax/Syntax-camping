@@ -23,6 +23,11 @@ import com.example.syntax_camping.UserScreens.SettingsScreen
 import com.example.syntax_camping.UserScreens.BookCampsiteScreen
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseCampsites
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseImages
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseProfiles
+import com.example.syntax_camping.screens.adminScreens.AdminComplaints
+import com.example.syntax_camping.screens.adminScreens.adminUserView.AdminViewUserScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
@@ -30,6 +35,7 @@ import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
 fun SyntaxCamping(
@@ -183,5 +189,32 @@ fun SyntaxCamping(
         composable("UpdateProfile") {
             UpdateProfileScreen(navController, userViewModel, modifier = Modifier)
         }
+
+        composable("adminUserInfo/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            AdminViewUserScreen(navController, userId /*, user = <from the repo later> */)
+        }
+
+        composable("adminBrowseProfiles") {
+            AdminBrowseProfiles(navController /*, users = <from the repo later> */)
+        }
+
+        composable("adminBrowseCampsites") {
+            AdminBrowseCampsites(navController)
+        }
+
+        composable("adminBrowseImages") {
+            AdminBrowseImages(navController)
+        }
+
+        composable("adminComplaints") {
+            AdminComplaints(navController)
+        }
+
+        composable("reservationInfo/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationInfoScreen(navController, reservationId)
+        }
+
     }
 }
