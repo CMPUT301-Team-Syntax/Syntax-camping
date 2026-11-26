@@ -50,6 +50,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,6 +69,8 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
     var EndDateRange by remember { mutableStateOf("") }
     var numGuests by remember { mutableStateOf(1) }
     var selectedCamps by remember { mutableStateOf(setOf<String>()) }
+    var searchHistory by remember { mutableStateOf<List<String>>(emptyList()) }
+    var searchQuery by remember { mutableStateOf("") }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -243,6 +246,7 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
                             campsite.name.contains(SearchInput, ignoreCase = true) || campsite.location.contains(SearchInput, ignoreCase = true)
                         }
                         displayFillereted = true
+                        userViewModel.addSearchQuery(SearchInput)
                     },
                         modifier = Modifier
                             .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
@@ -304,6 +308,11 @@ fun SearchHomeScreen(navController: NavController, userViewModel: UserViewModel)
                         }
 
                     }
+                }
+
+                if (searchHistory.isNotEmpty()) {
+                   VeiwSearchHistory(history = searchHistory, onWordClick = {clickedWord ->
+                       searchQuery = clickedWord },navController)
                 }
 
             }

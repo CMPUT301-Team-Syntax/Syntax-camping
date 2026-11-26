@@ -30,6 +30,7 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
 
 @Composable
 fun SyntaxCamping(
@@ -168,6 +169,10 @@ fun SyntaxCamping(
         }
         composable("UpdateProfile") {
             UpdateProfileScreen(navController, userViewModel, modifier = Modifier)
+        }
+
+        composable("History"){
+            VeiwSearchHistory(history = userViewModel.searchHistory, { query -> /* navigate or handle click */ }, navController)
         }
     }
 }
