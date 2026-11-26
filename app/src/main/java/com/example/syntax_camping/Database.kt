@@ -73,15 +73,24 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList(), startTime: Long = 0L): String{        //The two following values allow firebase to generate a unique lottery id
-
+    fun addDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryDates: List<String> = emptyList(),
+        startTime: Long = 0L,
+        ownerId: String = "",
+        isJoinable: Boolean = false
+    ): String {
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
@@ -90,36 +99,46 @@ class Database {
             "name" to name,
             "capacity" to capacity,
             "lotteryDates" to lotteryDates,
-            "startTimeLottery" to startTime
-
+            "startTimeLottery" to startTime,
+            "ownerId" to ownerId,
+            "isJoinable" to isJoinable
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null,  startTime: Long? = null){        //The two following values allow firebase to generate a unique lottery id
-
+    fun updateDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryId: String,
+        lotteryDates: List<String>? = null,
+        startTime: Long? = null,
+        ownerId: String? = null,
+        isJoinable: Boolean? = null
+    ) {
         val lotteryReference = db.collection("lotteries").document(lotteryId)
-        val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity,
-
-            )
+            "capacity" to capacity
+        )
         var finalData: Map<String, Any?> = data
         if (lotteryDates != null) finalData = finalData + ("lotteryDates" to lotteryDates)
         if (startTime != null) finalData = finalData + ("startTimeLottery" to startTime)
+        if (!ownerId.isNullOrBlank()) finalData = finalData + ("ownerId" to ownerId)
+        if (isJoinable != null) finalData = finalData + ("isJoinable" to isJoinable)
         lotteryReference.update(finalData)
-
     }
     /*
     * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
@@ -166,7 +185,9 @@ class Database {
                                 mapOf(
                                     "userId" to entry.userId,
                                     "joinedTimestamp" to entry.joined,
-                                    "status" to "waiting"
+                                    "status" to "waiting",
+                                    "directWaitlistRegistration" to (collectionName == "waitlist"),
+                                    "notificationCampsiteId" to campsiteId
                                 )
                             )
                             .addOnSuccessListener {
@@ -354,6 +375,7 @@ class Database {
                     "displayName" to userDetails.name,
                     "displayEmail" to userDetails.email,
                     "displayPhoneNumber" to userDetails.phoneNumber,
+                    "profileImageUrl" to userDetails.profileImageUrl,
                 )
             )
             .addOnSuccessListener {
@@ -426,6 +448,7 @@ class Database {
                     "displayName" to user.name,
                     "displayEmail" to user.email,
                     "displayPhoneNumber" to user.phoneNumber,
+                    "profileImageUrl" to user.profileImageUrl,
                 )
             )
             //If it succeeds, initialize details for specific user type in their own collections.
@@ -490,6 +513,7 @@ class Database {
                 val name = userDocument.get("displayName") as? String ?: ""
                 val email = userDocument.get("displayEmail") as? String ?: ""
                 val phoneNumber = userDocument.get("displayPhoneNumber") as? String ?: ""
+                val profileImageUrl = userDocument.get("profileImageUrl") as? String ?: ""
                 var fetchedEntrantData: EntrantData? = null
                 var fetchedOwnerData: OwnerData? = null
 
@@ -543,7 +567,8 @@ class Database {
                                     email,
                                     phoneNumber,
                                     fetchedEntrantData,
-                                    fetchedOwnerData
+                                    fetchedOwnerData,
+                                    profileImageUrl
                                 )
                                 callback(Result.success(fetchedUser))
                             }
@@ -621,6 +646,8 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
@@ -655,6 +682,8 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
@@ -701,6 +730,80 @@ class Database {
             }
             .addOnFailureListener { exception ->
                 callback(Result.failure(exception))
+            }
+    }
+
+    // uploadProfileImage
+    // uploads a user's profile picture to storage and gives back its download url.
+    // The url is then saved on the user through updateUser (profileImageUrl).
+    fun uploadProfileImage(
+        userId: String,
+        imageUri: Uri,
+        callback: (Result<String>) -> Unit
+    ) {
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("users/$userId/${UUID.randomUUID()}")
+
+        storageRef.putFile(imageUri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    throw task.exception
+                        ?: Exception("Image upload failed")
+                }
+
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUri ->
+                callback(Result.success(downloadUri.toString()))
+            }
+            .addOnFailureListener { exception ->
+                callback(Result.failure(exception))
+            }
+    }
+
+    // Creates or updates the top-level ownerId field on campsites/{campsiteId} without overwriting other fields
+    fun updateCampsiteOwnerId(
+        campsiteId: String,
+        ownerId: String,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (campsiteId.isBlank() || ownerId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
+
+    // Retrieves the ownerId string for a given campsiteId if it exists in Firestore
+    fun getCampsiteOwnerId(
+        campsiteId: String,
+        callback: (String?) -> Unit
+    ) {
+        if (campsiteId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val ownerId = document.getString("ownerId")?.takeIf { it.isNotBlank() }
+                    callback(ownerId)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
             }
     }
 

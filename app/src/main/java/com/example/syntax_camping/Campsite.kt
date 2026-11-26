@@ -36,6 +36,8 @@ class Campsite(documentId: String, name: String, location: String, description: 
     private var _rating =  rating
     private var _ratings = mutableListOf<Review>()
     private var _raters = 0 //number of people that have rated
+    private var _latitude: Double? = null    // ADDED: real map position of the address in `location`
+    private var _longitude: Double? = null
 
     val name: String
         get() = _name
@@ -66,6 +68,10 @@ class Campsite(documentId: String, name: String, location: String, description: 
         get() = _ratings.size
     val lotteryId: String?
         get() = _lotteryId
+    val latitude: Double?
+        get() = _latitude
+    val longitude: Double?
+        get() = _longitude
     /*
     * These functions for QR code are just filler until QR code is fully implemented
     * */
@@ -148,12 +154,18 @@ class Campsite(documentId: String, name: String, location: String, description: 
     fun updateQRCode(enabled: Boolean){
         _hasQRCode = enabled
     }
-//The followinng work with campsiteEditingScreen.
+    //The followinng work with campsiteEditingScreen.
     fun updateName(newName: String){
         _name = newName
     }
     fun updateLocation(newLocation: String){
-         _location = newLocation
+        _location = newLocation
+    }
+
+    // ADDED: saves where the address in `location` really is on the map
+    fun updateCoordinates(newLatitude: Double?, newLongitude: Double?){
+        _latitude = newLatitude
+        _longitude = newLongitude
     }
 
     fun updateDescription(newDescription: String){

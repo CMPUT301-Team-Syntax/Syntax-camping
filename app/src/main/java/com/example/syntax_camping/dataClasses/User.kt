@@ -21,5 +21,6 @@ data class User(
     var email: String,
     var phoneNumber: String,
     val entrantData: EntrantData? = null,
-    val ownerData: OwnerData? = null
+    val ownerData: OwnerData? = null,
+    val profileImageUrl: String = ""   // download url of the user's profile picture, "" = none
 )

@@ -1,25 +1,20 @@
 package com.example.syntax_camping.UserScreens
 
 import android.content.Context
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.example.syntax_camping.ui.components.PromptCsvDownload
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -32,17 +27,8 @@ import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.kizitonwose.calendar.compose.HorizontalCalendar
-import com.kizitonwose.calendar.compose.rememberCalendarState
-import com.kizitonwose.calendar.core.DayPosition
-import com.kizitonwose.calendar.core.daysOfWeek
-import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
-import androidx.compose.ui.platform.LocalLocale
 import com.example.syntax_camping.screens.CalenderVeiw
 
 private val bookingFormat = DateTimeFormatter.ofPattern("dd/MM/yy")
@@ -74,7 +60,8 @@ fun BookCampsiteScreen(
     var agreed by rememberSaveable { mutableStateOf(false) }
     var confirmedCampsite by rememberSaveable { mutableStateOf<String?>(null) }
     var bookingName by rememberSaveable { mutableStateOf(userViewModel.currentUser?.name ?: "") }
-
+    var csvToDownload by remember { mutableStateOf<String?>(null) }
+    var csvFileName by remember { mutableStateOf("reservation.csv") }
     var error by remember { mutableStateOf("") }
     var tapped by remember { mutableStateOf("") }
     var booking by remember { mutableStateOf(false) }
@@ -178,16 +165,19 @@ fun BookCampsiteScreen(
 
         val dates = rangeDays.map { it.format(bookingFormat) }.toMutableList()
         val reservation = Reservation(cs, dates, shownGuests, userViewModel.deviceId, "upcoming")
+        reservation.bookingName = bookingName.trim()
         booking = true
         error = ""
         reservation.reservationRepository.confirmLotteryBooking(
             reservation = reservation,
             lotteryId = l.lotteryId,
             rulesAcknowledged = agreed
-        ) { saved ->
+        ) { saved, csv ->
             booking = false
             if (saved) {
                 confirmedCampsite = cs.name
+                csvFileName = "reservation_${reservation.reservationId}.csv"
+                csvToDownload = csv
                 userViewModel.refreshCurrentUser()
             } else {
                 error = context.getString(R.string.reservation_confirmation_error)
@@ -201,6 +191,11 @@ fun BookCampsiteScreen(
         topBar = { TopBar(navController) },
         bottomBar = { CustomBottomBar(navController, "BookCampsite", Color(0xFF3E6B68)) }
     ) { innerPadding ->
+        PromptCsvDownload(
+            csvContent = csvToDownload,
+            defaultFileName = csvFileName,
+            onDismiss = { csvToDownload = null }
+        )
         Column(
             Modifier
                 .fillMaxSize()

@@ -18,11 +18,11 @@ export interface DateBounds {
 }
 
 /**
- * Parses a "dd/MM/yy" string into year, month (1-12), day (1-31).
+ * Parses a "ddMMyy" string (e.g., "241126") into year, month (1-12), day (1-31).
  * Returns null if invalid.
  */
 function parseDdMmYy(dateStr: string): {year: number; month: number; day: number} | null {
-  const match = /^(\d{2})\/(\d{2})\/(\d{2})$/.exec(dateStr.trim());
+  const match = /^(\d{2})(\d{2})(\d{2})$/.exec(dateStr.trim());
   if (!match) return null;
 
   const day = Number(match[1]);
@@ -32,7 +32,7 @@ function parseDdMmYy(dateStr: string): {year: number; month: number; day: number
 
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  // Verify real calendar date (e.g., rejects 31/02/26)
+  // Verify real calendar date (e.g., rejects 310226)
   const check = new Date(Date.UTC(year, month - 1, day));
   if (
     check.getUTCFullYear() !== year ||
@@ -68,7 +68,7 @@ export function getTodayKey(now: Date = new Date(), timeZone: string = APP_TIME_
 }
 
 /**
- * Finds the earliest and latest dates from a list of "dd/MM/yy" strings.
+ * Finds the earliest and latest dates from a list of "ddMMyy" strings.
  */
 export function getEarliestAndLatestDates(datesReserved: unknown): DateBounds | null {
   if (!Array.isArray(datesReserved) || datesReserved.length === 0) {
@@ -84,7 +84,7 @@ export function getEarliestAndLatestDates(datesReserved: unknown): DateBounds | 
     if (typeof raw !== "string") continue;
     const parsed = parseDdMmYy(raw);
     if (!parsed) {
-      logger.warn("Skipping invalid dd/MM/yy date string:", raw);
+      logger.warn("Skipping invalid ddMMyy date string:", raw);
       continue;
     }
 

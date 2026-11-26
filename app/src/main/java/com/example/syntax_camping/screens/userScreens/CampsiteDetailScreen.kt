@@ -51,8 +51,9 @@ import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CalenderVeiw
-import com.example.syntax_camping.screens.CampsiteQRCode
+import com.example.syntax_camping.screens.QRCodeScreens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
+import com.example.syntax_camping.screens.ownerScreens.openInGoogleMaps
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 
@@ -199,6 +200,17 @@ fun CampsiteDetailsScreen(
                     )
                 }
 
+                val shownTags = campsite.tags.filter { it.isNotBlank() }
+                if (shownTags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = shownTags.joinToString("  ") { "#$it" },
+                        fontSize = 14.sp,
+                        color = Color(0xFF3E6B68),
+                        modifier = Modifier.testTag("campsiteDetailsTags")
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -208,7 +220,19 @@ fun CampsiteDetailsScreen(
                             .weight(1f)
                             .padding(end = 8.dp)
                     ) {
+                        // Tapping the location opens it in Google Maps
                         Row(
+                            modifier = Modifier
+                                .testTag("campsiteLocationLink")
+                                .clickable {
+                                    openInGoogleMaps(
+                                        context,
+                                        campsite.latitude,
+                                        campsite.longitude,
+                                        campsite.name,
+                                        campsite.location
+                                    )
+                                },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Top
                         ) {
@@ -220,6 +244,8 @@ fun CampsiteDetailsScreen(
                             Text(
                                 text = " ${campsite.location}",
                                 fontSize = 16.sp,
+                                color = Color(0xFF3E6B68),
+                                textDecoration = TextDecoration.Underline,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -283,8 +309,9 @@ fun CampsiteDetailsScreen(
                                 fontSize = 16.sp
                             )
                             currentLottery.status?.let {
+
                                 Text(
-                                    text = it,
+                                    text = if (it == "initialAccepting") "Open" else if (it == "complete") "Ended" else it,
                                     color = Color(0xFFA13F3F),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
