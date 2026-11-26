@@ -43,6 +43,8 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.ownerScreens.OwnerReservationInfoScreen
+import com.example.syntax_camping.screens.ownerScreens.OwnerReservationsScreen
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
@@ -316,6 +318,15 @@ fun SyntaxCamping(
         }
         composable("cancelledReservations") {
             CancelledReservationsScreen(navController, userViewModel)
+        }
+
+        composable("ownerReservations/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            OwnerReservationsScreen(navController, campsiteId)
+        }
+        composable("ownerReservation/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            OwnerReservationInfoScreen(navController, reservationId)
         }
 
     }

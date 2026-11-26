@@ -671,9 +671,9 @@ class ReservationRepository {
 
     // CHANGED: these four used to sit INSIDE rejectReservationByOwner (so nothing could call them).
     // They are now normal class functions.
-    fun getReservationsForCampsiteByStatus(
+    // ADDED: every reservation of a campsite, whatever its status
+    fun getAllReservationsForCampsite(
         campsite: Campsite,
-        targetStatus: String,
         callback: (List<Reservation>) -> Unit
     ) {
         if (campsite.documentId.isBlank()) {
@@ -686,12 +686,7 @@ class ReservationRepository {
             .collection("reservations")
             .get()
             .addOnSuccessListener { querySnapshot ->
-                val matches = querySnapshot.documents.mapNotNull { doc ->
-                    val status = doc.getString("status") ?: ""
-                    if (!status.trim().equals(targetStatus, ignoreCase = true)) {
-                        return@mapNotNull null
-                    }
-
+                val all = querySnapshot.documents.map { doc ->
                     val datesReserved = (doc.get("datesReserved") as? List<*>)
                         ?.filterIsInstance<String>()
                         ?.toMutableList()
@@ -702,7 +697,7 @@ class ReservationRepository {
                         datesReserved = datesReserved,
                         numberGuests = doc.getLong("numberGuests")?.toInt() ?: 0,
                         userId = doc.getString("userId") ?: "",
-                        status = status
+                        status = doc.getString("status") ?: ""
                     ).apply {
                         updateReservationId(doc.getString("reservationId") ?: doc.id)
                         this.bookingName = doc.getString("bookingName") ?: ""
@@ -710,12 +705,22 @@ class ReservationRepository {
                         this.cancelledBy = doc.getString("cancelledBy") ?: ""
                     }
                 }
-
-                callback(matches)
+                callback(all)
             }
             .addOnFailureListener {
                 callback(emptyList())
             }
+    }
+
+    // CHANGED: now just filters the full list
+    fun getReservationsForCampsiteByStatus(
+        campsite: Campsite,
+        targetStatus: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getAllReservationsForCampsite(campsite) { all ->
+            callback(all.filter { it.status.trim().equals(targetStatus, ignoreCase = true) })
+        }
     }
 
     fun getPastReservationsForCampsite(
