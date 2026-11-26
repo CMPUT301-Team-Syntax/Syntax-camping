@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.User
+import com.example.syntax_camping.screens.tabs.LocalHasUnreadNotifications
+import com.example.syntax_camping.screens.NotificationBannerHost
 import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import kotlin.collections.emptyList
@@ -49,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
 
         // For now, I just have a test user.
-        val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"))
+        val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"),mutableListOf("maybeBook"))
         val testOwnerData = OwnerData(mutableListOf("lotteryid1"), mutableListOf("campsiteid2"))
         val testUser = User(deviceId, "HelloWorld", "sorachat@ualberta.ca", "7802349700", testEntrantData, testOwnerData)
 
@@ -77,15 +80,19 @@ class MainActivity : ComponentActivity() {
 
             SyntaxcampingTheme {
                 //we need something to differentiate campsite user and campsite owner? we neeed a create account screen
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        SyntaxCamping(
-                            (Modifier.padding(innerPadding)),
-                            userViewModel
-                        )
-
-
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    CompositionLocalProvider(
+                        LocalHasUnreadNotifications provides userViewModel.notificationInbox.hasUnread
+                    ) {
+                        NotificationBannerHost(
+                            inbox = userViewModel.notificationInbox,
+                            modifier = Modifier.fillMaxSize().padding(innerPadding)
+                        ) {
+                            SyntaxCamping(Modifier.fillMaxSize(), userViewModel)
+                        }
+                    }
+                }
             }
         }
     }
-}
 }

@@ -48,6 +48,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.material3)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.10.1")
     implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
@@ -79,4 +80,9 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
     implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.zxing:core:3.5.4")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.mapbox.maps:android-ndk27:11.35.2")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.35.2")
 }

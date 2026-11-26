@@ -37,6 +37,7 @@ import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CampsiteThumbnail
 import com.example.syntax_camping.screens.Rating
 
 @Composable
@@ -79,12 +80,7 @@ fun CampsiteCard(campsite: Campsite, onClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFF2994A))
-            )
+            CampsiteThumbnail(campsite)
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -113,6 +109,16 @@ fun CampsiteCard(campsite: Campsite, onClick: () -> Unit) {
                         text = campsite.location,
                         fontSize = 12.sp,
                         color = Color.Black
+                    )
+                }
+
+                val shownTags = campsite.tags.filter { it.isNotBlank() }
+                if (shownTags.isNotEmpty()) {
+                    Text(
+                        text = shownTags.joinToString("  ") { "#$it" },
+                        fontSize = 12.sp,
+                        color = Color(0xFF3E6B68),
+                        modifier = Modifier.testTag("campsiteTags_${campsite.documentId}")
                     )
                 }
 

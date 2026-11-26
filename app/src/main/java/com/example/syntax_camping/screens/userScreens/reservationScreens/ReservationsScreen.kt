@@ -1,5 +1,4 @@
 package com.example.syntax_camping.UserScreens
-import com.example.syntax_camping.screens.CalenderVeiw
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,47 +39,66 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.ReservationRepository
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryCard
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import com.example.syntax_camping.dataClasses.Reservation
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationCard
 
 @Composable
 fun ReservationsScreen(navController: NavController, userViewModel: UserViewModel) {
     val db = remember { Database() }
     val repo = remember { lotteryRepository() }
     val registeredLotteries = remember { mutableStateListOf<Lottery>() }
+    val wonLotteries = remember { mutableStateListOf<Lottery>() }
     val currentReservations = remember { mutableStateListOf<String>() }
     var isLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(userViewModel.currentUser) {
+        currentReservations.clear()
+        currentReservations.addAll(userViewModel.currentUser?.entrantData?.reservationIds ?: emptyList())
+    }
 
     LaunchedEffect(userViewModel.deviceId) {
         isLoading = true
         userViewModel.refreshCurrentUser()
-
-        val resIds = userViewModel.currentUser?.entrantData?.reservationIds ?: emptyList()
-        currentReservations.clear()
-        currentReservations.addAll(resIds)
-
         repo.getLotteries { allLotteries ->
             if (allLotteries.isEmpty()) {
                 registeredLotteries.clear()
+                wonLotteries.clear()
                 isLoading = false
                 return@getLotteries
             }
-
             val matched = mutableListOf<Lottery>()
+            val won = mutableListOf<Lottery>()
             var checkedCount = 0
+
+            fun finishIfDone() {
+                checkedCount++
+                if (checkedCount == allLotteries.size) {
+                    registeredLotteries.clear()
+                    registeredLotteries.addAll(matched)
+                    wonLotteries.clear()
+                    wonLotteries.addAll(won)
+                    isLoading = false
+                }
+            }
 
             allLotteries.forEach { lot ->
                 db.hasUserJoinedLottery(lot.lotteryId, userViewModel.deviceId) { joined ->
-                    if (joined) {
-                        matched.add(lot)
-                    }
-                    checkedCount++
-                    if (checkedCount == allLotteries.size) {
-                        registeredLotteries.clear()
-                        registeredLotteries.addAll(matched)
-                        isLoading = false
+                    if (!joined) {
+                        finishIfDone()
+                    } else {
+                        repo.getWinners(lot.lotteryId) { winners ->
+                            val myStatus = winners.firstOrNull { it.userID == userViewModel.deviceId }?.status
+                            when (myStatus) {
+                                "pending" -> won.add(lot)
+                                "confirmed", "rejected" -> { }
+                                else -> matched.add(lot)
+                            }
+                            finishIfDone()
+                        }
                     }
                 }
             }
@@ -141,7 +159,7 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                 ) {
                     CircularProgressIndicator(modifier = Modifier.testTag("reservationsLoading"))
                 }
-            } else if (registeredLotteries.isEmpty() && currentReservations.isEmpty()) {
+            } else if (registeredLotteries.isEmpty() && wonLotteries.isEmpty() && currentReservations.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -176,6 +194,31 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+
+                    if (wonLotteries.isNotEmpty()) {
+                        Text(
+                            text = "Your Won Lotteries",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3E6B68)
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("wonLotteriesSection")
+                        ) {
+                            wonLotteries.forEach { lottery ->
+                                LotteryCard(
+                                    lottery = lottery,
+                                    onClick = {
+                                        navController.navigate("LotteryDetailsScreen/${lottery.lotteryId}")
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     // Section 1: Registered Lotteries
                     Text(
                         text = "Your Registered Lotteries",
@@ -233,21 +276,10 @@ fun ReservationsScreen(navController: NavController, userViewModel: UserViewMode
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             currentReservations.forEach { reservationId ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp),
-                                    shape = RoundedCornerShape(20.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF4E8D5))
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text(
-                                            text = "Reservation: $reservationId",
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
+                                ReservationCard(
+                                    reservationId = reservationId,
+                                    onClick = { navController.navigate("reservationInfo/$reservationId") }
+                                )
                             }
                         }
                     }

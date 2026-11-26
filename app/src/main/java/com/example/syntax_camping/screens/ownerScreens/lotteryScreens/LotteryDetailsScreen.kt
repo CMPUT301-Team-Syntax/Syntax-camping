@@ -1,0 +1,568 @@
+package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
+import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CalenderVeiw
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteCardOwner
+import com.example.syntax_camping.screens.tabs.CustomBottomBar
+import com.example.syntax_camping.screens.tabs.TopBar
+import com.example.syntax_camping.screens.userScreens.userCampsiteList.CampsiteCard
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+@Composable
+fun LotteryDetailsScreen(
+    navController: NavController,
+    lotteryId: String?,
+    userViewModel: UserViewModel,
+    onEditLottery: (Lottery) -> Unit
+) {
+    val db = remember { Database() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
+    var lottery by remember { mutableStateOf<Lottery?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var campsitePendingLastRemoval by remember { mutableStateOf<Campsite?>(null) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    var showParticipants by remember { mutableStateOf(false) }
+    var showWinners by remember { mutableStateOf(false) }
+    var myWinnerStatus by remember { mutableStateOf<String?>(null) }
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
+
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            CampsiteRepository.refreshCampsiteCache {
+                lotteryRepository().getLottery(lotteryId) { fetched ->
+                    lottery = fetched
+                    isLoading = false
+                }
+            }
+        } else {
+            isLoading = false
+        }
+    }
+
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getWinners(lotteryId) { list ->
+                myWinnerStatus = list.firstOrNull { it.userID == userViewModel.deviceId }?.status
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            now = System.currentTimeMillis()
+        }
+    }
+
+    val current = lottery
+    val participating = remember(current, refreshTrigger) {
+        if (current == null) emptyList() else {
+            val fromRepo = CampsiteRepository.getCampsites().filter { it.lotteryId == current.lotteryId }
+            if (fromRepo.isNotEmpty()) fromRepo else current.campsites
+        }
+    }
+
+    val ownedIds = userViewModel.currentUser?.ownerData?.campsiteIds ?: emptyList()
+    val isOwner = participating.any { it.documentId in ownedIds }
+
+    // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
+    var entryCount by remember { mutableIntStateOf(0) }
+    var waitlistCount by remember { mutableIntStateOf(0) }
+    val notOpenYet = current != null && current.startTime > now
+    val drawPassed = current != null && now > current.endTimeLottery
+    LaunchedEffect(drawPassed, current?.status) {
+        if (drawPassed && current?.status == "initialAccepting") {
+            while (true) {
+                delay(5000L)
+                refreshTrigger++
+            }
+        }
+    }
+
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getEntries(lotteryId) { entries -> entryCount = entries.size }
+            lotteryRepository().getWaitlist(lotteryId) { waitlist -> waitlistCount = waitlist.size }
+        }
+    }
+    fun removeSingleCampsiteFromLottery(campToRemove: Campsite, activeLottery: Lottery) {
+        campToRemove.updateLotteryId("")
+        CampsiteRepository.getCampsites().find { it.documentId == campToRemove.documentId }?.updateLotteryId("")
+        db.updateCampsiteLotteryId(campToRemove.documentId, "")
+
+        val remainingCampsites = participating
+            .filter { it.documentId != campToRemove.documentId }
+            .toMutableList()
+
+        activeLottery.campsites.clear()
+        activeLottery.campsites.addAll(remainingCampsites)
+
+        db.updateDrawTimer(
+            endTimeLottery = activeLottery.endTimeLottery,
+            endTimeBooking = activeLottery.endTimeBooking,
+            numberOfWinners = activeLottery.numWinners,
+            campsites = remainingCampsites,
+            capacity = activeLottery.capacity,
+            name = activeLottery.name,
+            lotteryId = activeLottery.lotteryId
+        )
+
+        refreshTrigger++
+    }
+
+    fun removeLastCampsiteAndDeleteLottery(lastCamp: Campsite, activeLottery: Lottery) {
+        lastCamp.updateLotteryId("")
+        CampsiteRepository.getCampsites().find { it.documentId == lastCamp.documentId }?.updateLotteryId("")
+        db.updateCampsiteLotteryId(lastCamp.documentId, "")
+
+        firestore.collection("lotteries")
+            .document(activeLottery.lotteryId)
+            .delete()
+            .addOnCompleteListener {
+                CampsiteRepository.refreshCampsiteCache {
+                    navController.popBackStack()
+                }
+            }
+    }
+
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4E8D5)),
+        containerColor = Color(0xFFF4E8D5),
+        topBar = { TopBar(navController) },
+        bottomBar = { CustomBottomBar(navController, "LotteryDetails", Color(0xFF3E6B68)) }
+    ) { innerPadding ->
+        if (isLoading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (current == null) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Lottery not found.")
+            }
+        } else {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Text(
+                        current.name.ifBlank { "Lottery" },
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    val targetTime = when {
+                        notOpenYet -> current.startTime
+                        !drawPassed -> current.endTimeLottery
+                        else -> current.endTimeBooking
+                    }
+                    if (current.status != "complete") {
+                        val millisLeft = targetTime - now
+                        if (millisLeft > 0) {
+                            Text(
+                                when {
+                                    notOpenYet -> "Lottery starts in: ${formatRemaining(millisLeft)}"
+                                    !drawPassed -> "Draw in: ${formatRemaining(millisLeft)}"
+                                    myWinnerStatus == "pending" -> "Booking window closes in: ${formatRemaining(millisLeft)}"
+                                    else -> "Booking closes in: ${formatRemaining(millisLeft)}"
+                                },
+                                fontSize = 24.sp,
+                                color = Color(0xFF3E6B68),
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                "Booking has closed",
+                                fontSize = 24.sp,
+                                color = Color.Red,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Text("Draws: ${dateFormat.format(current.getReadableLotteryEndTime())}")
+                    if (current.startTime > 0) Text("Opens: ${dateFormat.format(java.util.Date(current.startTime))}")
+                    Text("Book by: ${dateFormat.format(current.getReadableBookingEndTime())}")
+                    Text("Capacity: ${current.capacity?.toString() ?: "Unlimited"}")
+
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "$waitlistCount people on waitlist | $entryCount people in lottery",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                if (!isOwner) {
+                    LotteryWinnerSection(
+                        lottery = current,
+                        userId = userViewModel.deviceId,
+                        status = myWinnerStatus,
+                        windowClosed = current.status == "complete" || now > current.endTimeBooking,
+                        onChanged = { refreshTrigger++ }
+                    )
+                }
+
+                // ADDED: everyone sees the dates on offer before registering (view only, but you can flip months)
+                if (current.lotteryDates.isNotEmpty()) {
+                    Text(
+                        "Available dates",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    Text(
+                        "Dates in red are offered in this lottery.",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp, vertical = 4.dp)
+                            .testTag("lotteryDatesLegend")
+                    )
+                    CalenderVeiw(initialSelected = current.lotteryDates, readOnly = true)
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                Text(
+                    "Participating Campsites",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+
+                participating.forEach { camp ->
+                    if (isOwner) {
+                        CampsiteCardOwner(
+                            campsite = camp,
+                            onClick = {
+                                navController.navigate("ownerCampsiteDetails/${camp.documentId}")
+                            },
+                            onRemoveFromLotteryClick = if (current.status == "initialAccepting") {
+                                {
+                                    if (participating.size <= 1) {
+                                        campsitePendingLastRemoval = camp
+                                    } else {
+                                        removeSingleCampsiteFromLottery(camp, current)
+                                    }
+                                }
+                            } else null,
+                            onUpdateLotteryClick = if (current.status == "initialAccepting") {
+                                { onEditLottery(current) }
+                            } else null
+                        )
+                    } else {
+                        CampsiteCard(camp) {
+                            navController.navigate("campsiteDetails/${camp.documentId}")
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (isOwner) {
+                    Button(
+                        onClick = { showParticipants = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .testTag("viewParticipantsButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text("View participants", color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (current.status != "initialAccepting") {
+                        Button(
+                            onClick = { showWinners = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .testTag("seeWinnersButton"),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("See winners", color = Color.White)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    if (current.status == "initialAccepting") {
+                        Button(
+                            onClick = { onEditLottery(current) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("Edit lottery", color = Color.White)
+                        }
+                    } else {
+                        Text(
+                            "Lottery has been drawn and cannot be edited.",
+                            modifier = Modifier.padding(24.dp),
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+                else if (notOpenYet) {
+                    Text(
+                        "Come back on ${dateFormat.format(java.util.Date(current.startTime))} to join the lottery. Good luck!",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .testTag("lotteryNotOpenText")
+                    )
+                }
+
+                else if (myWinnerStatus == null){
+                    LotteryEntrantSection(
+                        lottery = current,
+                        userId = userViewModel.deviceId,
+                        userViewModel = userViewModel,
+                        onChanged = { refreshTrigger++ }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+
+        // CHANGED: Participants dialog now uses TabbedNameListDialog with "Lottery" and "Waitlist" tabs
+        if (showParticipants && current != null) {
+            TabbedNameListDialog(
+                title = "Participants",
+                tabs = listOf("Lottery", "Waitlist"),
+                emptyTexts = listOf(
+                    "Nobody has entered the lottery yet.",
+                    "Nobody is on the waitlist yet."
+                ),
+                // CHANGED: Added explicit parameter types and Unit return to fix type inference error on 'R'
+                // CHANGED: Explicit types on lambda params and explicit Unit return on each branch
+                loadTabUsers = { tabIndex: Int, done: (List<Pair<String, String>>) -> Unit ->
+                    if (tabIndex == 0) {
+                        lotteryRepository().getEntries(current.lotteryId) { list ->
+                            val mapped: List<Pair<String, String>> = list.map { entry -> entry.userId to "" }
+                            done(mapped)
+                        }
+                    } else {
+                        lotteryRepository().getWaitlist(current.lotteryId) { list ->
+                            val mapped: List<Pair<String, String>> = list.map { waitEntry ->
+                                waitEntry.userID to (waitEntry.status ?: "")
+                            }
+                            done(mapped)
+                        }
+                    }
+                    Unit
+                // ADDED: Ensures the lambda returns Unit cleanly
+                },
+                onDismiss = { showParticipants = false }
+            )
+        }
+
+        // CHANGED: Winners dialog now uses TabbedNameListDialog with "Unconfirmed" and "Confirmed" tabs
+        if (showWinners && current != null) {
+            TabbedNameListDialog(
+                title = "Winners",
+                tabs = listOf("Unconfirmed", "Confirmed"),
+                emptyTexts = listOf(
+                    "No unconfirmed winners.",
+                    "No confirmed winners yet."
+                ),
+                loadTabUsers = { tabIndex, done ->
+                    lotteryRepository().getWinners(current.lotteryId) { list ->
+                        val filtered = if (tabIndex == 0) {
+                            list.filter { it.status == "pending" }
+                        } else {
+                            list.filter { it.status == "confirmed" }
+                        }
+                        done(filtered.map { it.userID to (it.status ?: "") })
+                    }
+                },
+                onDismiss = { showWinners = false }
+            )
+        }
+        // REMOVED: Extra closing brace that closed Scaffold early
+
+        val pendingCamp = campsitePendingLastRemoval
+        if (pendingCamp != null && current != null) {
+            AlertDialog(
+                onDismissRequest = { campsitePendingLastRemoval = null },
+                modifier = Modifier.testTag("deleteLotteryWarningDialog"),
+                title = { Text("Delete Current Lottery?") },
+                text = {
+                    Text(
+                        "This is the only campsite in this lottery. Removing it will delete this current lottery. Do you want to continue?"
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            campsitePendingLastRemoval = null
+                            removeLastCampsiteAndDeleteLottery(pendingCamp, current)
+                        },
+                        modifier = Modifier.testTag("confirmDeleteLotteryButton")
+                    ) {
+                        Text("Delete Lottery", color = Color.Red, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { campsitePendingLastRemoval = null },
+                        modifier = Modifier.testTag("cancelDeleteLotteryButton")
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+    }
+}
+
+private fun formatRemaining(millisLeft: Long): String {
+    val totalSecs = millisLeft / 1000
+    val days = totalSecs / 86400
+    val hours = (totalSecs % 86400) / 3600
+    val mins = (totalSecs % 3600) / 60
+    val secs = totalSecs % 60
+    return if (days > 0) "${days}d ${hours}h ${mins}m ${secs}s" else "${hours}h ${mins}m ${secs}s"
+}
+
+// CHANGED: Replaced single-list NameListDialog with TabbedNameListDialog for tabbed owner lists
+@Composable
+// CHANGED: Simplified loadTabUsers type so Kotlin never gets stuck inferring 'R' inside async callbacks
+private fun TabbedNameListDialog(
+    title: String,
+    tabs: List<String>,
+    emptyTexts: List<String>,
+    loadTabUsers: (Int, ((List<Pair<String, String>>) -> Unit)) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val db = remember { Database() }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var rows by remember { mutableStateOf<List<String>?>(null) }
+
+    // ADDED: Reloads tab rows when selectedTab changes
+    LaunchedEffect(selectedTab) {
+        rows = null
+        loadTabUsers(selectedTab) { users ->
+            if (users.isEmpty()) {
+                rows = emptyList()
+            } else {
+                val names = mutableMapOf<String, String>()
+                users.forEach { (id, _) ->
+                    db.fetchUserDetails(id) { result ->
+                        names[id] = result.getOrNull()?.name?.takeIf { it.isNotBlank() } ?: id
+                        if (names.size == users.size) {
+                            rows = users.map { (uid, note) ->
+                                (names[uid] ?: uid) + if (note.isNotBlank()) " — $note" else ""
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("nameListDialog"),
+        title = {
+            Column {
+                Text(title)
+                Spacer(modifier = Modifier.height(8.dp))
+                // CHANGED: Fixed SecondaryTabRow indicator signature to use TabIndicatorScope.tabIndicatorOffset(selectedTab)
+                SecondaryTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = Color(0xFF3E6B68),
+                    indicator = {
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(selectedTab),
+                            color = Color(0xFF3E6B68)
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, tabLabel ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            modifier = Modifier.testTag("dialogTab_$tabLabel"),
+                            text = {
+                                Text(
+                                    text = tabLabel,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (selectedTab == index) Color(0xFF3E6B68) else Color.Gray
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            val shown = rows
+            when {
+                shown == null -> CircularProgressIndicator()
+                shown.isEmpty() -> Text(emptyTexts.getOrElse(selectedTab) { "No entries." })
+                else -> Column(Modifier.verticalScroll(rememberScrollState())) {
+                    shown.forEachIndexed { i, line ->
+                        Text(
+                            text = "${i + 1}. $line",
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .testTag("nameListItem_$i")
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("nameListClose")) {
+                Text("Close")
+            }
+        }
+    )
+}
+// REMOVED: Duplicate/orphaned NameListDialog AlertDialog at bottom of file

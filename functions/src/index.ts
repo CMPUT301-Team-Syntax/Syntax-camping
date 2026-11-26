@@ -27,6 +27,10 @@ export {
 export{
     closeLotteryBooking
     } from "./closingLottery";
+export {
+  syncReservationStatusOnWrite,
+  updateReservationStatusesDaily,
+} from "./reservation";
 //initialization stuff
 //const db = getFirestore();
 //const tasksClient = new CloudTasksClient();

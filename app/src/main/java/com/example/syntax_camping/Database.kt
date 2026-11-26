@@ -6,6 +6,7 @@ import android.provider.Settings
 import android.util.Log
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
+import com.example.syntax_camping.dataClasses.NotificationData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.Reservation
 import com.example.syntax_camping.dataClasses.User
@@ -72,8 +73,7 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String): String{
-        //The two following values allow firebase to generate a unique lottery id
+    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList(), startTime: Long = 0L): String{        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
@@ -88,15 +88,16 @@ class Database {
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity
+            "capacity" to capacity,
+            "lotteryDates" to lotteryDates,
+            "startTimeLottery" to startTime
 
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String){
-        //The two following values allow firebase to generate a unique lottery id
+    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null,  startTime: Long? = null){        //The two following values allow firebase to generate a unique lottery id
 
         val lotteryReference = db.collection("lotteries").document(lotteryId)
         val lotteryId = lotteryReference.id
@@ -113,76 +114,90 @@ class Database {
             "name" to name,
             "capacity" to capacity,
 
-
             )
-        lotteryReference.update(data)
-
+        var finalData: Map<String, Any?> = data
+        if (lotteryDates != null) finalData = finalData + ("lotteryDates" to lotteryDates)
+        if (startTime != null) finalData = finalData + ("startTimeLottery" to startTime)
+        lotteryReference.update(finalData)
 
     }
     /*
     * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
     * */
-    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean)->Unit){
+    fun addLotteryEntry(lotteryId: String, entry: LotteryEntry, onComplete: (Boolean) -> Unit) {
+        registerLotteryEntry(lotteryId, entry) { notification -> onComplete(notification != null) }
+    }
 
-
-        hasUserJoinedLottery(lotteryId, entry.userId) { hasJoined ->
-
-            // If the user has already joined, stop here and don't add them again
+    internal fun registerLotteryEntry(
+        lotteryId: String,
+        entry: LotteryEntry,
+        campsiteId: String? = null,
+        onComplete: (NotificationData.LotteryJoined?) -> Unit
+    ) {
+        readLotteryMembership(lotteryId, entry.userId, onFailure = { onComplete(null) }) { hasJoined ->
             if (hasJoined) {
-                onComplete(false)
-                return@hasUserJoinedLottery
+                onComplete(null)
+                return@readLotteryMembership
             }
-            hasLotteryHitCapacity(lotteryId) { notCapacity ->
-                if (notCapacity) {
-                    onComplete(false)
+            hasLotteryHitCapacity(lotteryId) { isFull ->
+                if (isFull) {
+                    onComplete(null)
                     return@hasLotteryHitCapacity
                 }
-                val lottery = db.collection("lotteries")
-                    .document(lotteryId)
-
-
+                val lottery = db.collection("lotteries").document(lotteryId)
                 lottery.get()
                     .addOnSuccessListener { lotterySnapshot ->
-                        val currentTime = System.currentTimeMillis()
-                        val endTimeBooking = lotterySnapshot.getLong("endTimeBooking")
-                        val endTimeLottery = lotterySnapshot.getLong("endTimeLottery")
-                        val status = lotterySnapshot.getString("status")
-
-                        val collectionName: String? = when (status) {
+                        val opensAt = lotterySnapshot.getLong("startTimeLottery") ?: 0L
+                        if (opensAt > System.currentTimeMillis()) {
+                            onComplete(null)
+                            return@addOnSuccessListener
+                        }
+                        val collectionName = when (lotterySnapshot.getString("status")) {
                             "initialAccepting" -> "entries"
                             "booking" -> "waitlist"
-                            else -> null
+                            else -> {
+                                onComplete(null)
+                                return@addOnSuccessListener
+                            }
                         }
-                        //If a collection name was actually found, huzzah, add the user to that collection
-                        if (collectionName != null) {
-
-                            lottery.collection(collectionName)
-                                .document(entry.userId)
-                                .set(
-                                    mapOf(
-                                        "userId" to entry.userId,
-                                        "joinedTimestamp" to entry.joined,
-                                        "status" to "waiting"
+                        lottery.collection(collectionName)
+                            .document(entry.userId)
+                            .set(
+                                mapOf(
+                                    "userId" to entry.userId,
+                                    "joinedTimestamp" to entry.joined,
+                                    "status" to "waiting"
+                                )
+                            )
+                            .addOnSuccessListener {
+                                onComplete(
+                                    NotificationData.LotteryJoined(
+                                        id = "${lotterySnapshot.id}:${entry.joined.seconds}:${entry.joined.nanoseconds}",
+                                        subject = lotteryNotificationSubject(lotterySnapshot, campsiteId),
+                                        joinedWaitlist = collectionName == "waitlist"
                                     )
                                 )
-                                .addOnSuccessListener {
-                                    onComplete(true)
-                                }
-                                .addOnFailureListener { e ->
-                                    onComplete(false)
-                                }
-                        }else{
-                            onComplete(false)
-
-                        }
-                    }.addOnFailureListener{
-                        onComplete(false)
+                            }
+                            .addOnFailureListener { onComplete(null) }
                     }
+                    .addOnFailureListener { onComplete(null) }
             }
-
         }
-
     }
+
+    private fun lotteryNotificationSubject(lottery: DocumentSnapshot, campsiteId: String?): String {
+        if (!campsiteId.isNullOrBlank()) {
+            val campsite = CampsiteRepository.getCampsites().find { it.documentId == campsiteId }
+            campsite?.name?.takeIf(String::isNotBlank)?.let { return it }
+
+            val campsites = lottery.get("campsites") as? List<*>
+            val savedCampsite = campsites?.filterIsInstance<Map<*, *>>()
+                ?.firstOrNull { it["documentId"] == campsiteId }
+            (savedCampsite?.get("name") as? String)?.takeIf(String::isNotBlank)?.let { return it }
+        }
+        return (lottery.get("name") as? String).orEmpty()
+    }
+
     /*
     * Works with the firebase and lotteris to remove a user either from the waitlist or entries list attacehd to a lottery
     * as well as the has joined function to make sure the user is actually in there before we try to delete them
@@ -246,26 +261,32 @@ class Database {
     *
     * */
     fun hasUserJoinedLottery(lotteryId: String, userId: String, onResult: (Boolean) -> Unit) {
+        readLotteryMembership(lotteryId, userId, onFailure = {}, onResult = onResult)
+    }
+
+    private fun readLotteryMembership(
+        lotteryId: String,
+        userId: String,
+        onFailure: () -> Unit,
+        onResult: (Boolean) -> Unit
+    ) {
         val lotteryRef = db.collection("lotteries").document(lotteryId)
 
-        lotteryRef.collection("entries").document(userId).get().addOnSuccessListener { entry ->
-            if (entry.exists()) {
-                onResult(true)
-                return@addOnSuccessListener
-            }
-
-            lotteryRef.collection("waitlist").document(userId).get().addOnSuccessListener { waitlist ->
-                if (waitlist.exists()) {
-                    onResult(true)
-                    return@addOnSuccessListener
+        fun checkCollection(collection: String, onMissing: () -> Unit) {
+            lotteryRef.collection(collection).document(userId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) onResult(true) else onMissing()
                 }
+                .addOnFailureListener { onFailure() }
+        }
 
-                lotteryRef.collection("winners").document(userId).get().addOnSuccessListener { winner ->
-                    onResult(winner.exists())
-                }
+        checkCollection("entries") {
+            checkCollection("waitlist") {
+                checkCollection("winners") { onResult(false) }
             }
         }
     }
+
     /*
     * works with adding an entry to make sure user is not already a winner/entry/waitlist before ltting them join(they can't join more than once)
     * */
@@ -415,7 +436,8 @@ class Database {
                     .set(
                         mapOf(
                             "entrantReservationIds" to (user.entrantData?.reservationIds ?: emptyList<String>()),
-                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>())
+                            "entrantLotteryEntryIds" to (user.entrantData?.lotteryEntryIds ?: emptyList<String>()),
+                            "entrantPendingEntryIds" to (user.entrantData?.pendingEntryIds ?: emptyList<String>())
                         )
                     )
                     .addOnSuccessListener {
@@ -471,6 +493,7 @@ class Database {
                 var fetchedEntrantData: EntrantData? = null
                 var fetchedOwnerData: OwnerData? = null
 
+
                 //Reconstruct the entrant and campsite owner's info.
                 db.collection("entrantData")
                     .document(devId)
@@ -484,9 +507,13 @@ class Database {
                             val lotteryEntryIds =
                                 entrantDocument.get("entrantLotteryEntryIds") as? List<String>
                                     ?: emptyList()
+                            val pendingEntryIds =
+                                entrantDocument.get("entrantPendingEntryIds") as? List<String>
+                                    ?: emptyList()
                             fetchedEntrantData = EntrantData(
                                 reservationIds.toMutableList(),
-                                lotteryEntryIds.toMutableList()
+                                lotteryEntryIds.toMutableList(),
+                                pendingEntryIds.toMutableList()
                             )
                         }
 
@@ -594,12 +621,18 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                     "images" to campsite.getImagesAsStrs(),    // same with images
                     "lotteryId" to "",
-                    "ratings" to campsite.ratings
+                    "ratings" to campsite.ratings,
+                    "hasQRCode" to campsite.hasQRCode,
+                    "dates" to (campsite.dateManager?.allDates?.map {
+                        mapOf("date" to it.dateString, "maxOcc" to it.maxOcc, "currentOcc" to it.currentOcc)
+                    } ?: emptyList<Map<String, Any>>())
                 )
             )
     }
@@ -624,11 +657,14 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                     "images" to campsite.getImagesAsStrs(),   // same with images
-                    "ratings" to campsite.ratings
+                    "ratings" to campsite.ratings,
+                    "hasQRCode" to campsite.hasQRCode
                 )
             )
     }

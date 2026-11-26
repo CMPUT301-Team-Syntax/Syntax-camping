@@ -34,11 +34,15 @@ import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.lotteryJoinState
 import com.google.firebase.Timestamp
+import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.dataClasses.EntrantData
 
 @Composable
 fun LotteryEntrantSection(
     lottery: Lottery,
-    userId: String
+    userId: String,
+    userViewModel: UserViewModel? = null,   // CHANGED: so the user's own record can be updated
+    onChanged: () -> Unit = {}              // CHANGED: lets the screen refresh its counts
 ) {
     val db = remember { Database() }
     val repo = remember { lotteryRepository() }
@@ -61,6 +65,21 @@ fun LotteryEntrantSection(
             repo.getWaitlist(id) { waitlist ->
                 waitlistCount = waitlist.size
             }
+        }
+    }
+
+    // CHANGED: keeps the user's own list of entered lotteries in sync (the campsite screen used to do this)
+    fun syncUserEntry(joined: Boolean) {
+        val vm = userViewModel ?: return
+        val u = vm.currentUser ?: return
+        val old = u.entrantData ?: EntrantData()
+        val ids = if (joined) {
+            (old.lotteryEntryIds + lottery.lotteryId).distinct()
+        } else {
+            old.lotteryEntryIds - lottery.lotteryId
+        }
+        db.updateUser(userId, u.copy(entrantData = old.copy(lotteryEntryIds = ids.toMutableList()))) {
+            vm.refreshCurrentUser()
         }
     }
 
@@ -107,6 +126,8 @@ fun LotteryEntrantSection(
                                     hasJoined = false
                                     popupMessage = "Leave Successful"
                                     refreshStatus()
+                                    syncUserEntry(false)   // CHANGED
+                                    onChanged()            // CHANGED
                                 } else {
                                     popupMessage = "Unable to leave lottery."
                                 }
@@ -141,6 +162,8 @@ fun LotteryEntrantSection(
                                     hasJoined = true
                                     popupMessage = "Join Successful"
                                     refreshStatus()
+                                    syncUserEntry(true)    // CHANGED
+                                    onChanged()            // CHANGED
                                 } else {
                                     popupMessage = "Lottery is at full capacity"
                                     refreshStatus()

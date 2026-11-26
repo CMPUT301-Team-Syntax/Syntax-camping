@@ -10,15 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,18 +47,15 @@ import com.example.syntax_camping.Database
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
-import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.Lottery
-import com.example.syntax_camping.dataClasses.LotteryEntry
-import com.example.syntax_camping.dataClasses.Review // CHANGED: added (his rating model)
+import com.example.syntax_camping.dataClasses.Review
 import com.example.syntax_camping.dataClasses.lotteryRepository
+import com.example.syntax_camping.screens.CalenderVeiw
+import com.example.syntax_camping.screens.QRCodeScreens.CampsiteQRCode
 import com.example.syntax_camping.screens.Rating
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.LotteryJoinState
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.lotteryList.lotteryJoinState
+import com.example.syntax_camping.screens.ownerScreens.openInGoogleMaps
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.google.firebase.Timestamp
-// CHANGED: removed the FirebaseFirestore and SetOptions imports, this screen no longer talks to Firestore directly
 
 @Composable
 fun CampsiteDetailsScreen(
@@ -77,18 +73,12 @@ fun CampsiteDetailsScreen(
     val scrollState = rememberScrollState()
     val lotteryFolder = remember { lotteryRepository() }
     val db = remember { Database() }
-    // CHANGED: removed `val firestore = ...`
 
     if (campsite == null) {
         return
     }
 
     var lotteryState by remember { mutableStateOf<Lottery?>(null) }
-    var entryCount by remember { mutableIntStateOf(0) }
-    var waitlistCount by remember { mutableIntStateOf(0) }
-    var hasJoined by remember { mutableStateOf(false) }
-    var isActionLoading by remember { mutableStateOf(false) }
-    var popupMessage by remember { mutableStateOf<String?>(null) }
 
     // Real-time UI states for Rating
     var displayedRating by remember(campsite) { mutableDoubleStateOf(campsite.rating) }
@@ -96,42 +86,42 @@ fun CampsiteDetailsScreen(
     var showRatingInput by remember { mutableStateOf(false) }
     var showThankYouMessage by remember { mutableStateOf(false) }
     var showRatingPopup by remember { mutableStateOf(false) }
+    var showDeleteReviewDialog by remember { mutableStateOf(false) }
     var userReviewString by remember { mutableStateOf("") }
+    var userReviewTextString by remember { mutableStateOf("") }
     var ratingError by remember { mutableStateOf("") }
-    var previousUserRating by remember(campsite.documentId, userViewModel.deviceId) {
-        mutableStateOf<Double?>(campsite.ratings.find { it.userId == userViewModel.deviceId }?.rating)
-    }
+    val reviewDateFormat = remember { java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()) }
+
+    // CHANGED: reviews are shown as a list; this counter makes the list rebuild after a submit / edit / delete
+    var reviewsVersion by remember { mutableIntStateOf(0) }
+    val reviews = remember(reviewsVersion, campsite) { campsite.ratings.toList() }
+    val myReview = reviews.find { it.userId == userViewModel.deviceId }
+
     val isOwner =
         userViewModel.currentUser?.ownerData?.campsiteIds?.contains(campsiteID ?: "") == true
 
-    fun refreshLotteryDetails(id: String) {
-        lotteryFolder.getLottery(id) { fetchedLottery ->
-            lotteryState = fetchedLottery?.takeIf { !it.status.isNullOrBlank() }
-        }
-        lotteryFolder.getEntries(id) { entries ->
-            entryCount = entries.size
-        }
-        lotteryFolder.getWaitlist(id) { waitlist ->
-            waitlistCount = waitlist.size
-        }
-        db.hasUserJoinedLottery(id, userViewModel.deviceId) { joined ->
-            hasJoined = joined
-        }
-    }
-
     val nonBlankLotteryId = campsite.lotteryId?.takeIf { it.isNotBlank() }
-    LaunchedEffect(nonBlankLotteryId, userViewModel.deviceId) {
+    LaunchedEffect(nonBlankLotteryId) {
         if (nonBlankLotteryId != null) {
-            refreshLotteryDetails(nonBlankLotteryId)
+            lotteryFolder.getLottery(nonBlankLotteryId) { fetchedLottery ->
+                lotteryState = fetchedLottery?.takeIf { !it.status.isNullOrBlank() }
+            }
         } else {
             lotteryState = null
-            entryCount = 0
-            waitlistCount = 0
-            hasJoined = false
         }
     }
 
     val currentLottery = lotteryState
+
+    val context = LocalContext.current
+    var myWinnerStatus by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(nonBlankLotteryId) {
+        if (nonBlankLotteryId != null) {
+            lotteryFolder.getWinners(nonBlankLotteryId) { list ->
+                myWinnerStatus = list.firstOrNull { it.userID == userViewModel.deviceId }?.status
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -210,6 +200,17 @@ fun CampsiteDetailsScreen(
                     )
                 }
 
+                val shownTags = campsite.tags.filter { it.isNotBlank() }
+                if (shownTags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = shownTags.joinToString("  ") { "#$it" },
+                        fontSize = 14.sp,
+                        color = Color(0xFF3E6B68),
+                        modifier = Modifier.testTag("campsiteDetailsTags")
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -219,7 +220,19 @@ fun CampsiteDetailsScreen(
                             .weight(1f)
                             .padding(end = 8.dp)
                     ) {
+                        // Tapping the location opens it in Google Maps
                         Row(
+                            modifier = Modifier
+                                .testTag("campsiteLocationLink")
+                                .clickable {
+                                    openInGoogleMaps(
+                                        context,
+                                        campsite.latitude,
+                                        campsite.longitude,
+                                        campsite.name,
+                                        campsite.location
+                                    )
+                                },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Top
                         ) {
@@ -231,6 +244,8 @@ fun CampsiteDetailsScreen(
                             Text(
                                 text = " ${campsite.location}",
                                 fontSize = 16.sp,
+                                color = Color(0xFF3E6B68),
+                                textDecoration = TextDecoration.Underline,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -238,7 +253,7 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "💰 Rate: $25/n", fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "🏕️ Campsite Rules", fontSize = 16.sp, color = Color.Blue)
+                        CampsiteRulesLink(navController)
                     }
 
                     // Right column
@@ -259,7 +274,7 @@ fun CampsiteDetailsScreen(
                             Text(text = " Max Occupancy: ${campsite.maxOcc}", fontSize = 16.sp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "📜 Cancellation policy", fontSize = 16.sp, color = Color.Blue)
+                        CancellationPolicyLink(navController)
                     }
                 }
 
@@ -294,8 +309,9 @@ fun CampsiteDetailsScreen(
                                 fontSize = 16.sp
                             )
                             currentLottery.status?.let {
+
                                 Text(
-                                    text = it,
+                                    text = if (it == "initialAccepting") "Open" else if (it == "complete") "Ended" else it,
                                     color = Color(0xFFA13F3F),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
@@ -321,7 +337,27 @@ fun CampsiteDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // OWNER LOTTERY CONTROLS vs ENTRANT LOTTERY CONTROLS
+                    if (!update && !isOwner && currentLottery != null &&
+                        myWinnerStatus == "pending" &&
+                        currentLottery.status != "complete" &&
+                        System.currentTimeMillis() <= currentLottery.endTimeBooking &&
+                        winnerAccepted(context, currentLottery.lotteryId, userViewModel.deviceId)
+                    ) {
+                        Button(
+                            onClick = {
+                                navController.navigate("bookCampsite/${campsite.documentId}/${currentLottery.lotteryId}")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                .testTag("bookCampsiteButton"),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                        ) {
+                            Text("Book this campsite", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // OWNER LOTTERY CONTROLS (join/leave now lives on the lottery info screen)
                     if (update || isOwner) {
                         if (isOwner && !update) {
                             Text(
@@ -340,7 +376,9 @@ fun CampsiteDetailsScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 24.dp, vertical = 16.dp)
                                     .testTag("addLottery"),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E6B68)
+                                )
                             ) {
                                 Text(
                                     "Add Lottery",
@@ -361,7 +399,9 @@ fun CampsiteDetailsScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 24.dp, vertical = 16.dp)
                                     .testTag("editLotteryButton"),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E6B68)
+                                )
                             ) {
                                 Text(
                                     "Edit Lottery",
@@ -370,172 +410,35 @@ fun CampsiteDetailsScreen(
                                 )
                             }
                         }
-                    } else {
-                        val joinState = lotteryJoinState(currentLottery?.status)
-
-                        when (joinState) {
-                            LotteryJoinState.ENDED -> {
-                                Text(
-                                    "Lottery ended",
-                                    color = Color(0xFFA13F3F),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                            }
-
-                            LotteryJoinState.CAN_ENTER_LOTTERY, LotteryJoinState.CAN_JOIN_WAITLIST -> {
-                                val currentActiveCount = if (joinState == LotteryJoinState.CAN_JOIN_WAITLIST) {
-                                    waitlistCount
-                                } else {
-                                    entryCount
-                                }
-                                val cap = currentLottery?.capacity
-                                val isAtCapacity = cap != null && currentActiveCount >= cap
-
-                                if (isActionLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .testTag("lotteryActionLoading")
-                                    )
-                                } else if (hasJoined) {
-                                    // LEAVE BUTTON
-                                    Button(
-                                        onClick = {
-                                            nonBlankLotteryId?.let { nonNullLotteryId ->
-                                                isActionLoading = true
-                                                db.removeLotteryEntry(
-                                                    nonNullLotteryId,
-                                                    LotteryEntry(
-                                                        userId = userViewModel.deviceId,
-                                                        joined = Timestamp.now()
-                                                    )
-                                                ) { success ->
-                                                    isActionLoading = false
-                                                    if (success) {
-                                                        hasJoined = false
-                                                        popupMessage = "Leave Successful"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-
-                                                        userViewModel.currentUser?.let { u ->
-                                                            val oldEntrant = u.entrantData ?: EntrantData()
-                                                            val updatedUser = u.copy(
-                                                                entrantData = oldEntrant.copy(
-                                                                    lotteryEntryIds = (oldEntrant.lotteryEntryIds - nonNullLotteryId).toMutableList()
-                                                                )
-                                                            )
-                                                            db.updateUser(userViewModel.deviceId, updatedUser) {
-                                                                userViewModel.refreshCurrentUser()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        popupMessage = "Unable to leave lottery."
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.testTag("leaveLotteryButton"),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Text(
-                                            text = if (joinState == LotteryJoinState.CAN_JOIN_WAITLIST) "Leave Waitlist" else "Leave Lottery",
-                                            color = Color.Black
-                                        )
-                                    }
-                                } else {
-                                    // JOIN BUTTON
-                                    Button(
-                                        onClick = {
-                                            if (isAtCapacity) {
-                                                popupMessage = "Lottery is at full capacity"
-                                                return@Button
-                                            }
-                                            nonBlankLotteryId?.let { nonNullLotteryId ->
-                                                isActionLoading = true
-                                                db.addLotteryEntry(
-                                                    nonNullLotteryId,
-                                                    LotteryEntry(
-                                                        userId = userViewModel.deviceId,
-                                                        joined = Timestamp.now()
-                                                    )
-                                                ) { success ->
-                                                    isActionLoading = false
-                                                    if (success) {
-                                                        hasJoined = true
-                                                        popupMessage = "Join Successful"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-
-                                                        userViewModel.currentUser?.let { u ->
-                                                            val oldEntrant = u.entrantData ?: EntrantData()
-                                                            val updatedIds = (oldEntrant.lotteryEntryIds + nonNullLotteryId).distinct().toMutableList()
-                                                            val updatedUser = u.copy(
-                                                                entrantData = oldEntrant.copy(
-                                                                    lotteryEntryIds = updatedIds
-                                                                )
-                                                            )
-                                                            db.updateUser(userViewModel.deviceId, updatedUser) {
-                                                                userViewModel.refreshCurrentUser()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        popupMessage = "Lottery is at full capacity"
-                                                        refreshLotteryDetails(nonNullLotteryId)
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        enabled = !isAtCapacity,
-                                        modifier = Modifier.testTag("joinLotteryButton"),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFF2C9C9)
-                                        ),
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Text(
-                                            text = when {
-                                                isAtCapacity -> "Lottery Full"
-                                                joinState == LotteryJoinState.CAN_JOIN_WAITLIST -> "Click to join waitlist!!"
-                                                else -> "Click to enter lottery!!"
-                                            },
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                val targetTime = if (currentLottery?.status == "booking") {
-                                    currentLottery.endTimeBooking
-                                } else {
-                                    currentLottery?.endTimeLottery ?: 0L
-                                }
-
-                                val daysLeft = if (targetTime > 0L) {
-                                    ((targetTime - System.currentTimeMillis()) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
-                                } else {
-                                    0L
-                                }
-
-                                Text(
-                                    text = "$waitlistCount people on waitlist\n$entryCount people in lottery\n$daysLeft days left",
-                                    fontSize = 12.sp,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.testTag("lotteryCountsAndTimer")
-                                )
-                            }
-
-                            LotteryJoinState.NONE -> {}
-                        }
                     }
+                } // end Lottery Section
+
+                val lotteryDatesShown = currentLottery?.lotteryDates ?: emptyList()
+                val ownDatesShown = campsite.dateManager?.allDates?.map { it.dateString } ?: emptyList()
+                val calendarDates = if (lotteryDatesShown.isNotEmpty()) lotteryDatesShown else ownDatesShown
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = if (lotteryDatesShown.isNotEmpty()) "Dates offered by this lottery" else "Available dates",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (calendarDates.isEmpty()) {
+                    Text("No available dates yet", color = Color.Gray, modifier = Modifier.testTag("noAvailableDatesText"))
+                } else {
+                    CalenderVeiw(
+                        initialSelected = calendarDates,
+                        readOnly = true,
+                        selectedColor = Color(0xFF2E7D32)
+                    )
                 }
 
-                // ================== RATING SECTION (Non-Owners Only) ==================
-                if (!isOwner && !update) {
-                    Spacer(modifier = Modifier.height(24.dp))
+                // ================== REVIEWS SECTION ==================
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(text = "Reviews", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
 
+                // Leave / edit form (non-owners only)
+                if (!isOwner && !update) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -552,27 +455,7 @@ fun CampsiteDetailsScreen(
                             )
                         }
 
-                        if (!showRatingInput) {
-                            val hasRatedBefore = previousUserRating != null
-                            Button(
-                                onClick = {
-                                    ratingError = ""
-                                    userReviewString = previousUserRating?.toString() ?: ""
-                                    showRatingInput = true
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                                    .testTag(if (hasRatedBefore) "editRatingPrompt" else "openRatingPrompt"),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
-                            ) {
-                                Text(
-                                    text = if (hasRatedBefore) "Edit rating?" else "Do you want to leave a rating?",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        } else {
+                        if (showRatingInput) {
                             OutlinedTextField(
                                 value = userReviewString,
                                 onValueChange = { userReviewString = it },
@@ -581,6 +464,15 @@ fun CampsiteDetailsScreen(
                                     .fillMaxWidth()
                                     .testTag("campsite_name_input")
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = userReviewTextString,
+                                onValueChange = { userReviewTextString = it },
+                                label = { Text("Write a review (optional)") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("reviewTextInput")
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Button(
@@ -588,17 +480,22 @@ fun CampsiteDetailsScreen(
                                     val parsedRating = userReviewString.toDoubleOrNull()
                                     if (parsedRating != null) {
                                         if (parsedRating in 0.0..5.0) {
-                                            // CHANGED: ratings are Review objects now (review text left blank, this screen only asks for a number)
-                                            val newReview = Review(parsedRating, userViewModel.deviceId, "")
-                                            if (previousUserRating == null) {
+                                            val newReview = Review(
+                                                parsedRating,
+                                                userViewModel.deviceId,
+                                                userReviewTextString.trim(),
+                                                userViewModel.currentUser?.name ?: "",
+                                                System.currentTimeMillis()
+                                            )
+                                            if (myReview == null) {
                                                 campsite.updateRating(newReview)
                                             } else {
                                                 campsite.replaceRating(newReview)
                                             }
 
-                                            previousUserRating = parsedRating
                                             displayedRating = campsite.rating
                                             displayedRaters = campsite.raters
+                                            reviewsVersion++
                                             ratingError = ""
                                             showRatingInput = false
                                             showThankYouMessage = true
@@ -607,16 +504,33 @@ fun CampsiteDetailsScreen(
                                             ratingError = "review must be between 0.0 and 5.0"
                                         }
                                     } else {
-                                        ratingError = "you must enter a rating before you can review"
+                                        ratingError =
+                                            "you must enter a rating before you can review"
                                     }
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 24.dp, vertical = 8.dp)
                                     .testTag("submitRatingButton"),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E6B68)
+                                )
                             ) {
-                                Text("Submit Rating", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Submit Rating",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    ratingError = ""
+                                    showRatingInput = false
+                                },
+                                modifier = Modifier.testTag("cancelReviewButton")
+                            ) {
+                                Text("Cancel")
                             }
 
                             if (ratingError.isNotEmpty()) {
@@ -628,30 +542,146 @@ fun CampsiteDetailsScreen(
                                     modifier = Modifier.testTag("ratingErrorText")
                                 )
                             }
+                        } else if (myReview == null) {
+                            Button(
+                                onClick = {
+                                    ratingError = ""
+                                    userReviewString = ""
+                                    userReviewTextString = ""
+                                    showRatingInput = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .testTag("openRatingPrompt"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E6B68)
+                                )
+                            ) {
+                                Text(
+                                    text = "Do you want to leave a rating?",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-            }
-        }
 
-        // Lottery Join / Leave Popup
-        if (popupMessage != null) {
-            AlertDialog(
-                onDismissRequest = { popupMessage = null },
-                modifier = Modifier.testTag("lotteryStatusPopup"),
-                title = { Text(text = popupMessage!!) },
-                text = { Text(text = popupMessage!!) },
-                confirmButton = {
-                    TextButton(
-                        onClick = { popupMessage = null },
-                        modifier = Modifier.testTag("lotteryStatusPopupOk")
+                // List of reviews: yours first, then everyone else's
+                if (reviews.isEmpty()) {
+                    Text(
+                        text = "No reviews yet",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.testTag("noReviewsText")
+                    )
+                } else {
+                    reviews
+                        .sortedByDescending { it.userId == userViewModel.deviceId }
+                        .forEach { r ->
+                            val isMine = r.userId == userViewModel.deviceId
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp)
+                                    .background(Color.White, RoundedCornerShape(16.dp))
+                                    .padding(16.dp)
+                                    .testTag("reviewCard_${r.userId}")
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = r.reviewerName.ifBlank { "Camper" } + (if (isMine) " (you)" else ""),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.testTag("reviewerName_${r.userId}")
+                                        )
+                                        if (r.timestamp > 0L) {
+                                            Text(
+                                                text = reviewDateFormat.format(java.util.Date(r.timestamp)),
+                                                fontSize = 12.sp,
+                                                color = Color.Gray,
+                                                modifier = Modifier.testTag("reviewDate_${r.userId}")
+                                            )
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Rating(
+                                            r.rating,
+                                            modifier = Modifier.testTag("reviewStars_${r.userId}")
+                                        )
+                                        Text(
+                                            text = " ${r.rating}",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                }
+                                if (r.reviewText.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = r.reviewText,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.testTag("reviewText_${r.userId}")
+                                    )
+                                }
+                                if (isMine && !showRatingInput) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                ratingError = ""
+                                                userReviewString = r.rating.toString()
+                                                userReviewTextString = r.reviewText
+                                                showRatingInput = true
+                                            },
+                                            modifier = Modifier.testTag("editRatingPrompt")
+                                        ) {
+                                            Text("Edit", color = Color(0xFF3E6B68))
+                                        }
+                                        TextButton(
+                                            onClick = { showDeleteReviewDialog = true },
+                                            modifier = Modifier.testTag("deleteReviewButton")
+                                        ) {
+                                            Text("Delete", color = Color(0xFFA13F3F))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // -- Campsite QR Code Section --
+                if (campsite.hasQRCode) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("OK")
+                        Text(
+                            text = "Campsite QR Code",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        CampsiteQRCode(
+                            campsiteId = campsite.documentId
+                        )
                     }
                 }
-            )
-        }
+            } // end padded Column
+        } // end scrolling Column
 
         // Rating Received Popup
         if (showRatingPopup) {
@@ -666,6 +696,39 @@ fun CampsiteDetailsScreen(
                         modifier = Modifier.testTag("ratingPopupOk")
                     ) {
                         Text("OK")
+                    }
+                }
+            )
+        }
+
+        // Delete review confirmation
+        if (showDeleteReviewDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteReviewDialog = false },
+                modifier = Modifier.testTag("deleteReviewDialog"),
+                title = { Text(text = "Delete your review?") },
+                text = { Text(text = "This removes your rating and review from this campsite.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            campsite.removeRating(userViewModel.deviceId)
+                            displayedRating = campsite.rating
+                            displayedRaters = campsite.raters
+                            reviewsVersion++
+                            showThankYouMessage = false
+                            showDeleteReviewDialog = false
+                        },
+                        modifier = Modifier.testTag("confirmDeleteReviewButton")
+                    ) {
+                        Text("Delete", color = Color(0xFFA13F3F), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteReviewDialog = false },
+                        modifier = Modifier.testTag("cancelDeleteReviewButton")
+                    ) {
+                        Text("Cancel")
                     }
                 }
             )

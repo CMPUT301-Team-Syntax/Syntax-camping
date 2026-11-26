@@ -11,26 +11,32 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
-import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
-import com.example.syntax_camping.screens.userScreens.PastReservationsScreen
+import com.example.syntax_camping.UserScreens.campsiteInformationDestinations
+import com.example.syntax_camping.screens.userScreens.reservationScreens.PastReservationsScreen
 import com.example.syntax_camping.UserScreens.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
-import com.example.syntax_camping.UserScreens.SearchHomeScreen
+import com.example.syntax_camping.UserScreens.searchScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen
-import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
-import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
+import com.example.syntax_camping.UserScreens.BookCampsiteScreen
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.Lottery
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseCampsites
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseImages
+import com.example.syntax_camping.screens.adminScreens.AdminBrowseProfiles
+import com.example.syntax_camping.screens.adminScreens.AdminComplaints
+import com.example.syntax_camping.screens.adminScreens.adminUserView.AdminViewUserScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteEditingScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
-import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
-import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
+import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
+import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.userScreens.notificationsDestination
+import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
 fun SyntaxCamping(
@@ -76,6 +82,8 @@ fun SyntaxCamping(
             )
         }
 
+        campsiteInformationDestinations(navController)
+
         composable("ownerCampsiteDetails/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId")
             CampsiteDetailsScreen(
@@ -100,12 +108,23 @@ fun SyntaxCamping(
             )
         }
 
+        composable("bookCampsite/{campsiteId}/{lotteryId}") { backStackEntry ->
+            BookCampsiteScreen(
+                navController = navController,
+                campsiteId = backStackEntry.arguments?.getString("campsiteId"),
+                lotteryId = backStackEntry.arguments?.getString("lotteryId"),
+                userViewModel = userViewModel
+            )
+        }
+
         composable("Settings") {
             SettingsScreen(navController, userViewModel)
         }
         composable(APP_GUIDELINES_ROUTE) {
             AppGuidelinesScreen(navController)
         }
+        notificationsDestination(navController,
+            userViewModel.notificationInbox)
         composable("Search") {
             SearchHomeScreen(navController, userViewModel)
         }
@@ -152,13 +171,14 @@ fun SyntaxCamping(
                 navController = navController,
                 lotteryId = lotteryId,
                 userViewModel = userViewModel,
-                onEditLottery = { lotteryToEdit ->
+                onEditLottery = { lotteryToEdit: Lottery ->
                     selCampsite = null
                     selectedLottery = lotteryToEdit
                     navController.navigate("CreateLottery")
                 }
             )
         }
+
 
         composable("UpdateCamp") {
             CampsiteEditingScreen(
@@ -171,8 +191,35 @@ fun SyntaxCamping(
             UpdateProfileScreen(navController, userViewModel, modifier = Modifier)
         }
 
+        composable("adminUserInfo/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            AdminViewUserScreen(navController, userId /*, user = <from the repo later> */)
+        }
+
+        composable("adminBrowseProfiles") {
+            AdminBrowseProfiles(navController /*, users = <from the repo later> */)
+        }
+
+        composable("adminBrowseCampsites") {
+            AdminBrowseCampsites(navController)
+        }
+
+        composable("adminBrowseImages") {
+            AdminBrowseImages(navController)
+        }
+
+        composable("adminComplaints") {
+            AdminComplaints(navController)
+        }
+
+        composable("reservationInfo/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationInfoScreen(navController, reservationId)
+        }
+
         composable("History"){
             VeiwSearchHistory(history = userViewModel.searchHistory, { query -> /* navigate or handle click */ }, navController)
         }
+
     }
 }

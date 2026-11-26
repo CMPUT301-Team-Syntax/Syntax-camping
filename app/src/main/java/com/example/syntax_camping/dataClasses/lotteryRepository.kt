@@ -1,6 +1,7 @@
 package com.example.syntax_camping.dataClasses
 
 import com.example.syntax_camping.Campsite
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.mutableListOf
 /*This repository handles the retireval of lottery information from the firebase. It works with most of the display screens to siplay the information as necessary, and also works wiht lottery, as the get lottery and getlotteries functions b
@@ -9,38 +10,23 @@ import kotlin.collections.mutableListOf
 class lotteryRepository {
     val db = FirebaseFirestore.getInstance()
     //returns all the lotteries in the database
-    fun getLotteries(callback: ( MutableList<Lottery>) -> Unit){
+    fun getLotteries(callback: (MutableList<Lottery>) -> Unit) {
         db.collection("lotteries")
             .get()
             .addOnSuccessListener { querySnapshot ->
                 val lotteriesList = mutableListOf<Lottery>()
 
-                // Loop through every document in the "lotteries" collection
                 for (document in querySnapshot) {
                     val campsites = mutableListOf<Campsite>()
-
-
                     val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
-                    //handles the list of campsites attached to the lottery
+
                     for (campsiteItem in campsitesReference) {
                         val campsiteMap = campsiteItem as? Map<*, *> ?: continue
-                        val campsite = Campsite(
-                            documentId = campsiteMap["documentId"] as? String ?: "",
-                            name = campsiteMap["name"] as? String ?: "",
-                            location = campsiteMap["location"] as? String ?: "",
-                            description = campsiteMap["description"] as? String ?: "",
-                            maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
-                            tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
-                            rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
-                            images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
-                        )
-                        campsites.add(campsite)
+                        campsites.add(parseCampsiteFromMap(campsiteMap))
                     }
 
-                    val capacityLong = document.getLong("capacity")
-                    val capacity = capacityLong?.toInt()
+                    val capacity = document.getLong("capacity")?.toInt()
 
-                    //stores the actual lottery portion
                     val lottery = Lottery(
                         endTimeLottery = document.getLong("endTimeLottery") ?: 0L,
                         endTimeBooking = document.getLong("endTimeBooking") ?: 0L,
@@ -48,69 +34,60 @@ class lotteryRepository {
                         campsites = campsites,
                         capacity = capacity,
                         name = document.getString("name") ?: "",
-                        status = document.getString("status")?: ""
+                        status = document.getString("status") ?: ""
                     ).apply {
                         this.lotteryId = document.id
+                        this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        this.startTime = document.getLong("startTimeLottery") ?: 0L
                     }
-
 
                     lotteriesList.add(lottery)
                 }
 
-
                 callback(lotteriesList)
             }
             .addOnFailureListener {
-                // Return an empty list if the query fails
                 callback(mutableListOf())
             }
     }
-    //return a lottery object, so works with the lottery class, uses a lottery id to get a specific lottery from the repository
-    fun getLottery(lotteryId: String, callback: (Lottery?)->Unit){
 
-        var lottery: Lottery?
-        lottery = null
-        val campsites= mutableListOf<Campsite>()
+    fun getLottery(lotteryId: String, callback: (Lottery?) -> Unit) {
+        var lottery: Lottery? = null
+        val campsites = mutableListOf<Campsite>()
+
         db.collection("lotteries")
             .document(lotteryId)
             .get()
             .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
 
-                val campsitesReference = document.get("campsites") as? List<*> ?: emptyList<Any>()
-                for (campsiteItem in campsitesReference){
-                    val campsiteMap = campsiteItem as? Map<*, *> ?: continue
-                    val campsite = Campsite(
-                        documentId = campsiteMap["documentId"] as? String ?: "",
-                        name = campsiteMap["name"] as? String ?: "",
-                        location = campsiteMap["location"] as? String ?: "",
-                        description = campsiteMap["description"] as? String ?: "",
-                        maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
-                        tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
-                        rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
-                        images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
-                    )
-                    campsites.add(campsite)
-                }
-                    val capacityLong = document.getLong("capacity")
-                    val capacity = capacityLong?.toInt()
+                    for (campsiteItem in campsitesReference) {
+                        val campsiteMap = campsiteItem as? Map<*, *> ?: continue
+                        campsites.add(parseCampsiteFromMap(campsiteMap))
+                    }
+
+                    val capacity = document.getLong("capacity")?.toInt()
                     lottery = Lottery(
-                        endTimeLottery = document.getLong("endTimeLottery")?.toLong() ?:0,
-                        endTimeBooking = document.getLong("endTimeBooking")?.toLong() ?: 0,
+                        endTimeLottery = document.getLong("endTimeLottery") ?: 0L,
+                        endTimeBooking = document.getLong("endTimeBooking") ?: 0L,
                         numWinners = document.getLong("numberOfWinners")?.toInt() ?: 0,
-                        campsites,
+                        campsites = campsites,
                         capacity = capacity,
-                        name= document.getString("name")?: "",
-                        status = document.getString("status")?: ""
+                        name = document.getString("name") ?: "",
+                        status = document.getString("status") ?: ""
                     ).apply {
                         this.lotteryId = document.id
+                        this.lotteryDates = (document.get("lotteryDates") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        this.startTime = document.getLong("startTimeLottery") ?: 0L
                     }
+                }
 
                 callback(lottery)
             }
             .addOnFailureListener {
                 callback(lottery)
             }
-
     }
     //Returns a list of the winners(if there are any)
     fun getWinners(lotteryId: String,callback: ( MutableList<Winner>) -> Unit) {
@@ -196,6 +173,176 @@ class lotteryRepository {
                 callback(entries)
             }
 
+    }
+    //Basically prevents having to have repeated code for getting a campsite from firebase, especially cause the ratings, reservatiojns etc makes that code a beast
+    private fun parseCampsiteFromMap(campsiteMap: Map<*, *>): Campsite {
+        val campsite = Campsite(
+            documentId = campsiteMap["documentId"] as? String ?: "",
+            name = campsiteMap["name"] as? String ?: "",
+            location = campsiteMap["location"] as? String ?: "",
+            description = campsiteMap["description"] as? String ?: "",
+            maxOcc = (campsiteMap["maxOccupancy"] as? Number)?.toInt() ?: 0,
+            tags = ((campsiteMap["tags"] as? String) ?: "").split(",").toMutableList(),
+            rating = (campsiteMap["rating"] as? Number)?.toDouble() ?: 0.0,
+            images = ((campsiteMap["imagesAsStrs"] as? String) ?: "").split(",").toMutableList()
+        )
+
+        //Gets the ratings
+        val rawRatings = campsiteMap["ratings"] as? List<*> ?: emptyList<Any>()
+        val parsedRatings = rawRatings.mapNotNull { item ->
+            val map = item as? Map<*, *> ?: return@mapNotNull null
+            Review(
+                rating = (map["rating"] as? Number)?.toDouble() ?: 0.0,
+                userId = (map["userId"] as? String) ?: "",
+                reviewText = (map["reviewText"] as? String) ?: ""
+            )
+        }.toMutableList()
+        campsite.updateRaterList(parsedRatings)
+
+        // gets the datemaager
+        val rawDateManagerMap = campsiteMap["dateManager"] as? Map<*, *>
+        val rawDatesList = (rawDateManagerMap?.get("dates") as? List<*>)
+            ?: (campsiteMap["dates"] as? List<*>)
+            ?: emptyList<Any>()
+
+        val parsedDates = rawDatesList.mapNotNull { item ->
+            val map = item as? Map<*, *> ?: return@mapNotNull null
+            Date(
+                maxOcc = (map["maxOcc"] as? Number)?.toInt() ?: 0,
+                date = (map["date"] as? String) ?: ""
+            )
+        }.toMutableList()
+        campsite.updateDateManager(DateManager(parsedDates))
+
+        // 3. gets the reservations
+        val rawReservations = campsiteMap["reservations"] as? List<*> ?: emptyList<Any>()
+        val parsedReservations = rawReservations.mapNotNull { item ->
+            val map = item as? Map<*, *> ?: return@mapNotNull null
+            Reservation(
+                campsite = campsite,
+                datesReserved = (map["datesReserved"] as? List<*>)
+                    ?.filterIsInstance<String>()
+                    ?.toMutableList()
+                    ?: mutableListOf(),
+                numberGuests = (map["numberGuests"] as? Number)?.toInt() ?: 0,
+                userId = (map["userId"] as? String) ?: "",
+                status = (map["status"] as? String) ?: ""
+            ).apply {
+                this.reservationId = (map["reservationId"] as? String) ?: ""
+
+            }
+        }.toMutableList()
+        campsite.updateReservations(parsedReservations)
+
+        // Optional: preserve lotteryId if stored inside the nested campsite map
+        val nestedLotteryId = (campsiteMap["lotteryId"] as? String)?.takeIf { it.isNotBlank() }
+        campsite.updateLotteryId(nestedLotteryId)
+
+        return campsite
+    }
+    //Note the two statuses that should be passed ot this are either confirmed or rejected
+    fun updateWinnerStatus(
+        lotteryId: String,
+        userId: String,
+        newStatus: String,
+        pendingId: String? = null,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (lotteryId.isBlank() || userId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        val winnersCollection = db.collection("lotteries")
+            .document(lotteryId)
+            .collection("winners")
+
+        winnersCollection.document(userId).get()
+            .addOnSuccessListener { directDoc ->
+                if (directDoc.exists()) { applyWinnerStatusUpdate(listOf(directDoc), userId, newStatus, pendingId, callback
+                    )
+                } else {
+                    winnersCollection.whereEqualTo("userId", userId).get()
+                        .addOnSuccessListener { querySnapshot ->
+                            if (querySnapshot.isEmpty) {
+                                callback(false)
+                            } else {
+                                applyWinnerStatusUpdate(querySnapshot.documents, userId, newStatus, pendingId, callback
+                                )
+                            }
+                        }
+                        .addOnFailureListener { callback(false) }
+                }
+            }
+            .addOnFailureListener { callback(false) }
+    }
+
+    //a helper to update winner status to clear pendingConfirmations / entrantPendingEntryIds
+    //please edit as needed
+    private fun applyWinnerStatusUpdate(
+        winnerDocs: List<com.google.firebase.firestore.DocumentSnapshot>,
+        userId: String,
+        newStatus: String,
+        explicitPendingId: String?,
+        callback: (Boolean) -> Unit
+    ) {
+        val batch = db.batch()
+        val pendingIdsToClear = mutableSetOf<String>()
+
+        if (!explicitPendingId.isNullOrBlank()) {
+            pendingIdsToClear.add(explicitPendingId)
+        }
+
+        for (doc in winnerDocs) {
+            batch.update(doc.reference, "status", newStatus)
+            val docConfId = doc.getString("confirmationId")?.takeIf { it.isNotBlank() }
+            if (docConfId != null) {
+                pendingIdsToClear.add(docConfId)
+            }
+        }
+
+        for (confId in pendingIdsToClear) {
+            val pendingRef = db.collection("pendingConfirmations").document(confId)
+            batch.set(pendingRef, mapOf("status" to newStatus), com.google.firebase.firestore.SetOptions.merge())
+
+            val entrantRef = db.collection("entrantData").document(userId)
+            batch.update(entrantRef, "entrantPendingEntryIds", FieldValue.arrayRemove(confId))
+        }
+
+        batch.commit()
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
+
+    //getPendingConfirmation(confirmationId) takes a confirmationId string, looks up pendingConfirmations/{confirmationId} in Firestore, checks that the document exists and its status is null or "pending", and returns a PendingConfirmation object (or null if missing, already confirmed/rejected, or on error).
+
+    //Where It's Used in Your Flow
+    //When a lottery draw finishes (UserViewModel.announceWins):
+    //The draw puts a confirmationId into entrantData/{userId}.entrantPendingEntryIds and creates pendingConfirmations/{confirmationId}.
+    //announceWins calls lotteries.getPendingConfirmation(pendingId) to verify it's still an unanswered pending win and get its lotteryId so it can fetch the lottery name and trigger the "You won the lottery!" notification.
+    //When opening a won lottery / booking screen (your next UI step):
+    //You call getPendingConfirmation(pendingId) to get the PendingConfirmation instance (pendingId, lotteryId, userId), fetch the Lottery (lottery.endTimeBooking, lottery.lotteryDates, lottery.campsites), and wire the user's Confirm / Book (confirmReservation()) and Decline (rejectReservation()) actions.
+    fun getPendingConfirmation(confirmationId: String, callback: (PendingConfirmation?) -> Unit) {
+        if (confirmationId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("pendingConfirmations")
+            .document(confirmationId)
+            .get()
+            .addOnSuccessListener { doc ->
+                val status = doc.getString("status")
+                if (doc.exists() && (status == null || status == "pending")) {
+                    callback(
+                        PendingConfirmation(doc.id, doc.getString("lotteryId") ?: "", doc.getString("userId") ?: ""
+                        )
+                    )
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { callback(null) }
     }
 }
 
