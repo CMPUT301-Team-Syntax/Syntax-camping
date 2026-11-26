@@ -16,7 +16,7 @@ import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
 import com.example.syntax_camping.UserScreens.CampsiteDetailsScreen
 import com.example.syntax_camping.UserScreens.campsiteInformationDestinations
 import com.example.syntax_camping.screens.userScreens.reservationScreens.PastReservationsScreen
-import com.example.syntax_camping.UserScreens.ProfileScreen
+import com.example.syntax_camping.screens.userScreens.profileScreen.ProfileScreen
 import com.example.syntax_camping.UserScreens.ReservationsScreen
 import com.example.syntax_camping.UserScreens.searchScreens.SearchHomeScreen
 import com.example.syntax_camping.UserScreens.SettingsScreen

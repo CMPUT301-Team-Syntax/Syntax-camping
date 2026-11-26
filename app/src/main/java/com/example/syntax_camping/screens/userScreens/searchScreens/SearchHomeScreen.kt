@@ -1,4 +1,4 @@
-package com.example.syntax_camping.UserScreens
+package com.example.syntax_camping.UserScreens.searchScreens
 
 import android.Manifest
 import androidx.activity.compose.BackHandler
