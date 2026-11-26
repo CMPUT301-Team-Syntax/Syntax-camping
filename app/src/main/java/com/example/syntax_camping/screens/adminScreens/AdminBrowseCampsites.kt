@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.dataClasses.NotificationLogScope
 import com.example.syntax_camping.screens.adminScreens.adminCampsiteList.CampsiteListScreenAdmin
 import com.example.syntax_camping.screens.tabs.AdminBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
@@ -78,9 +79,10 @@ fun AdminBrowseCampsites(navController: NavController) {
                     campsiteList = campsites,
                     // for now this opens the owner-style details page; swap in the
                     // admin details route here once that page exists
-                    onItemClick = { id -> navController.navigate("ownerCampsiteDetails/$id") }
-                    // menu actions (logs / owner profile / notifications) are not wired yet,
-                    // so they do nothing for now
+                    onItemClick = { id -> navController.navigate("ownerCampsiteDetails/$id") },
+                    onViewNotificationsClick = { id ->
+                        navController.openAdminNotificationLogs(NotificationLogScope.CAMPSITE, id)
+                    }
                 )
             }
         }

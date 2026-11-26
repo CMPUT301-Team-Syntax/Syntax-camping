@@ -39,3 +39,11 @@ export {
 
 
 
+
+export {
+    getAdminNotificationLogs,
+    logLotteryWaitlist,
+    logLotteryOutcome,
+    logLotteryRegistration,
+    logLotteryWinner,
+} from "./notificationAudit";

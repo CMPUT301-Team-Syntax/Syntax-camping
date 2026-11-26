@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,7 +32,8 @@ import com.example.syntax_camping.screens.tabs.TopBar
 @Composable
 fun AdminBrowseProfiles(
     navController: NavController,
-    users: List<AdminUserItem> = emptyList()
+    users: List<AdminUserItem> = emptyList(),
+    loading: Boolean = false
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -66,7 +68,11 @@ fun AdminBrowseProfiles(
                 )
             }
 
-            if (users.isEmpty()) {
+            if (loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (users.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

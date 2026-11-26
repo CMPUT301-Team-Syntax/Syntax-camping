@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,39 +26,21 @@ import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import com.google.firebase.auth.FirebaseAuth
 
 private val SettingsPink = Color(0xFFE2AEAF)
 private val LinkBlue = Color(0xFF6093B5)
 
-/** Storyboard shell. These local control states do not change notification delivery or sign-in. */
 @Composable
 fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
     var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
-    var showAdminDialog by rememberSaveable { mutableStateOf(false) }
-
-    if (showAdminDialog) {
-        AlertDialog(
-            onDismissRequest = { showAdminDialog = false },
-            title = { Text("Login as admin") },
-            text = { Text("Do you want to log in as an admin?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showAdminDialog = false
-                        navController.navigate("adminBrowseProfiles") { launchSingleTop = true }
-                    },
-                    modifier = Modifier.testTag("adminLoginYes")
-                ) { Text("Yes") }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showAdminDialog = false },
-                    modifier = Modifier.testTag("adminLoginNo")
-                ) { Text("No") }
-            },
-            modifier = Modifier.testTag("adminLoginDialog")
-        )
+    val auth = remember { FirebaseAuth.getInstance() }
+    var signedIn by remember { mutableStateOf(auth.currentUser != null) }
+    DisposableEffect(auth) {
+        val listener = FirebaseAuth.AuthStateListener { signedIn = it.currentUser != null }
+        auth.addAuthStateListener(listener)
+        onDispose { auth.removeAuthStateListener(listener) }
     }
 
     SettingsPagesLayout(navController) { innerPadding ->
@@ -105,8 +88,11 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
             SettingsMenuRow(
                 label = "Login as admin",
                 modifier = Modifier.testTag("settingsLoginAsAdmin"),
-                onClick = { showAdminDialog = true }
+                onClick = { navController.navigate("adminBrowseProfiles") { launchSingleTop = true } }
             )
+            if (signedIn) {
+                SettingsMenuRow(label = stringResource(R.string.admin_sign_out), onClick = auth::signOut)
+            }
             TextButton(
                 onClick = { navController.navigate(APP_GUIDELINES_ROUTE) { launchSingleTop = true } },
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp)

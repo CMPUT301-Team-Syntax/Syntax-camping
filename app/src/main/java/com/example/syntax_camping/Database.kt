@@ -185,7 +185,9 @@ class Database {
                                 mapOf(
                                     "userId" to entry.userId,
                                     "joinedTimestamp" to entry.joined,
-                                    "status" to "waiting"
+                                    "status" to "waiting",
+                                    "directWaitlistRegistration" to (collectionName == "waitlist"),
+                                    "notificationCampsiteId" to campsiteId
                                 )
                             )
                             .addOnSuccessListener {
