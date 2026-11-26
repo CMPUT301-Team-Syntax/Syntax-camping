@@ -8,6 +8,101 @@ import com.example.syntax_camping.Campsite
 class ReservationRepository {
     val db = FirebaseFirestore.getInstance()
 
+    /** Saves a lottery booking and consumes the pending win in the same transaction. */
+    internal fun confirmLotteryBooking(
+        reservation: Reservation,
+        lotteryId: String,
+        rulesAcknowledged: Boolean,
+        callback: (Boolean, String?) -> Unit
+    ) {
+        val dates = reservation.datesReserved.toSet()
+        val guests = reservation.numberGuests
+        val campsite = reservation.campsite
+        if (!rulesAcknowledged || dates.isEmpty() || guests <= 0 ||
+            lotteryId.isBlank() || campsite.documentId.isBlank() || reservation.userId.isBlank()
+        ) {
+            callback(false, null)
+            return
+        }
+
+        val campsiteRef = db.collection("campsites").document(campsite.documentId)
+        val lotteryRef = db.collection("lotteries").document(lotteryId)
+        val winnerRef = lotteryRef.collection("winners").document(reservation.userId)
+        val entrantRef = db.collection("entrantData").document(reservation.userId)
+        val bookingRef = db.collection("reservations").document()
+        val campsiteBookingRef = campsiteRef.collection("reservations").document(bookingRef.id)
+
+        db.runTransaction { transaction ->
+            val lottery = transaction.get(lotteryRef)
+            val winner = transaction.get(winnerRef)
+            if (lottery.getString("status") != "booking" ||
+                (lottery.getLong("endTimeBooking") ?: 0L) < System.currentTimeMillis() ||
+                winner.getString("status") != "pending"
+            ) {
+                return@runTransaction false
+            }
+
+            val campsiteSnapshot = transaction.get(campsiteRef)
+            if (!campsiteSnapshot.exists() || campsiteSnapshot.getString("lotteryId") != lotteryId) {
+                return@runTransaction false
+            }
+            val capacity = campsiteSnapshot.getLong("maxOccupancy") ?: campsite.maxOcc.toLong()
+            if (guests > capacity) return@runTransaction false
+
+            val existingDates = campsiteSnapshot.get("dates") as? List<*> ?: emptyList<Any>()
+            val lotteryDates = (lottery.get("lotteryDates") as? List<*>)?.filterIsInstance<String>().orEmpty()
+            val offeredDates = lotteryDates.ifEmpty {
+                existingDates.mapNotNull { (it as? Map<*, *>)?.get("date") as? String }
+            }
+            if (!offeredDates.containsAll(dates)) return@runTransaction false
+
+            val remainingDates = dates.toMutableSet()
+            val updatedDates = existingDates.map { item ->
+                val day = item as? Map<*, *> ?: return@map item
+                val date = day["date"] as? String ?: return@map item
+                if (!remainingDates.remove(date)) return@map item
+                val maximum = (day["maxOcc"] as? Number)?.toLong()?.takeIf { it > 0 } ?: capacity
+                val occupied = (day["currentOcc"] as? Number)?.toLong() ?: 0L
+                if (occupied + guests > maximum) return@runTransaction false
+                mapOf("date" to date, "maxOcc" to maximum, "currentOcc" to occupied + guests)
+            } + remainingDates.map { date ->
+                mapOf("date" to date, "maxOcc" to capacity, "currentOcc" to guests)
+            }
+
+            val bookingData = mapOf(
+                "reservationId" to bookingRef.id,
+                "campsiteId" to campsiteRef.id,
+                "datesReserved" to dates.toList(),
+                "numberGuests" to guests,
+                "userId" to reservation.userId,
+                "status" to reservation.status,
+                "bookingName" to reservation.bookingName,
+                "rulesAcknowledged" to true
+            )
+            val entrantUpdate = mutableMapOf(
+                "entrantReservationIds" to FieldValue.arrayUnion(bookingRef.id)
+            )
+            winner.getString("confirmationId")?.takeIf { it.isNotBlank() }?.let { confirmationId ->
+                val confirmationRef = db.collection("pendingConfirmations").document(confirmationId)
+                transaction.set(confirmationRef, mapOf("status" to "confirmed"), SetOptions.merge())
+                entrantUpdate["entrantPendingEntryIds"] = FieldValue.arrayRemove(confirmationId)
+            }
+            transaction.update(campsiteRef, "dates", updatedDates)
+            transaction.set(campsiteBookingRef, bookingData)
+            transaction.set(bookingRef, bookingData)
+            transaction.set(entrantRef, entrantUpdate, SetOptions.merge())
+            transaction.update(winnerRef, "status", "confirmed")
+            true
+        }.addOnSuccessListener { confirmed ->
+            if (confirmed) {
+                reservation.updateReservationId(bookingRef.id)
+                callback(true, formatReservationAsCSV(reservation))
+            } else {
+                callback(false, null)
+            }
+        }.addOnFailureListener { callback(false, null) }
+    }
+
     fun addReservation(
         documentId: String,
         reservation: Reservation,
