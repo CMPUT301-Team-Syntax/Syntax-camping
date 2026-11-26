@@ -1,4 +1,4 @@
-package com.example.syntax_camping.UserScreens
+package com.example.syntax_camping.screens.userScreens.profileScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +35,6 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.example.syntax_camping.screens.userScreens.profileScreen.DeleteProfilePopUp
 
 @Composable
 fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, modifier: Modifier = Modifier) {
@@ -82,16 +79,15 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, mo
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    val shapeModifier = modifier
-                        .width(96.dp)
-                        .height(96.dp)
-                        .clip(RoundedCornerShape(16.dp))
-
-                    Box(
-                        modifier = shapeModifier
-                            .background(Color(0xFFF4E8D5))
-                    )
+                    // Saved profile picture; tap it to change it on the update screen
+                    Box(modifier = Modifier.size(96.dp)) {
+                        ProfileAvatar(
+                            model = userViewModel.currentUser?.profileImageUrl,
+                            modifier = Modifier
+                                .clickable { navController.navigate("UpdateProfile") }
+                                .testTag("profileAvatar")
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -145,11 +141,13 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, mo
             )
             ListItem(
                 headlineContent = { Text(text = "View Reservation history") },
-                modifier = Modifier.clickable { }
+                modifier = Modifier.clickable {navController.navigate("PastReservations") }
             )
             ListItem(
                 headlineContent = { Text(text = "View Search history") },
-                modifier = Modifier.clickable { }
+                modifier = Modifier.clickable {
+                    navController.navigate("History")
+                }
             )
             ListItem(
                 headlineContent = { Text(text = "Delete Account") },

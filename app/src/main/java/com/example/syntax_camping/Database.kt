@@ -354,6 +354,7 @@ class Database {
                     "displayName" to userDetails.name,
                     "displayEmail" to userDetails.email,
                     "displayPhoneNumber" to userDetails.phoneNumber,
+                    "profileImageUrl" to userDetails.profileImageUrl,
                 )
             )
             .addOnSuccessListener {
@@ -426,6 +427,7 @@ class Database {
                     "displayName" to user.name,
                     "displayEmail" to user.email,
                     "displayPhoneNumber" to user.phoneNumber,
+                    "profileImageUrl" to user.profileImageUrl,
                 )
             )
             //If it succeeds, initialize details for specific user type in their own collections.
@@ -490,6 +492,7 @@ class Database {
                 val name = userDocument.get("displayName") as? String ?: ""
                 val email = userDocument.get("displayEmail") as? String ?: ""
                 val phoneNumber = userDocument.get("displayPhoneNumber") as? String ?: ""
+                val profileImageUrl = userDocument.get("profileImageUrl") as? String ?: ""
                 var fetchedEntrantData: EntrantData? = null
                 var fetchedOwnerData: OwnerData? = null
 
@@ -543,7 +546,8 @@ class Database {
                                     email,
                                     phoneNumber,
                                     fetchedEntrantData,
-                                    fetchedOwnerData
+                                    fetchedOwnerData,
+                                    profileImageUrl
                                 )
                                 callback(Result.success(fetchedUser))
                             }
@@ -690,6 +694,36 @@ class Database {
             .getInstance("gs://syntaxcamping.firebasestorage.app")
             .reference
             .child("campsites/$campsiteId/${UUID.randomUUID()}")
+
+        storageRef.putFile(imageUri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    throw task.exception
+                        ?: Exception("Image upload failed")
+                }
+
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUri ->
+                callback(Result.success(downloadUri.toString()))
+            }
+            .addOnFailureListener { exception ->
+                callback(Result.failure(exception))
+            }
+    }
+
+    // uploadProfileImage
+    // uploads a user's profile picture to storage and gives back its download url.
+    // The url is then saved on the user through updateUser (profileImageUrl).
+    fun uploadProfileImage(
+        userId: String,
+        imageUri: Uri,
+        callback: (Result<String>) -> Unit
+    ) {
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("users/$userId/${UUID.randomUUID()}")
 
         storageRef.putFile(imageUri)
             .continueWithTask { task ->
