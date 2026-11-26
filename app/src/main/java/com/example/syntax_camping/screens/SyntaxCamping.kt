@@ -44,6 +44,8 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
+import com.example.syntax_camping.screens.userScreens.reservationScreens.CancelledReservationsScreen
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationCsvScreen
 import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
@@ -246,6 +248,14 @@ fun SyntaxCamping(
 
         composable("History"){
             VeiwSearchHistory(history = userViewModel.searchHistory, { query -> /* navigate or handle click */ }, navController)
+        }
+
+        composable("reservationCsv/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationCsvScreen(navController, reservationId)
+        }
+        composable("cancelledReservations") {
+            CancelledReservationsScreen(navController, userViewModel)
         }
 
     }

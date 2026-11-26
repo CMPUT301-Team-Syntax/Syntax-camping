@@ -181,3 +181,59 @@ export const getAdminNotificationLogs = onCall(async (request) => {
         next: snapshot.size > pageSize ? {id: last.id, occurredAt: last.occurredAt} : null,
     };
 });
+
+export const logReservationCancellation = onDocumentUpdated(
+    {document: "reservations/{reservationId}", retry: true},
+    async (event) => {
+        if (!event.data) return;
+        const {before, after} = event.data;
+        const status = String(after.get("status") ?? "").toLowerCase();
+        if (before.get("status") === after.get("status")) return;
+        if (status !== "cancelled" && status !== "rejected") return;
+
+        const campsiteId = after.get("campsiteId");
+        if (!validId(campsiteId)) return;
+        const campsite = (await db.collection("campsites").doc(campsiteId).get()).data() ?? {};
+        const campsiteName = typeof campsite.name === "string" && campsite.name.trim()
+            ? campsite.name.trim() : campsiteId;
+        const ownerId = campsite.ownerId;
+        const guestId = after.get("userId");
+
+        const byOwner = after.get("cancelledBy") === "owner" || status === "rejected";
+        const bookingName = String(after.get("bookingName") ?? "").trim() || "The guest";
+        const reason = String(after.get("cancelReason") ?? "").trim();
+        const reasonText = reason ? ` Reason: ${reason}` : " No reason was given.";
+        const occurredAt = after.updateTime.toMillis();
+
+        const ownerEntry = byOwner
+            ? {title: "You cancelled a reservation",
+                message: `You cancelled ${bookingName}'s reservation at ${campsiteName}.${reasonText}`}
+            : {title: "Reservation cancelled by guest",
+                message: `${bookingName} cancelled their reservation at ${campsiteName}.${reasonText}`};
+        const guestEntry = byOwner
+            ? {title: "Your reservation was cancelled by the owner",
+                message: `Your reservation at ${campsiteName} was cancelled by the owner.${reasonText}`}
+            : {title: "You cancelled your reservation",
+                message: `You cancelled your reservation at ${campsiteName}.${reasonText}`};
+
+        const targets: {scope: Scope; id: string; entry: {title: string; message: string}}[] = [
+            {scope: "campsite", id: campsiteId, entry: ownerEntry},
+        ];
+        if (validId(ownerId)) targets.push({scope: "owner", id: ownerId, entry: ownerEntry});
+        if (validId(guestId)) targets.push({scope: "owner", id: guestId, entry: guestEntry});
+
+        const writer = db.bulkWriter();
+        const writes = targets.map((t) => {
+            const docId = createHash("sha256")
+                .update(JSON.stringify([event.id, t.scope, t.id])).digest("hex");
+            return writer.create(logCollection(t.scope, t.id).doc(docId), {
+                campsiteId, campsiteName, title: t.entry.title, message: t.entry.message, occurredAt,
+            });
+        });
+        // Events can be delivered twice: keep the first record
+        const completed = Promise.all(writes.map((write) => write.catch((error) => {
+            if (error.code !== 6) throw error; // gRPC ALREADY_EXISTS
+        })));
+        await Promise.all([writer.close(), completed]);
+    },
+);

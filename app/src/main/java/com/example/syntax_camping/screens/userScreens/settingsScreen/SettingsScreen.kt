@@ -82,6 +82,12 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
                 modifier = Modifier.testTag("settingsLoginAsAdmin"),
                 onClick = { showAdminDialog = true }
             )
+
+            SettingsMenuRow(
+                label = "View cancelled reservations",
+                modifier = Modifier.testTag("settingsCancelledReservations"),
+                onClick = { navController.navigate("cancelledReservations") }
+            )
             TextButton(
                 onClick = { navController.navigate(APP_GUIDELINES_ROUTE) { launchSingleTop = true } },
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
