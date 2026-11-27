@@ -22,7 +22,7 @@ export interface DateBounds {
  * Returns null if invalid.
  */
 function parseDdMmYy(dateStr: string): {year: number; month: number; day: number} | null {
-  const match = /^(\d{2})(\d{2})(\d{2})$/.exec(dateStr.trim());
+  const match = /^(\d{2})\/?(\d{2})\/?(\d{2})$/.exec(dateStr.trim());
   if (!match) return null;
 
   const day = Number(match[1]);
@@ -32,7 +32,7 @@ function parseDdMmYy(dateStr: string): {year: number; month: number; day: number
 
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  // Verify real calendar date (e.g., rejects 310226)
+  // Verify real calendar date (e.g., rejects 31/02/26)
   const check = new Date(Date.UTC(year, month - 1, day));
   if (
     check.getUTCFullYear() !== year ||
