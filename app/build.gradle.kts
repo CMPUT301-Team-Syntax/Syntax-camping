@@ -90,4 +90,5 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.mapbox.maps:android-ndk27:11.35.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.35.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }
