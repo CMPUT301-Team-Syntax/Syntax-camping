@@ -21,7 +21,7 @@ enum class BottomTab(//can replicate for campsite owner, just change the navigat
 ) {
     Search("Search", R.drawable.ic_search, R.drawable.search_tapped),
     Reservations("Reservations", R.drawable.reservations, R.drawable.reservations),
-    CampsitesHome("CampsiteOwnerHome", R.drawable.home, R.drawable.home ),
+    CampsitesHome("CampsiteOwnerHome", R.drawable.home, R.drawable.home_selected ),
     Profile("Profile", R.drawable.account, R.drawable.account_tapped),                     // Add a tapped version here if you make one
     Settings("Settings", R.drawable.ic_settings, R.drawable.settings_tapped),
 }

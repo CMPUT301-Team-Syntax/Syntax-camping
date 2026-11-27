@@ -3,45 +3,50 @@ package com.example.syntax_camping.screens.ownerScreens.lotteryScreens
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.dateConverterToLong
+
+// The first date/time is the DRAW (the countdown ends there). The second is the LAST DAY TO BOOK
+// for winners and waitlisters. The lottery is open for entries from the moment it is created.
 fun validateAndCreateLottery(
     editingLotteryId: String? = null,
     name: String,
-    startDay: String,
-    startMonth: String,
-    startYear: String,
-    startHour: String,
-    startMinute: String,
-    finalDay: String,
-    finalMonth: String,
-    finalYear: String,
-    finalHour: String,
-    finalMinute: String,
+    drawDay: String,
+    drawMonth: String,
+    drawYear: String,
+    drawHour: String,
+    drawMinute: String,
+    bookByDay: String,
+    bookByMonth: String,
+    bookByYear: String,
+    bookByHour: String,
+    bookByMinute: String,
     numWinnersText: String,
     capacity: String,
     selectedCampsites: MutableList<Campsite>,
-    lotteryDates: List<String> = emptyList()
+    lotteryDates: List<String> = emptyList(),
+    ownerId: String = "",
+    isJoinable: Boolean = false
 
 ): Pair<Boolean, String>
 
 {
     val myName = name.trim()
-    val sDay = startDay.toIntOrNull()
-    val sMonth = startMonth.toIntOrNull()
-    val sYear = startYear.toIntOrNull()
-    val sHour = startHour.toIntOrNull()
-    val sMin = startMinute.toIntOrNull()
+    val dDay = drawDay.toIntOrNull()
+    val dMonth = drawMonth.toIntOrNull()
+    val dYear = drawYear.toIntOrNull()
+    val dHour = drawHour.toIntOrNull()
+    val dMin = drawMinute.toIntOrNull()
 
-    val fDay = finalDay.toIntOrNull()
-    val fMonth = finalMonth.toIntOrNull()
-    val fYear = finalYear.toIntOrNull()
-    val fHour = finalHour.toIntOrNull()
-    val fMin = finalMinute.toIntOrNull()
+    val bDay = bookByDay.toIntOrNull()
+    val bMonth = bookByMonth.toIntOrNull()
+    val bYear = bookByYear.toIntOrNull()
+    val bHour = bookByHour.toIntOrNull()
+    val bMin = bookByMinute.toIntOrNull()
 
     val parsedWinners = numWinnersText.toIntOrNull()
     val lotCapacity = if (capacity.isEmpty()){
         null} else{
         capacity.toIntOrNull()
-        }
+    }
 
 
     if (myName.isEmpty()){
@@ -51,8 +56,8 @@ fun validateAndCreateLottery(
         return Pair(false, "Lottery name must be 50 characters or fewer")
     }
 
-    if (sDay == null || sMonth == null || sYear == null || sHour == null || sMin == null ||
-        fDay == null || fMonth == null || fYear == null || fHour == null || fMin == null ||
+    if (dDay == null || dMonth == null || dYear == null || dHour == null || dMin == null ||
+        bDay == null || bMonth == null || bYear == null || bHour == null || bMin == null ||
         parsedWinners == null
     ) {
         return Pair(false, "All date and winner fields must be valid numbers")
@@ -67,8 +72,12 @@ fun validateAndCreateLottery(
     }
 
     val dateLongConverter = dateConverterToLong()
-    val endTimeLottery = dateLongConverter.convertDateToLong(sYear, sMonth, sDay, sHour, sMin)
-    val endTimeBooking = dateLongConverter.convertDateToLong(fYear, fMonth, fDay, fHour, fMin)
+    val endTimeLottery = dateLongConverter.convertDateToLong(dYear, dMonth, dDay, dHour, dMin)   // the draw
+    val endTimeBooking = dateLongConverter.convertDateToLong(bYear, bMonth, bDay, bHour, bMin)   // last time to book
+
+    if (endTimeBooking <= endTimeLottery) {
+        return Pair(false, "The last day to book must be after the draw")
+    }
 
     val newLottery = Lottery(
         endTimeLottery = endTimeLottery,
@@ -85,7 +94,9 @@ fun validateAndCreateLottery(
     }
 
     newLottery.lotteryDates = lotteryDates
-
+    newLottery.startTime = 0L   // no separate opening time: entries are open as soon as the lottery exists
+    newLottery.ownerId = ownerId
+    newLottery.isJoinable = isJoinable
     val success = newLottery.createLotteryTimer()
 
     if (!success) {
@@ -96,7 +107,7 @@ fun validateAndCreateLottery(
         campsite.updateLotteryId(newLottery.lotteryId)
     }
 
-    // ADDED: every campsite in the lottery gets the dates the owner picked
+    // every campsite in the lottery gets the dates the owner picked
     if (lotteryDates.isNotEmpty()) {
         selectedCampsites.forEach { campsite -> campsite.addLotteryDates(lotteryDates) }
     }

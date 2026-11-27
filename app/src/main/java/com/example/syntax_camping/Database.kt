@@ -4,10 +4,11 @@ import android.content.Context
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
-import com.example.syntax_camping.dataClasses.Conversation
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.LotteryEntry
-import com.example.syntax_camping.dataClasses.Message
 import com.example.syntax_camping.dataClasses.NotificationData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.Reservation
@@ -20,7 +21,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import com.example.syntax_camping.dataClasses.Review
 import com.google.firebase.firestore.SetOptions
@@ -43,6 +43,7 @@ class Database {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
     //This is to allow the use for certain firebase functions specifically fo lottery timers
     private val functions = FirebaseFunctions.getInstance()
+
 
     //This is for userCache related things.
     private var _users: MutableList<User> = mutableListOf()
@@ -76,15 +77,24 @@ class Database {
 
     }
     //returns lottery d for use in lottery manager(track what lottery each campsite bleongs to basically
-    fun addDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String, lotteryDates: List<String> = emptyList()): String{        //The two following values allow firebase to generate a unique lottery id
-
+    fun addDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryDates: List<String> = emptyList(),
+        startTime: Long = 0L,
+        ownerId: String = "",
+        isJoinable: Boolean = false
+    ): String {
         val lotteryReference = db.collection("lotteries").document()
         val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
@@ -92,34 +102,47 @@ class Database {
             "campsites" to campsites,
             "name" to name,
             "capacity" to capacity,
-            "lotteryDates" to lotteryDates
-
+            "lotteryDates" to lotteryDates,
+            "startTimeLottery" to startTime,
+            "ownerId" to ownerId,
+            "isJoinable" to isJoinable
         )
         lotteryReference.set(data)
 
         return lotteryId
     }
-    fun updateDrawTimer( endTimeLottery: Long,endTimeBooking: Long,  numberOfWinners: Int,campsites: MutableList<Campsite>,capacity: Int?, name: String,  lotteryId: String, lotteryDates: List<String>? = null){        //The two following values allow firebase to generate a unique lottery id
-
+    fun updateDrawTimer(
+        endTimeLottery: Long,
+        endTimeBooking: Long,
+        numberOfWinners: Int,
+        campsites: MutableList<Campsite>,
+        capacity: Int?,
+        name: String,
+        lotteryId: String,
+        lotteryDates: List<String>? = null,
+        startTime: Long? = null,
+        ownerId: String? = null,
+        isJoinable: Boolean? = null
+    ) {
         val lotteryReference = db.collection("lotteries").document(lotteryId)
-        val lotteryId = lotteryReference.id
-        for (campsite in campsites){
+        for (campsite in campsites) {
             campsite.updateLotteryId(lotteryId)
         }
         val data = mapOf(
-
             "endTimeLottery" to endTimeLottery,
             "endTimeBooking" to endTimeBooking,
             "numberOfWinners" to numberOfWinners,
             "status" to "initialAccepting",
             "campsites" to campsites,
             "name" to name,
-            "capacity" to capacity,
-
-            )
-        val finalData = if (lotteryDates != null) data + ("lotteryDates" to lotteryDates) else data
+            "capacity" to capacity
+        )
+        var finalData: Map<String, Any?> = data
+        if (lotteryDates != null) finalData = finalData + ("lotteryDates" to lotteryDates)
+        if (startTime != null) finalData = finalData + ("startTimeLottery" to startTime)
+        if (!ownerId.isNullOrBlank()) finalData = finalData + ("ownerId" to ownerId)
+        if (isJoinable != null) finalData = finalData + ("isJoinable" to isJoinable)
         lotteryReference.update(finalData)
-
     }
     /*
     * adds a user to the correct list for a lottery(either entries if names have not been drawn, or waitlist if they have
@@ -147,6 +170,11 @@ class Database {
                 val lottery = db.collection("lotteries").document(lotteryId)
                 lottery.get()
                     .addOnSuccessListener { lotterySnapshot ->
+                        val opensAt = lotterySnapshot.getLong("startTimeLottery") ?: 0L
+                        if (opensAt > System.currentTimeMillis()) {
+                            onComplete(null)
+                            return@addOnSuccessListener
+                        }
                         val collectionName = when (lotterySnapshot.getString("status")) {
                             "initialAccepting" -> "entries"
                             "booking" -> "waitlist"
@@ -161,7 +189,9 @@ class Database {
                                 mapOf(
                                     "userId" to entry.userId,
                                     "joinedTimestamp" to entry.joined,
-                                    "status" to "waiting"
+                                    "status" to "waiting",
+                                    "directWaitlistRegistration" to (collectionName == "waitlist"),
+                                    "notificationCampsiteId" to campsiteId
                                 )
                             )
                             .addOnSuccessListener {
@@ -349,6 +379,7 @@ class Database {
                     "displayName" to userDetails.name,
                     "displayEmail" to userDetails.email,
                     "displayPhoneNumber" to userDetails.phoneNumber,
+                    "profileImageUrl" to userDetails.profileImageUrl,
                 )
             )
             .addOnSuccessListener {
@@ -421,6 +452,7 @@ class Database {
                     "displayName" to user.name,
                     "displayEmail" to user.email,
                     "displayPhoneNumber" to user.phoneNumber,
+                    "profileImageUrl" to user.profileImageUrl,
                 )
             )
             //If it succeeds, initialize details for specific user type in their own collections.
@@ -485,6 +517,7 @@ class Database {
                 val name = userDocument.get("displayName") as? String ?: ""
                 val email = userDocument.get("displayEmail") as? String ?: ""
                 val phoneNumber = userDocument.get("displayPhoneNumber") as? String ?: ""
+                val profileImageUrl = userDocument.get("profileImageUrl") as? String ?: ""
                 var fetchedEntrantData: EntrantData? = null
                 var fetchedOwnerData: OwnerData? = null
 
@@ -538,7 +571,8 @@ class Database {
                                     email,
                                     phoneNumber,
                                     fetchedEntrantData,
-                                    fetchedOwnerData
+                                    fetchedOwnerData,
+                                    profileImageUrl
                                 )
                                 callback(Result.success(fetchedUser))
                             }
@@ -608,6 +642,68 @@ class Database {
             }
     }
 
+    //Delete user
+    fun removeUser(devId: String, callback: (Result<Unit>) -> Unit) {
+        val defaultEntrantData = EntrantData(mutableListOf<String>(),
+            mutableListOf<String>(),
+            mutableListOf<String>())
+        val defaultOwnerData = OwnerData(mutableListOf<String>(),
+            mutableListOf<String>())
+        val defaultUser = User(devId,
+            "Default",
+            "Default@gmail.com",
+            "1234567890",
+            defaultEntrantData,
+            defaultOwnerData)
+
+        //1. Get user data
+        var currentUser by mutableStateOf<User?>(null)
+        fetchUserDetails(devId) {result ->
+            result.onSuccess { user ->
+                currentUser = user
+            }.onFailure { error ->
+                Log.e("UserDebug", "Failed to fetch user", error)
+            }
+        }
+
+        //2. Delete entrant & owner data
+        currentUser?.entrantData?.let { entrantData ->
+
+            val entrantLotteryList = entrantData.lotteryEntryIds
+            val entrantReservationList = entrantData.reservationIds
+
+            for (id in entrantLotteryList) {
+                //removeUserFromLottery(id)
+            }
+            for (id in entrantReservationList) {
+                //removeReservation(id)
+            }
+        }
+
+        currentUser?.ownerData?.let { ownerData ->
+            val lotteryList = ownerData.lotteryIds
+            val campsiteList = ownerData.campsiteIds
+
+            for (id in lotteryList) {
+                //deleteLottery(id)
+            }
+            for (id in campsiteList) {
+                //deleteCampsite(id)
+            }
+        }
+
+        //3. Replace the user with a "DeletedUser" in every conservation they're in.
+        //replaceConservationWithDeletedUser(devId)
+
+        //4. Reset the user to a  "default" state.
+        updateUser(devId, defaultUser) { result ->
+            result.onSuccess {
+                callback(Result.success(Unit))
+            }.onFailure { error ->
+                Log.e("UserDebug", "Failed to reset user", error)
+            }
+        }
+    }
 
     fun createNewCampsite(campsite: Campsite) {
         db.collection("campsites")
@@ -616,13 +712,18 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
                     "images" to campsite.getImagesAsStrs(),    // same with images
                     "lotteryId" to "",
                     "ratings" to campsite.ratings,
-                    "hasQRCode" to campsite.hasQRCode
+                    "hasQRCode" to campsite.hasQRCode,
+                    "dates" to (campsite.dateManager?.allDates?.map {
+                        mapOf("date" to it.dateString, "maxOcc" to it.maxOcc, "currentOcc" to it.currentOcc)
+                    } ?: emptyList<Map<String, Any>>())
                 )
             )
     }
@@ -638,7 +739,6 @@ class Database {
                 // Optional: Handle the error
             }
     }
-
     fun updateCampsite(campsite: Campsite) {
 
 
@@ -648,6 +748,8 @@ class Database {
                 mapOf(
                     "name" to campsite.name,
                     "location" to campsite.location,
+                    "latitude" to campsite.latitude,
+                    "longitude" to campsite.longitude,
                     "description" to campsite.description,
                     "maxOccupancy" to campsite.maxOcc,
                     "tags" to campsite.tags.joinToString(separator = ","),   // Campsite() stores tags as a MutableList, firestore stores them as a string.
@@ -696,4 +798,79 @@ class Database {
                 callback(Result.failure(exception))
             }
     }
+
+    // uploadProfileImage
+    // uploads a user's profile picture to storage and gives back its download url.
+    // The url is then saved on the user through updateUser (profileImageUrl).
+    fun uploadProfileImage(
+        userId: String,
+        imageUri: Uri,
+        callback: (Result<String>) -> Unit
+    ) {
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("users/$userId/${UUID.randomUUID()}")
+
+        storageRef.putFile(imageUri)
+            .continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    throw task.exception
+                        ?: Exception("Image upload failed")
+                }
+
+                storageRef.downloadUrl
+            }
+            .addOnSuccessListener { downloadUri ->
+                callback(Result.success(downloadUri.toString()))
+            }
+            .addOnFailureListener { exception ->
+                callback(Result.failure(exception))
+            }
+    }
+
+    // Creates or updates the top-level ownerId field on campsites/{campsiteId} without overwriting other fields
+    fun updateCampsiteOwnerId(
+        campsiteId: String,
+        ownerId: String,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (campsiteId.isBlank() || ownerId.isBlank()) {
+            callback(false)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
+
+    // Retrieves the ownerId string for a given campsiteId if it exists in Firestore
+    fun getCampsiteOwnerId(
+        campsiteId: String,
+        callback: (String?) -> Unit
+    ) {
+        if (campsiteId.isBlank()) {
+            callback(null)
+            return
+        }
+
+        db.collection("campsites")
+            .document(campsiteId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val ownerId = document.getString("ownerId")?.takeIf { it.isNotBlank() }
+                    callback(ownerId)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
 }

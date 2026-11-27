@@ -89,6 +89,7 @@ object CampsiteRepository {
 
                 )
                 campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)  //Adds QR Code check.
+                campsite.updateCoordinates(document.getDouble("latitude"), document.getDouble("longitude"))
                 campsite.updateRaterList(document.get("ratings") as? MutableList<Review> ?:mutableListOf())
 
                 callback(campsite)
@@ -191,6 +192,9 @@ object CampsiteRepository {
 
                     // 4. Updates the QR Code check.
                     campsite.updateQRCode(document.getBoolean("hasQRCode") ?: false)
+
+                    // 5. Map position of the address (null for older campsites)
+                    campsite.updateCoordinates(document.getDouble("latitude"), document.getDouble("longitude"))
 
                     loadedCampsites.add(campsite)
                 }

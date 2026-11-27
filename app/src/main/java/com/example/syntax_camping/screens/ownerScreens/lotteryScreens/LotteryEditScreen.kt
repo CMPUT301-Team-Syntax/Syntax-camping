@@ -53,16 +53,20 @@ fun LotteryEditScreen(
     preselectedCampsite: Campsite? = null
 ) {
     var name by remember { mutableStateOf("") }
-    var startDay by remember { mutableStateOf("") }
-    var startMonth by remember { mutableStateOf("") }
-    var startYear by remember { mutableStateOf("") }
-    var startHour by remember { mutableStateOf("") }
-    var startMinute by remember { mutableStateOf("") }
-    var finalDay by remember { mutableStateOf("") }
-    var finalMonth by remember { mutableStateOf("") }
-    var finalYear by remember { mutableStateOf("") }
-    var finalHour by remember { mutableStateOf("") }
-    var finalMinute by remember { mutableStateOf("") }
+    // draw (the countdown ends here)
+    var drawDay by remember { mutableStateOf("") }
+    var isJoinable by remember { mutableStateOf(true) }
+    var ownerId by remember {mutableStateOf("")}
+    var drawMonth by remember { mutableStateOf("") }
+    var drawYear by remember { mutableStateOf("") }
+    var drawHour by remember { mutableStateOf("") }
+    var drawMinute by remember { mutableStateOf("") }
+    // last day to book (winners and waitlisters)
+    var bookByDay by remember { mutableStateOf("") }
+    var bookByMonth by remember { mutableStateOf("") }
+    var bookByYear by remember { mutableStateOf("") }
+    var bookByHour by remember { mutableStateOf("") }
+    var bookByMinute by remember { mutableStateOf("") }
     var numWinners by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
@@ -81,30 +85,31 @@ fun LotteryEditScreen(
             name = editingLottery.name
             capacity = editingLottery.capacity.toString()
             lotteryDates = editingLottery.lotteryDates
+            isJoinable = editingLottery.isJoinable
+            val drawCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
+            drawDay = drawCal.get(Calendar.DAY_OF_MONTH).toString()
+            drawMonth = (drawCal.get(Calendar.MONTH) + 1).toString()
+            drawYear = drawCal.get(Calendar.YEAR).toString()
+            drawHour = drawCal.get(Calendar.HOUR_OF_DAY).toString()
+            drawMinute = drawCal.get(Calendar.MINUTE).toString()
 
-            val startCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeLottery }
-            startDay = startCal.get(Calendar.DAY_OF_MONTH).toString()
-            startMonth = (startCal.get(Calendar.MONTH) + 1).toString()
-            startYear = startCal.get(Calendar.YEAR).toString()
-            startHour = startCal.get(Calendar.HOUR_OF_DAY).toString()
-            startMinute = startCal.get(Calendar.MINUTE).toString()
-
-            val finalCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
-            finalDay = finalCal.get(Calendar.DAY_OF_MONTH).toString()
-            finalMonth = (finalCal.get(Calendar.MONTH) + 1).toString()
-            finalYear = finalCal.get(Calendar.YEAR).toString()
-            finalHour = finalCal.get(Calendar.HOUR_OF_DAY).toString()
-            finalMinute = finalCal.get(Calendar.MINUTE).toString()
+            val bookByCal = Calendar.getInstance().apply { timeInMillis = editingLottery.endTimeBooking }
+            bookByDay = bookByCal.get(Calendar.DAY_OF_MONTH).toString()
+            bookByMonth = (bookByCal.get(Calendar.MONTH) + 1).toString()
+            bookByYear = bookByCal.get(Calendar.YEAR).toString()
+            bookByHour = bookByCal.get(Calendar.HOUR_OF_DAY).toString()
+            bookByMinute = bookByCal.get(Calendar.MINUTE).toString()
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
 
 
         }  else {
-        selectedCampsites.clear()
-        // CHANGED: a new lottery started from a campsite's page begins with that campsite already in the list
-        preselectedCampsite?.let { selectedCampsites.add(it) }
-    }
+            isJoinable = false //Note just a default value, will be updated before is actually passes to what user sets
+            selectedCampsites.clear()
+            // a new lottery started from a campsite's page begins with that campsite already in the list
+            preselectedCampsite?.let { selectedCampsites.add(it) }
+        }
 
     }
 
@@ -138,9 +143,9 @@ fun LotteryEditScreen(
 
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // --- Start Date Sections ---
+            // --- Draw date and time: the countdown ends here ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Start Date and Time")
+                Text("Draw date and time (the countdown ends here)")
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
@@ -156,8 +161,8 @@ fun LotteryEditScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
-                        value = startDay,
-                        onValueChange = { startDay = it },
+                        value = drawDay,
+                        onValueChange = { drawDay = it },
                         label = { Text("Day") },
                         modifier = Modifier
                             .weight(1f)
@@ -165,8 +170,8 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
-                        value = startMonth,
-                        onValueChange = { startMonth = it },
+                        value = drawMonth,
+                        onValueChange = { drawMonth = it },
                         label = { Text("Month") },
                         modifier = Modifier
                             .weight(1f)
@@ -175,8 +180,8 @@ fun LotteryEditScreen(
                     )
 
                     TextField(
-                        value = startYear,
-                        onValueChange = { startYear = it },
+                        value = drawYear,
+                        onValueChange = { drawYear = it },
                         label = { Text("Year") },
                         modifier = Modifier
                             .weight(1f)
@@ -186,8 +191,8 @@ fun LotteryEditScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
-                        value = startHour,
-                        onValueChange = { startHour = it },
+                        value = drawHour,
+                        onValueChange = { drawHour = it },
                         label = { Text("Hour") },
                         modifier = Modifier
                             .weight(1f)
@@ -195,8 +200,8 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
-                        value = startMinute,
-                        onValueChange = { startMinute = it },
+                        value = drawMinute,
+                        onValueChange = { drawMinute = it },
                         label = { Text("Minute") },
                         modifier = Modifier
                             .weight(1f)
@@ -206,14 +211,14 @@ fun LotteryEditScreen(
                 }
             }
 
-            // --- Final Date Sections ---
+            // --- Last day to book: winners and waitlisters ---
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Final Date and Time")
+                Text("Last day and time to book (winners and waitlisters)")
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
-                        value = finalDay,
-                        onValueChange = { finalDay = it },
+                        value = bookByDay,
+                        onValueChange = { bookByDay = it },
                         label = { Text("Day") },
                         modifier = Modifier
                             .weight(1f)
@@ -221,8 +226,8 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
-                        value = finalMonth,
-                        onValueChange = { finalMonth = it },
+                        value = bookByMonth,
+                        onValueChange = { bookByMonth = it },
                         label = { Text("Month") },
                         modifier = Modifier
                             .weight(1f)
@@ -230,8 +235,8 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
-                        value = finalYear,
-                        onValueChange = { finalYear = it },
+                        value = bookByYear,
+                        onValueChange = { bookByYear = it },
                         label = { Text("Year") },
                         modifier = Modifier
                             .weight(1f)
@@ -241,8 +246,8 @@ fun LotteryEditScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextField(
-                        value = finalHour,
-                        onValueChange = { finalHour = it },
+                        value = bookByHour,
+                        onValueChange = { bookByHour = it },
                         label = { Text("Hour") },
                         modifier = Modifier
                             .weight(1f)
@@ -250,8 +255,8 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
-                        value = finalMinute,
-                        onValueChange = { finalMinute = it },
+                        value = bookByMinute,
+                        onValueChange = { bookByMinute = it },
                         label = { Text("Minute") },
                         modifier = Modifier
                             .weight(1f)
@@ -259,7 +264,10 @@ fun LotteryEditScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
+            }
 
+            // --- Winners and capacity ---
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextField(
                     value = numWinners,
                     onValueChange = { numWinners = it },
@@ -309,20 +317,22 @@ fun LotteryEditScreen(
                     val (isSuccess, errorText) = validateAndCreateLottery(
                         editingLottery?.lotteryId,
                         name,
-                        startDay,
-                        startMonth,
-                        startYear,
-                        startHour,
-                        startMinute,
-                        finalDay,
-                        finalMonth,
-                        finalYear,
-                        finalHour,
-                        finalMinute,
+                        drawDay,
+                        drawMonth,
+                        drawYear,
+                        drawHour,
+                        drawMinute,
+                        bookByDay,
+                        bookByMonth,
+                        bookByYear,
+                        bookByHour,
+                        bookByMinute,
                         numWinners,
                         capacity,
                         selectedCampsites,
-                        lotteryDates
+                        lotteryDates,
+                        ownerId = userViewModel.deviceId,
+                        isJoinable = isJoinable
                     )
 
                     if (isSuccess) {

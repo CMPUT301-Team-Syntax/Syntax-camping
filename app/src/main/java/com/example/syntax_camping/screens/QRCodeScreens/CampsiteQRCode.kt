@@ -1,4 +1,4 @@
-package com.example.syntax_camping.screens
+package com.example.syntax_camping.screens.QRCodeScreens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size

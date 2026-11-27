@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +49,7 @@ fun LotteryDetailsScreen(
     var refreshTrigger by remember { mutableIntStateOf(0) }
     var showParticipants by remember { mutableStateOf(false) }
     var showWinners by remember { mutableStateOf(false) }
+    var myWinnerStatus by remember { mutableStateOf<String?>(null) }
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
     LaunchedEffect(lotteryId, refreshTrigger) {
@@ -59,6 +62,14 @@ fun LotteryDetailsScreen(
             }
         } else {
             isLoading = false
+        }
+    }
+
+    LaunchedEffect(lotteryId, refreshTrigger) {
+        if (!lotteryId.isNullOrBlank()) {
+            lotteryRepository().getWinners(lotteryId) { list ->
+                myWinnerStatus = list.firstOrNull { it.userID == userViewModel.deviceId }?.status
+            }
         }
     }
 
@@ -83,6 +94,17 @@ fun LotteryDetailsScreen(
     // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
     var entryCount by remember { mutableIntStateOf(0) }
     var waitlistCount by remember { mutableIntStateOf(0) }
+    val notOpenYet = current != null && current.startTime > now
+    val drawPassed = current != null && now > current.endTimeLottery
+    LaunchedEffect(drawPassed, current?.status) {
+        if (drawPassed && current?.status == "initialAccepting") {
+            while (true) {
+                delay(5000L)
+                refreshTrigger++
+            }
+        }
+    }
+
     LaunchedEffect(lotteryId, refreshTrigger) {
         if (!lotteryId.isNullOrBlank()) {
             lotteryRepository().getEntries(lotteryId) { entries -> entryCount = entries.size }
@@ -170,19 +192,28 @@ fun LotteryDetailsScreen(
                     )
                     Spacer(Modifier.height(8.dp))
 
-                    val targetTime = if (current.status == "initialAccepting") current.endTimeLottery else current.endTimeBooking
-                    if (current.status == "initialAccepting" || current.status == "booking") {
+                    val targetTime = when {
+                        notOpenYet -> current.startTime
+                        !drawPassed -> current.endTimeLottery
+                        else -> current.endTimeBooking
+                    }
+                    if (current.status != "complete") {
                         val millisLeft = targetTime - now
                         if (millisLeft > 0) {
                             Text(
-                                "Closes in: ${formatRemaining(millisLeft)}",
+                                when {
+                                    notOpenYet -> "Lottery starts in: ${formatRemaining(millisLeft)}"
+                                    !drawPassed -> "Draw in: ${formatRemaining(millisLeft)}"
+                                    myWinnerStatus == "pending" -> "Booking window closes in: ${formatRemaining(millisLeft)}"
+                                    else -> "Booking closes in: ${formatRemaining(millisLeft)}"
+                                },
                                 fontSize = 24.sp,
                                 color = Color(0xFF3E6B68),
                                 fontWeight = FontWeight.Bold
                             )
                         } else {
                             Text(
-                                "Time's up!",
+                                "Booking has closed",
                                 fontSize = 24.sp,
                                 color = Color.Red,
                                 fontWeight = FontWeight.Bold
@@ -192,6 +223,7 @@ fun LotteryDetailsScreen(
 
                     Spacer(Modifier.height(16.dp))
                     Text("Draws: ${dateFormat.format(current.getReadableLotteryEndTime())}")
+                    if (current.startTime > 0) Text("Opens: ${dateFormat.format(java.util.Date(current.startTime))}")
                     Text("Book by: ${dateFormat.format(current.getReadableBookingEndTime())}")
                     Text("Capacity: ${current.capacity?.toString() ?: "Unlimited"}")
 
@@ -201,6 +233,16 @@ fun LotteryDetailsScreen(
                         fontSize = 14.sp,
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Medium
+                    )
+                }
+
+                if (!isOwner) {
+                    LotteryWinnerSection(
+                        lottery = current,
+                        userId = userViewModel.deviceId,
+                        status = myWinnerStatus,
+                        windowClosed = current.status == "complete" || now > current.endTimeBooking,
+                        onChanged = { refreshTrigger++ }
                     )
                 }
 
@@ -303,7 +345,18 @@ fun LotteryDetailsScreen(
                             color = Color.DarkGray
                         )
                     }
-                } else {
+                }
+                else if (notOpenYet) {
+                    Text(
+                        "Come back on ${dateFormat.format(java.util.Date(current.startTime))} to join the lottery. Good luck!",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .testTag("lotteryNotOpenText")
+                    )
+                }
+
+                else if (myWinnerStatus == null){
                     LotteryEntrantSection(
                         lottery = current,
                         userId = userViewModel.deviceId,
@@ -316,30 +369,61 @@ fun LotteryDetailsScreen(
             }
         }
 
+        // CHANGED: Participants dialog now uses TabbedNameListDialog with "Lottery" and "Waitlist" tabs
         if (showParticipants && current != null) {
-            NameListDialog(
+            TabbedNameListDialog(
                 title = "Participants",
-                emptyText = "Nobody has entered yet.",
-                loadUsers = { done ->
-                    lotteryRepository().getEntries(current.lotteryId) { list ->
-                        done(list.map { it.userId to "" })
+                tabs = listOf("Lottery", "Waitlist"),
+                emptyTexts = listOf(
+                    "Nobody has entered the lottery yet.",
+                    "Nobody is on the waitlist yet."
+                ),
+                // CHANGED: Added explicit parameter types and Unit return to fix type inference error on 'R'
+                // CHANGED: Explicit types on lambda params and explicit Unit return on each branch
+                loadTabUsers = { tabIndex: Int, done: (List<Pair<String, String>>) -> Unit ->
+                    if (tabIndex == 0) {
+                        lotteryRepository().getEntries(current.lotteryId) { list ->
+                            val mapped: List<Pair<String, String>> = list.map { entry -> entry.userId to "" }
+                            done(mapped)
+                        }
+                    } else {
+                        lotteryRepository().getWaitlist(current.lotteryId) { list ->
+                            val mapped: List<Pair<String, String>> = list.map { waitEntry ->
+                                waitEntry.userID to (waitEntry.status ?: "")
+                            }
+                            done(mapped)
+                        }
                     }
+                    Unit
+                // ADDED: Ensures the lambda returns Unit cleanly
                 },
                 onDismiss = { showParticipants = false }
             )
         }
+
+        // CHANGED: Winners dialog now uses TabbedNameListDialog with "Unconfirmed" and "Confirmed" tabs
         if (showWinners && current != null) {
-            NameListDialog(
+            TabbedNameListDialog(
                 title = "Winners",
-                emptyText = "No winners yet.",
-                loadUsers = { done ->
+                tabs = listOf("Unconfirmed", "Confirmed"),
+                emptyTexts = listOf(
+                    "No unconfirmed winners.",
+                    "No confirmed winners yet."
+                ),
+                loadTabUsers = { tabIndex, done ->
                     lotteryRepository().getWinners(current.lotteryId) { list ->
-                        done(list.map { it.userID to (it.status ?: "") })
+                        val filtered = if (tabIndex == 0) {
+                            list.filter { it.status == "pending" }
+                        } else {
+                            list.filter { it.status == "confirmed" }
+                        }
+                        done(filtered.map { it.userID to (it.status ?: "") })
                     }
                 },
                 onDismiss = { showWinners = false }
             )
         }
+        // REMOVED: Extra closing brace that closed Scaffold early
 
         val pendingCamp = campsitePendingLastRemoval
         if (pendingCamp != null && current != null) {
@@ -385,18 +469,24 @@ private fun formatRemaining(millisLeft: Long): String {
     return if (days > 0) "${days}d ${hours}h ${mins}m ${secs}s" else "${hours}h ${mins}m ${secs}s"
 }
 
+// CHANGED: Replaced single-list NameListDialog with TabbedNameListDialog for tabbed owner lists
 @Composable
-private fun NameListDialog(
+// CHANGED: Simplified loadTabUsers type so Kotlin never gets stuck inferring 'R' inside async callbacks
+private fun TabbedNameListDialog(
     title: String,
-    emptyText: String,
-    loadUsers: ((List<Pair<String, String>>) -> Unit) -> Unit,
+    tabs: List<String>,
+    emptyTexts: List<String>,
+    loadTabUsers: (Int, ((List<Pair<String, String>>) -> Unit)) -> Unit,
     onDismiss: () -> Unit
 ) {
     val db = remember { Database() }
+    var selectedTab by remember { mutableIntStateOf(0) }
     var rows by remember { mutableStateOf<List<String>?>(null) }
 
-    LaunchedEffect(Unit) {
-        loadUsers { users ->
+    // ADDED: Reloads tab rows when selectedTab changes
+    LaunchedEffect(selectedTab) {
+        rows = null
+        loadTabUsers(selectedTab) { users ->
             if (users.isEmpty()) {
                 rows = emptyList()
             } else {
@@ -418,12 +508,44 @@ private fun NameListDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("nameListDialog"),
-        title = { Text(title) },
+        title = {
+            Column {
+                Text(title)
+                Spacer(modifier = Modifier.height(8.dp))
+                // CHANGED: Fixed SecondaryTabRow indicator signature to use TabIndicatorScope.tabIndicatorOffset(selectedTab)
+                SecondaryTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = Color(0xFF3E6B68),
+                    indicator = {
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(selectedTab),
+                            color = Color(0xFF3E6B68)
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, tabLabel ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            modifier = Modifier.testTag("dialogTab_$tabLabel"),
+                            text = {
+                                Text(
+                                    text = tabLabel,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (selectedTab == index) Color(0xFF3E6B68) else Color.Gray
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        },
         text = {
             val shown = rows
             when {
                 shown == null -> CircularProgressIndicator()
-                shown.isEmpty() -> Text(emptyText)
+                shown.isEmpty() -> Text(emptyTexts.getOrElse(selectedTab) { "No entries." })
                 else -> Column(Modifier.verticalScroll(rememberScrollState())) {
                     shown.forEachIndexed { i, line ->
                         Text(
@@ -443,3 +565,4 @@ private fun NameListDialog(
         }
     )
 }
+// REMOVED: Duplicate/orphaned NameListDialog AlertDialog at bottom of file

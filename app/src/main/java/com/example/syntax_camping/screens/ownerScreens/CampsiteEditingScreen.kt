@@ -1,6 +1,7 @@
 package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,15 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import com.google.firebase.firestore.FirebaseFirestore
-//TO be added to the correct Navigation calss (ie syntax camping
-/*
-At Top var selectedCampsite by remember {
-        mutableStateOf<Campsite?>(null)
-    }
-composable( "UpdateCamp"){ CampsiteEditingScreen(navController,
-            campsite = selectedCampsite)}
-
-* */
 import androidx.navigation.NavController
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.foundation.rememberScrollState
@@ -48,12 +40,29 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.PhotoCarousel
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.OutlinedButton
+import com.example.syntax_camping.dataClasses.DateRepository
+import com.example.syntax_camping.screens.CalenderVeiw
+import com.example.syntax_camping.screens.ownerScreens.geocodeAddress
+import com.example.syntax_camping.screens.ownerScreens.suggestAddresses
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 //import androidx.compose.ui.Modifier
 /*
@@ -87,13 +96,37 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     val newTags = remember {mutableStateListOf<String>()}
     val newPhotos = remember {mutableStateListOf<Uri>()}
     var newTag  by remember { mutableStateOf("") }
+    var page by rememberSaveable { mutableIntStateOf(1) }
+    var pickMode by rememberSaveable { mutableStateOf("available") }   // "available" or "unavailable"
+    var pickedDates by remember { mutableStateOf<List<String>>(emptyList()) }
+    var datesConfirmed by remember { mutableStateOf(false) }
+    var newLat by remember { mutableStateOf<Double?>(null) }          // map position of the address
+    var newLng by remember { mutableStateOf<Double?>(null) }
+    var geocodedFor by remember { mutableStateOf<String?>(null) }     // the address text newLat/newLng belong to
+    var locating by remember { mutableStateOf(false) }
+    var suggestions by remember { mutableStateOf<List<Triple<String, Double, Double>>>(emptyList()) }   // address suggestions as the owner types
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var currImage: Uri?
     currImage = null
 
+    LaunchedEffect(page) { scrollState.scrollTo(0) }
+
+    // As the owner types the address, wait a moment after they stop, then look up suggestions.
+    // Nothing is suggested when the text is already a chosen/found address.
+    LaunchedEffect(newCampLocation) {
+        if (newCampLocation.length < 3 || newCampLocation == geocodedFor) {
+            suggestions = emptyList()
+        } else {
+            delay(500)
+            val typed = newCampLocation
+            suggestions = withContext(Dispatchers.IO) { suggestAddresses(context, typed) }
+        }
+    }
     //Note the following is a list of selected photos, initialized as empty
-   // var  selectedPhotos by remember {
+    // var  selectedPhotos by remember {
     //    mutableStateOf<List<Uri>>(emptyList())
-   // }
+    // }
     //Note this launcher is used for photo selection, it activates androids built in photo selector, and stores the selected URI's to a list(selected photos)
     val launcher =  rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
@@ -107,7 +140,7 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
     LaunchedEffect(campsite?.documentId){
         //If we are creating a cmapsite
         if (campsite == null){
-            locationDisplay = "Enter campsite Location"
+            locationDisplay = "Start typing the real address"
             nameDisplay = "Enter campsite Name"
             descriptionDisplay = "Enter campsite Description"
             maxOccDisplay = "Enter campsite Maximum Occupancy"
@@ -123,12 +156,18 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
             newMaxOcc = campsite.maxOcc.toString()
             maxOccDisplay = newMaxOcc
 
+            newLat = campsite.latitude
+            newLng = campsite.longitude
+            geocodedFor = if (campsite.latitude != null && campsite.longitude != null) campsite.location else null
 
             newPhotos.clear()
             newPhotos.addAll(campsite.images)
 
             newTags.clear()
             newTags.addAll(campsite.tags)
+            pickedDates = campsite.dateManager?.allDates?.map { it.dateString } ?: emptyList()
+            pickMode = "available"
+            datesConfirmed = pickedDates.isNotEmpty()
 
         }
     }
@@ -214,215 +253,331 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //These first few rows handle the Name and location textboxes
-            Row(
-                modifier = Modifier.fillMaxWidth()
+            if (page == 1) {
+                //These first few rows handle the Name and location textboxes
+                Row(
+                    modifier = Modifier.fillMaxWidth()
 
-            ) {
-                OutlinedTextField(
-                    value = newCampName,
-                    onValueChange = { newCampName = it },
-                    label = { Text(nameDisplay) },
-                    modifier = Modifier.weight(1f).testTag("campsiteNameInput")
-                )
-                //THIS WILL CHANGE WITH MAP IMPLEMENTATION SLIGHTLY AS IT NEEDS TO ALSO RECIEVE POTENTIAL STRINGS FORM THE MAP/TODO
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedTextField(
-                    value = newCampLocation,
-                    onValueChange = { newCampLocation = it },
-                    label = { Text(locationDisplay) },
-                    modifier = Modifier.weight(1f).testTag("campsiteLocationInput")
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-
-
-                        .padding(4.dp),
-
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                    //Embeded row to allow the Qr Code and max occupancy to stack on top of each other like in our planning images
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ){
-                        OutlinedTextField(
-                            value = newMaxOcc ,
-                            onValueChange = { newMaxOcc = it },
-                            label = { Text(maxOccDisplay) },
-                            modifier = Modifier.weight(1f).testTag("campsiteMaximumOccupantInput")
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        //A filler Image for map until map is updated later down the road
-                        /*
-                        Image(
-                            painter = painterResource(id = R.drawable.map_filler_image),
-                            contentDescription = "A description of the image for accessibility",
-                            modifier = Modifier.size(150.dp)
-                        )
-                        */
-
-                    }
-                    //A checkbox for Qr code, hopefully implemented
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ){
-                        Checkbox(
-                            checked = qrCodeChecked,
-                            onCheckedChange = { checked ->
-                                qrCodeChecked = checked // Update the state when clicked
-                            }
-                        )
-                        Text(text = "Generate QR Code")
-                    }
-                }
-
-
-            }
-            //This is a scrollable text boxx with a set space on screen for acmp description. If description is too long, the text box can be scrolled through
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                OutlinedTextField(
-                    value = newCampDescription,
-                    onValueChange = { newCampDescription = it },
-                    label = { Text(descriptionDisplay) },
-                    modifier = Modifier.weight(1f)
-                        .heightIn(min = 350.dp, max = 350.dp)
-                        // Enables the vertical scroll behavior inside the text box
-                        .verticalScroll(rememberScrollState())
-                        .testTag("campsiteDescriptionInput")
-
-                )
-            }
-            //THe following few rows handle tags, displaying current tags and letting users add and remove tags at their whim
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Text(
-                    text = "Please enter a tag you wish to have added or removed, then press the corresponding button"
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Text(
-                    text = "current tags: "
-                )
-                Text(
-                    text = newTags.joinToString(", ")
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                OutlinedTextField(
-                    value = newTag,
-                    onValueChange = { newTag = it },
-                    label = { Text("Enter a tag") },
-                    modifier = Modifier.weight(1f).testTag("campsiteTagInput")
-
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth()
-
-            ) {
-                Button(
-                    modifier = Modifier.padding(vertical = 12.dp).testTag("addTagButton"),
-                    onClick = {
-                        if (newTag.isNotBlank() and (newTag !in newTags)) {
-                            newTags.add(newTag)
-                            newTag = ""
-
-                        }
-                    }
                 ) {
-                    Text("Add Tag")
+                    OutlinedTextField(
+                        value = newCampName,
+                        onValueChange = { newCampName = it },
+                        label = { Text(nameDisplay) },
+                        modifier = Modifier.weight(1f).testTag("campsiteNameInput")
+                    )
+                    //The location box is the real address. Suggestions appear under it as you type.
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = newCampLocation,
+                        onValueChange = { newCampLocation = it },
+                        label = { Text(locationDisplay) },
+                        modifier = Modifier.weight(1f).testTag("campsiteLocationInput")
+                    )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    modifier = Modifier.padding(vertical = 12.dp)
-                        ,
-                    onClick = {
-                        if (newTag.isNotBlank() and (newTag in newTags)) {
-                            newTags.remove(newTag)
-                            newTag = ""
-                        }
-                    }
-                ) {
-                    Text("remove Tag")
-                }
-            }
-            //The following will Handle images
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Please select images you would like to upload by tapping below"
-                )
-            }
-            //This row calls photo carousel display funciton, passing an argument of the photocarousel onject created on this page
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-
-                 currImage =   photoCarousel.displayCarousel(Modifier,photoCarousel)
-
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-
-            ) {
-                Button(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    //This onclick handles the launcher for Android's built in image selector.
-                    onClick = {
-                        launcher.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts
-                                    .PickVisualMedia.ImageOnly
+                // Address suggestions: tap one to use it (this also saves its map position)
+                if (suggestions.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .background(Color(0xFFF4E8D5))
+                            .testTag("addressSuggestions")
+                    ) {
+                        suggestions.forEachIndexed { index, suggestion ->
+                            Text(
+                                text = suggestion.first,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        newCampLocation = suggestion.first
+                                        newLat = suggestion.second
+                                        newLng = suggestion.third
+                                        geocodedFor = suggestion.first
+                                        suggestions = emptyList()
+                                        error = ""
+                                    }
+                                    .padding(12.dp)
+                                    .testTag("addressSuggestion_$index")
                             )
-                        )
-
-
-                    }
-                ) {
-                    Text("Add Images")
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-
-            ) {
-                Button(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    //This onclick handles the launcher for Android's built in image selector.
-                    onClick = {
-                        if((newPhotos.isNotEmpty()) && (currImage != null)){
-                            newPhotos.remove(currImage)
-                            photoCarousel = PhotoCarousel(newPhotos)
                         }
                     }
-                ) {
-                    Text("Remove Image")
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+
+
+                            .padding(4.dp),
+
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        //Embeded row to allow the Qr Code and max occupancy to stack on top of each other like in our planning images
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ){
+                            OutlinedTextField(
+                                value = newMaxOcc ,
+                                onValueChange = { newMaxOcc = it },
+                                label = { Text(maxOccDisplay) },
+                                modifier = Modifier.weight(1f).testTag("campsiteMaximumOccupantInput")
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            //A filler Image for map until map is updated later down the road
+                            /*
+                            Image(
+                                painter = painterResource(id = R.drawable.map_filler_image),
+                                contentDescription = "A description of the image for accessibility",
+                                modifier = Modifier.size(150.dp)
+                            )
+                            */
+
+                        }
+                        //A checkbox for Qr code, hopefully implemented
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ){
+                            Checkbox(
+                                checked = qrCodeChecked,
+                                onCheckedChange = { checked ->
+                                    qrCodeChecked = checked // Update the state when clicked
+                                }
+                            )
+                            Text(text = "Generate QR Code")
+                        }
+                    }
+
+
+                }
+                //This is a scrollable text boxx with a set space on screen for acmp description. If description is too long, the text box can be scrolled through
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+
+                ) {
+                    OutlinedTextField(
+                        value = newCampDescription,
+                        onValueChange = { newCampDescription = it },
+                        label = { Text(descriptionDisplay) },
+                        modifier = Modifier.weight(1f)
+                            .heightIn(min = 350.dp, max = 350.dp)
+                            // Enables the vertical scroll behavior inside the text box
+                            .verticalScroll(rememberScrollState())
+                            .testTag("campsiteDescriptionInput")
+
+                    )
+                }
+                //THe following few rows handle tags, displaying current tags and letting users add and remove tags at their whim
+                // Tags: type one and press +. Every added tag gets its own line with a − to remove it.
+                Text(text = "Tags", fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newTag,
+                        onValueChange = { newTag = it },
+                        label = { Text("Enter a tag") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f).testTag("campsiteTagInput")
+                    )
+                    Button(
+                        modifier = Modifier.padding(start = 8.dp).testTag("addTagButton"),
+                        onClick = {
+                            val cleaned = newTag.replace(",", "").trim()
+                            if (cleaned.isNotBlank() && cleaned !in newTags) {
+                                newTags.add(cleaned)
+                            }
+                            newTag = ""
+                        }
+                    ) {
+                        Text("+")
+                    }
+                }
+                newTags.toList().forEach { tag ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().testTag("tagRow_$tag"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = tag)
+                        TextButton(
+                            onClick = { newTags.remove(tag) },
+                            modifier = Modifier.testTag("removeTag_$tag")
+                        ) {
+                            Text("−", fontSize = 22.sp)
+                        }
+                    }
+                }
+                //The following will Handle images
+
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Please select images you would like to upload by tapping below"
+                    )
+                }
+                //This row calls photo carousel display funciton, passing an argument of the photocarousel onject created on this page
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+
+                    currImage =   photoCarousel.displayCarousel(Modifier,photoCarousel)
+
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+
+                ) {
+                    Button(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        //This onclick handles the launcher for Android's built in image selector.
+                        onClick = {
+                            launcher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts
+                                        .PickVisualMedia.ImageOnly
+                                )
+                            )
+
+
+                        }
+                    ) {
+                        Text("Add Images")
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+
+                ) {
+                    Button(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        //This onclick handles the launcher for Android's built in image selector.
+                        onClick = {
+                            if((newPhotos.isNotEmpty()) && (currImage != null)){
+                                newPhotos.remove(currImage)
+                                photoCarousel = PhotoCarousel(newPhotos)
+                            }
+                        }
+                    ) {
+                        Text("Remove Image")
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier.padding(vertical = 12.dp).testTag("nextPageButton"),
+                        enabled = !locating,
+                        onClick = {
+                            if (newTags.isNotEmpty() && newCampName != "" && newCampLocation != "" &&
+                                newCampDescription != "" && newMaxOcc != ""
+                            ) {
+                                if (newMaxOcc.toIntOrNull() == null) {
+                                    error = "Max occupancy must be a number"
+                                } else if (geocodedFor == newCampLocation && newLat != null && newLng != null) {
+                                    // this address was already found on the map (picked from the suggestions or found before)
+                                    error = ""
+                                    page = 2
+                                } else {
+                                    error = ""
+                                    locating = true
+                                    val addressToFind = newCampLocation
+                                    scope.launch {
+                                        val found = withContext(Dispatchers.IO) {
+                                            geocodeAddress(context, addressToFind)
+                                        }
+                                        locating = false
+                                        if (found == null) {
+                                            error = "We couldn't find that address on the map. Pick one from the suggestions or try a fuller address."
+                                        } else {
+                                            newLat = found.first
+                                            newLng = found.second
+                                            geocodedFor = addressToFind
+                                            error = ""
+                                            page = 2
+                                        }
+                                    }
+                                }
+                            } else {
+                                error = "All fields must be filled in"
+                            }
+                        }
+                    ) {
+                        Text(if (locating) "Finding address..." else "Next")
+                    }
+                }
+            }   // end of page 1
+
+            if (page == 2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = qrCodeChecked,
+                        onCheckedChange = { checked -> qrCodeChecked = checked }
+                    )
+                    Text(text = "Generate QR Code")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Availability", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Choose what kind of dates you will tap, then tap them and press Confirm.")
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { if (pickMode != "available") { pickMode = "available"; pickedDates = emptyList() } },
+                        enabled = !datesConfirmed,
+                        modifier = Modifier.weight(1f).testTag("pickAvailableMode"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pickMode == "available") Color(0xFF2E7D32) else Color.LightGray,
+                            disabledContainerColor = if (pickMode == "available") Color(0xFF2E7D32) else Color.LightGray
+                        )
+                    ) { Text("Pick available dates", color = Color.White) }
+                    Button(
+                        onClick = { if (pickMode != "unavailable") { pickMode = "unavailable"; pickedDates = emptyList() } },
+                        enabled = !datesConfirmed,
+                        modifier = Modifier.weight(1f).testTag("pickUnavailableMode"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pickMode == "unavailable") Color(0xFFA13F3F) else Color.LightGray,
+                            disabledContainerColor = if (pickMode == "unavailable") Color(0xFFA13F3F) else Color.LightGray
+                        )
+                    ) { Text("Pick unavailable dates", color = Color.White) }
+                }
+                Text(
+                    if (pickMode == "available")
+                        "Green dates are available. Every other date is unavailable."
+                    else
+                        "Red dates are unavailable. Every other date in the next 6 months is available.",
+                    modifier = Modifier.testTag("availabilityHint")
+                )
+                CalenderVeiw(
+                    initialSelected = pickedDates,
+                    selectedColor = if (pickMode == "available") Color(0xFF2E7D32) else Color(0xFFA13F3F),
+                    startLocked = datesConfirmed,
+                    onConfirm = { pickedDates = it; datesConfirmed = true },
+                    onEdit = { datesConfirmed = false }
+                )
+                TextButton(
+                    onClick = { page = 1 },
+                    modifier = Modifier.testTag("backToDetailsButton")
+                ) { Text("Back") }
             }
             //The following is to handle updating/creating the cmapsite
             //Each button has a couple of if statemnets to make sure none of the required fields are blank/max occupancy entered is a number
@@ -430,79 +585,164 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                if(campsite == null) {
+                if (page == 2) {
+                    if(campsite == null) {
 
 
-                    Button(
-                        modifier = Modifier.padding(vertical = 12.dp)
-                            .testTag("createCampsiteButton")
-                        ,
-                        onClick = {
-                            if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
-                                val intNewMaxOcc = newMaxOcc.toIntOrNull()
-                                error = ""
-                                if (intNewMaxOcc == null) {
-                                    error = "Max Int must be a string"
+                        Button(
+                            modifier = Modifier.padding(vertical = 12.dp)
+                                .testTag("createCampsiteButton")
+                            ,
+                            onClick = {
+                                if (!datesConfirmed || pickedDates.isEmpty()) {
+                                    error = "Confirm at least one date on the calendar first"
+                                    return@Button
                                 }
-
-                                else {
+                                if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
+                                    val intNewMaxOcc = newMaxOcc.toIntOrNull()
                                     error = ""
-                                    documentID = FirebaseFirestore.getInstance()
-                                        .collection("campsites")
-                                        .document()
-                                        .id
+                                    if (intNewMaxOcc == null) {
+                                        error = "Max Int must be a string"
+                                    }
+
+                                    else {
+                                        error = ""
+                                        documentID = FirebaseFirestore.getInstance()
+                                            .collection("campsites")
+                                            .document()
+                                            .id
 
 
-                                    val user = userViewModel.currentUser
+                                        val user = userViewModel.currentUser
 
-                                    if (user == null) {
-                                        error = "Your account hasn't loaded yet. Please try again."
+                                        if (user == null) {
+                                            error = "Your account hasn't loaded yet. Please try again."
+                                        } else {
+                                            uploadNewImages(
+                                                campsiteId = documentID,
+                                                originalImages = emptyList(),
+                                                imagesToSave = newPhotos.toList()
+                                            ) { result ->
+
+                                                result.onSuccess { imageUrls ->
+                                                    val newCampsite = Campsite(
+                                                        documentId = documentID,
+                                                        name = newCampName,
+                                                        location = newCampLocation,
+                                                        description = newCampDescription,
+                                                        maxOcc = intNewMaxOcc,
+                                                        tags = newTags.toMutableList(),
+                                                        rating = 0.0,
+                                                        images = imageUrls.toMutableList()
+                                                    )
+                                                    newCampsite.updateCoordinates(newLat, newLng)
+                                                    newCampsite.updateDateManager(
+                                                        buildCampsiteDates(null, datesForMode(pickMode, pickedDates), intNewMaxOcc)
+                                                    )
+                                                    newCampsite.updateQRCode(qrCodeChecked)  //New QR Code update.
+                                                    db.createNewCampsite(newCampsite)
+
+// <-- PUT IT RIGHT HERE (or inside updateUser's onSuccess below)
+                                                    db.updateCampsiteOwnerId(newCampsite.documentId, userViewModel.deviceId)
+
+                                                    val oldOwnerData = user.ownerData ?: OwnerData()
+                                                    val updatedUser = user.copy(
+                                                        ownerData = oldOwnerData.copy(
+                                                            campsiteIds = (
+                                                                    oldOwnerData.campsiteIds +
+                                                                            newCampsite.documentId
+                                                                    ).toMutableList()
+                                                        )
+                                                    )
+
+                                                    db.updateUser(
+                                                        userViewModel.deviceId,
+                                                        updatedUser
+                                                    ) { updateResult ->
+                                                        updateResult.onSuccess {
+                                                            userViewModel.refreshCurrentUser()
+                                                            navController.popBackStack()
+                                                        }
+                                                        updateResult.onFailure { exception ->
+                                                            error = exception.message
+                                                                ?: "Failed to update owner data"
+                                                        }
+                                                    }
+                                                }
+
+                                                result.onFailure { exception ->
+                                                    error = exception.message
+                                                        ?: "Failed to upload campsite images"
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                }
+                                else{
+                                    error = "All fields must be filled in"
+                                }
+                            }
+                        ) {
+                            Text("create campsite")
+                        }
+                    }
+                    else{
+
+
+                        Button(
+                            modifier = Modifier.padding(vertical = 12.dp).testTag("createCampsiteButton"),
+                            onClick = {
+                                if (!datesConfirmed || pickedDates.isEmpty()) {
+                                    error = "Confirm at least one date on the calendar first"
+                                    return@Button
+                                }
+                                val db = Database()
+                                if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
+                                    intNewMaxOcc = newMaxOcc.toIntOrNull()
+                                    error = ""
+                                    if (intNewMaxOcc == null) {
+                                        error = "Max Int must be an int"
                                     } else {
+                                        error = ""
+
+                                        val originalImages = campsite.images.toList()
+                                        val imagesToSave = newPhotos.toList()
+
                                         uploadNewImages(
-                                            campsiteId = documentID,
-                                            originalImages = emptyList(),
-                                            imagesToSave = newPhotos.toList()
+                                            campsiteId = campsite.documentId,
+                                            originalImages = originalImages,
+                                            imagesToSave = imagesToSave
                                         ) { result ->
 
                                             result.onSuccess { imageUrls ->
-                                                val newCampsite = Campsite(
-                                                    documentId = documentID,
-                                                    name = newCampName,
-                                                    location = newCampLocation,
-                                                    description = newCampDescription,
-                                                    maxOcc = intNewMaxOcc,
-                                                    tags = newTags.toMutableList(),
-                                                    rating = 0.0,
-                                                    images = imageUrls.toMutableList()
+                                                campsite.updateName(newCampName)
+                                                campsite.updateLocation(newCampLocation)
+                                                campsite.updateCoordinates(newLat, newLng)
+                                                campsite.updateDescription(newCampDescription)
+                                                campsite.updateMaxOcc(intNewMaxOcc!!)
+                                                campsite.updateTag(newTags.toMutableList())
+                                                campsite.updateQRCode(qrCodeChecked)  //QR CODE
+                                                val newManager = buildCampsiteDates(
+                                                    campsite.dateManager,
+                                                    datesForMode(pickMode, pickedDates),
+                                                    intNewMaxOcc!!
                                                 )
-                                                newCampsite.updateQRCode(qrCodeChecked)  //New QR Code update.
-                                                db.createNewCampsite(newCampsite)
+                                                campsite.updateDateManager(newManager)
+                                                DateRepository().addDateManager(campsite.documentId, newManager)
 
-                                                val oldOwnerData = user.ownerData ?: OwnerData()
+                                                // Replace the old image list with the final URLs.
+                                                campsite.images.clear()
 
-                                                val updatedUser = user.copy(
-                                                    ownerData = oldOwnerData.copy(
-                                                        campsiteIds = (
-                                                                oldOwnerData.campsiteIds +
-                                                                        newCampsite.documentId
-                                                                ).toMutableList()
-                                                    )
-                                                )
-
-                                                db.updateUser(
-                                                    userViewModel.deviceId,
-                                                    updatedUser
-                                                ) { updateResult ->
-                                                    updateResult.onSuccess {
-                                                        userViewModel.refreshCurrentUser()
-                                                        navController.popBackStack()
-                                                    }
-
-                                                    updateResult.onFailure { exception ->
-                                                        error = exception.message
-                                                            ?: "Failed to update owner data"
-                                                    }
+                                                for (url in imageUrls) {
+                                                    campsite.addImage(Uri.parse(url))
                                                 }
+
+                                                // Save the updated campsite to Firestore.
+                                                db.updateCampsite(campsite)
+                                                val ownerIdToSave = userViewModel.currentUser?.userId ?: userViewModel.deviceId
+                                                db.updateCampsiteOwnerId(campsite.documentId, ownerIdToSave)
+                                                navController.popBackStack()
                                             }
 
                                             result.onFailure { exception ->
@@ -510,81 +750,21 @@ fun CampsiteEditingScreen(navController: NavController, userViewModel: UserViewM
                                                     ?: "Failed to upload campsite images"
                                             }
                                         }
-                                    }
 
+                                    }
+                                }
+                                else{
+                                    error = "All fields must be filled in"
                                 }
                             }
-                            else{
-                                error = "All fields must be filled in"
-                            }
+                        ) {
+                            Text("update campsite")
                         }
-                    ) {
-                        Text("create campsite")
                     }
+                    //If there is na error in the info entered by the user, tells them
+
+
                 }
-                else{
-
-
-                    Button(
-                        modifier = Modifier.padding(vertical = 12.dp).testTag("createCampsiteButton"),
-                        onClick = {
-                            val db = Database()
-                            if (newTags.isNotEmpty() and (newCampName != "") and (newCampLocation != "") and (newCampDescription !="") and (newMaxOcc != "")) {
-                                intNewMaxOcc = newMaxOcc.toIntOrNull()
-                                error = ""
-                                if (intNewMaxOcc == null) {
-                                    error = "Max Int must be an int"
-                                } else {
-                                    error = ""
-
-                                    val originalImages = campsite.images.toList()
-                                    val imagesToSave = newPhotos.toList()
-
-                                    uploadNewImages(
-                                        campsiteId = campsite.documentId,
-                                        originalImages = originalImages,
-                                        imagesToSave = imagesToSave
-                                    ) { result ->
-
-                                        result.onSuccess { imageUrls ->
-                                            campsite.updateName(newCampName)
-                                            campsite.updateLocation(newCampLocation)
-                                            campsite.updateDescription(newCampDescription)
-                                            campsite.updateMaxOcc(intNewMaxOcc!!)
-                                            campsite.updateTag(newTags.toMutableList())
-                                            campsite.updateQRCode(qrCodeChecked)  //QR CODE
-
-                                            // Replace the old image list with the final URLs.
-                                            campsite.images.clear()
-
-                                            for (url in imageUrls) {
-                                                campsite.addImage(Uri.parse(url))
-                                            }
-
-                                            // Save the updated campsite to Firestore.
-                                            db.updateCampsite(campsite)
-                                            navController.popBackStack()
-                                        }
-
-                                        result.onFailure { exception ->
-                                            error = exception.message
-                                                ?: "Failed to upload campsite images"
-                                        }
-                                    }
-
-                                }
-                            }
-                            else{
-                                error = "All fields must be filled in"
-                            }
-                        }
-                    ) {
-                        Text("update campsite")
-                    }
-                }
-                //If there is na error in the info entered by the user, tells them
-
-
             }
             if( (error != "") ){
                 Row(

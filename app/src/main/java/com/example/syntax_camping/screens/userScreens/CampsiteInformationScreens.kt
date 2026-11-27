@@ -30,7 +30,6 @@ import androidx.navigation.compose.composable
 import com.example.syntax_camping.R
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
-import com.example.syntax_camping.screens.CampsiteQRCode
 
 private const val CAMPSITE_RULES_ROUTE = "CampsiteRules"
 private const val CANCELLATION_POLICY_ROUTE = "CancellationPolicy"

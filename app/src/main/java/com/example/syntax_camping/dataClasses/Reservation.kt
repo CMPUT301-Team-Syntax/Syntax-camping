@@ -16,14 +16,17 @@ data class Reservation (
     var dateManager = campsite.dateManager
     //Note this oes not exist yet as I have nto done firebase
     var reservationId = ""
+    var bookingName = ""
+    var cancelReason = ""      // ADDED: why it was cancelled / rejected
+    var cancelledBy = ""       // ADDED: "entrant" or "owner" (empty if not cancelled)
     val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
-    fun createReservation(callback: (Boolean) -> Unit = {}): Boolean {
+    fun createReservation(callback: (Boolean, String?) -> Unit = { _, _ -> }): Boolean {
         val manager = dateManager
         if (manager == null || datesReserved.isEmpty() || numberGuests <= 0) {
             reservationSuccessful = false
-            callback(false)
+            callback(false, null)
             return false
         }
 
@@ -36,7 +39,7 @@ data class Reservation (
         if (!allDatesFit) {
             reservationNotFull = false
             reservationSuccessful = false
-            callback(false)
+            callback(false, null)
             return false
         }
 
@@ -45,7 +48,7 @@ data class Reservation (
             if (!manager.addReservation(dateStr, numberGuests)) {
                 reservationNotFull = false
                 reservationSuccessful = false
-                callback(false)
+                callback(false, null)
                 return false
             }
         }
@@ -57,15 +60,15 @@ data class Reservation (
         val dateRepository = DateRepository()
         dateRepository.addDateManager(campsite.documentId, manager) { datesSaved ->
             if (!datesSaved) {
-                callback(false)
+                callback(false, null)
                 return@addDateManager
             }
 
             reservationRepository.addReservation(
                 documentId = campsite.documentId,
                 reservation = this
-            ) { resSaved ->
-                callback(resSaved)
+            ) { resSaved, csv ->
+                callback(resSaved, csv)
             }
         }
 
@@ -74,4 +77,29 @@ data class Reservation (
     fun updateReservationId(newId: String) {
         this.reservationId = newId
     }
+    fun rejectByOwner(
+        lotteryId: String? = null,
+        rejectedStatus: String = "rejected",
+        reason: String = "",                       // ADDED
+        callback: (Boolean, String?) -> Unit = { _, _ -> }
+    ) {
+        if (reservationId.isBlank()) {
+            callback(false, null)
+            return
+        }
+
+        val resolvedStatus = rejectedStatus.ifBlank { "rejected" }
+        this.status = resolvedStatus
+        this.cancelReason = reason                 // ADDED
+        this.cancelledBy = "owner"                 // ADDED
+
+        reservationRepository.rejectReservationByOwner(
+            reservationId = reservationId,
+            lotteryId = lotteryId,
+            rejectedStatus = resolvedStatus,
+            reason = reason,                       // ADDED
+            callback = callback
+        )
+    }
+
 }
