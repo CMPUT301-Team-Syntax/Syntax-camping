@@ -227,6 +227,7 @@ export const runLotteryDraw = onTaskDispatched(
                         userId: entrant.userId,
                         status: "waiting",
                         joinedTimestamp: entrant.joinedTimestamp,
+                        addedByDraw: true,
                     });
                 }
             }

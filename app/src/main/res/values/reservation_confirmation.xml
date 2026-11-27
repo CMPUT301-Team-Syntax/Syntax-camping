@@ -1,0 +1,12 @@
+<resources>
+    <string name="reservation_rules_heading">Rules and policies</string>
+    <string name="reservation_rules_acknowledge">I have read the campsite rules and cancellation policy.</string>
+    <string name="reservation_confirm">Confirm Reservation</string>
+    <string name="reservation_confirming">Confirming…</string>
+    <string name="reservation_confirmed">Reservation Confirmed</string>
+    <string name="reservation_confirmed_status">Status: Confirmed</string>
+    <string name="reservation_confirmation_error">The reservation could not be confirmed. Check the booking window and date availability before trying again.</string>
+    <string name="reservation_check_in">Check-in: %1$s</string>
+    <string name="reservation_check_out">Check-out: %1$s</string>
+    <string name="reservation_view_reservations">My Reservations</string>
+</resources>

@@ -29,36 +29,11 @@ import com.example.syntax_camping.screens.tabs.TopBar
 private val SettingsPink = Color(0xFFE2AEAF)
 private val LinkBlue = Color(0xFF6093B5)
 
-/** Storyboard shell. These local control states do not change notification delivery or sign-in. */
 @Composable
 fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
     var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
-    var showAdminDialog by rememberSaveable { mutableStateOf(false) }
-
-    if (showAdminDialog) {
-        AlertDialog(
-            onDismissRequest = { showAdminDialog = false },
-            title = { Text("Login as admin") },
-            text = { Text("Do you want to log in as an admin?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showAdminDialog = false
-                        navController.navigate("adminBrowseProfiles") { launchSingleTop = true }
-                    },
-                    modifier = Modifier.testTag("adminLoginYes")
-                ) { Text("Yes") }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showAdminDialog = false },
-                    modifier = Modifier.testTag("adminLoginNo")
-                ) { Text("No") }
-            },
-            modifier = Modifier.testTag("adminLoginDialog")
-        )
-    }
+    var showAdminDialog by remember { mutableStateOf(false) }
 
     SettingsPagesLayout(navController) { innerPadding ->
         Column(
@@ -115,6 +90,30 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
                     fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center)
             }
+        }
+
+        if (showAdminDialog) {
+            AlertDialog(
+                onDismissRequest = { showAdminDialog = false },
+                modifier = Modifier.testTag("adminLoginDialog"),
+                title = { Text("Login as admin?") },
+                text = { Text("Do you want to continue to the admin screens?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showAdminDialog = false
+                            navController.navigate("adminBrowseCampsites") { launchSingleTop = true }
+                        },
+                        modifier = Modifier.testTag("adminLoginYes")
+                    ) { Text("Yes") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showAdminDialog = false },
+                        modifier = Modifier.testTag("adminLoginNo")
+                    ) { Text("No") }
+                }
+            )
         }
     }
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_sign_in">Admin sign-in</string>
+    <string name="admin_sign_out">Sign out as admin</string>
+    <string name="admin_email">Email</string>
+    <string name="admin_password">Password</string>
+    <string name="admin_sign_in_failed">Sign-in failed. Check your credentials and try again.</string>
+    <string name="admin_role_check_failed">Could not verify administrator access. Sign in again to retry.</string>
+    <string name="admin_account_required">This account does not have administrator access.</string>
+    <string name="admin_notification_logs">Notification logs</string>
+    <string name="admin_view_notification_logs">View notification logs</string>
+    <string name="admin_campsite_notification_logs">Notification logs for %1$s</string>
+    <string name="admin_owner_notification_logs">Notification logs for owner %1$s</string>
+    <string name="admin_notification_logs_empty">No notifications have been logged yet.</string>
+    <string name="admin_notification_logs_error">Could not load notification logs.</string>
+    <string name="admin_notification_logs_retry">Retry</string>
+    <string name="admin_notification_logs_more">Load more</string>
+</resources>
