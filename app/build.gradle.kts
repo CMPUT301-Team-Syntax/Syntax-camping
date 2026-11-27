@@ -6,10 +6,13 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+
 android {
     namespace = "com.example.syntax_camping"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 2
+        }
     }
 
     defaultConfig {
@@ -48,6 +51,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.material3)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.10.1")
@@ -86,4 +90,5 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.mapbox.maps:android-ndk27:11.35.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.35.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }
