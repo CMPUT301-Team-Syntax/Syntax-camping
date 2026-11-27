@@ -203,7 +203,7 @@ class ReservationRepository {
             .addOnSuccessListener { callback(true) }
             .addOnFailureListener { callback(false) }
     }
-        //This is complicated because reseervation has a campsite tied to it, which must be retrieved
+    //This is complicated because reseervation has a campsite tied to it, which must be retrieved
     fun getReservation(reservationId: String, callback: (Reservation?) -> Unit) {
         if (reservationId.isBlank()) {
             callback(null)
@@ -228,6 +228,8 @@ class ReservationRepository {
                 val userId = resDoc.getString("userId") ?: ""
                 val status = resDoc.getString("status") ?: ""
                 val bookingName = resDoc.getString("bookingName") ?: ""
+                val cancelReason = resDoc.getString("cancelReason") ?: ""   // ADDED
+                val cancelledBy = resDoc.getString("cancelledBy") ?: ""     // ADDED
 
                 // Fetch the associated Campsite so we can construct the full Reservation object
                 db.collection("campsites")
@@ -301,6 +303,8 @@ class ReservationRepository {
                         ).apply {
                             updateReservationId(resDoc.id)
                             this.bookingName = bookingName
+                            this.cancelReason = cancelReason     // ADDED
+                            this.cancelledBy = cancelledBy       // ADDED
                         }
 
                         callback(reservation)
@@ -370,10 +374,14 @@ class ReservationRepository {
             .addOnFailureListener { callback(false) }
     }
 
+    // CHANGED: takes a reason + who cancelled, and now KEEPS the reservation (status = cancelled)
+    // instead of deleting it, so it can be listed under Settings -> cancelled reservations.
     fun cancelReservation(
         reservationId: String,
         lotteryId: String? = null,
         cancelledStatus: String = "cancelled",
+        reason: String = "",                 // ADDED
+        cancelledBy: String = "entrant",     // ADDED
         callback: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
         if (reservationId.isBlank()) {
@@ -402,35 +410,28 @@ class ReservationRepository {
                 }
             }
 
+            val cancelFields = mapOf(          // ADDED
+                "status" to resolvedStatus,
+                "cancelReason" to reason,
+                "cancelledBy" to cancelledBy
+            )
+
             val persistDatesAndCleanup = {
                 val batch = db.batch()
 
-                // Keep the reservation document under the campsite, but mark its status as cancelled/rejected
+                // Keep the reservation document under the campsite, but mark it cancelled
                 if (campsiteId.isNotBlank()) {
                     val campsiteResRef = db.collection("campsites")
                         .document(campsiteId)
                         .collection("reservations")
                         .document(reservationId)
-                    batch.set(
-                        campsiteResRef,
-                        mapOf("status" to resolvedStatus),
-                        SetOptions.merge()
-                    )
+                    batch.set(campsiteResRef, cancelFields, SetOptions.merge())
                 }
 
-                // Delete from top-level reservations collection
+                // CHANGED: keep the top-level reservation too (it used to be deleted here)
+                // and keep its id in the user's entrantReservationIds, same as rejectReservationByOwner.
                 val topLevelResRef = db.collection("reservations").document(reservationId)
-                batch.delete(topLevelResRef)
-
-                // Remove reservationId from user's entrantData list
-                if (userId.isNotBlank()) {
-                    val entrantRef = db.collection("entrantData").document(userId)
-                    batch.set(
-                        entrantRef,
-                        mapOf("entrantReservationIds" to FieldValue.arrayRemove(reservationId)),
-                        SetOptions.merge()
-                    )
-                }
+                batch.set(topLevelResRef, cancelFields, SetOptions.merge())
 
                 batch.commit()
                     .addOnSuccessListener {
@@ -467,6 +468,10 @@ class ReservationRepository {
             }
         }
     }
+
+    // ADDED: the CSV text for any reservation (used by "View CSV")
+    fun reservationCsv(reservation: Reservation): String = formatReservationAsCSV(reservation)
+
     //This will return reservaion details as a string IT henddles both cancellation and confirmation, as ti will print its status
     //AS part of the csv It works with add reservation and cancel reservation to do this
     private fun formatReservationAsCSV(
@@ -485,9 +490,11 @@ class ReservationRepository {
 
         return csvBuilder.toString().trimEnd()
     }
-    private fun getReservationsForUserByStatus(
+
+    // CHANGED: now takes several statuses; the single-status version below just calls it
+    private fun getReservationsForUserByStatuses(
         userId: String,
-        targetStatus: String,
+        targetStatuses: List<String>,
         callback: (List<Reservation>) -> Unit
     ) {
         if (userId.isBlank()) {
@@ -517,7 +524,7 @@ class ReservationRepository {
                     getReservation(id) { reservation ->
                         synchronized(matches) {
                             if (reservation != null &&
-                                reservation.status.trim().equals(targetStatus, ignoreCase = true)
+                                targetStatuses.any { reservation.status.trim().equals(it, ignoreCase = true) }
                             ) {
                                 matches.add(reservation)
                             }
@@ -533,6 +540,38 @@ class ReservationRepository {
             .addOnFailureListener {
                 callback(emptyList())
             }
+    }
+
+    private fun getReservationsForUserByStatus(
+        userId: String,
+        targetStatus: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForUserByStatuses(userId, listOf(targetStatus), callback)
+    }
+    // ADDED: true when every reserved date is before today
+    fun hasEnded(reservation: Reservation): Boolean {
+        val format = java.text.SimpleDateFormat("dd/MM/yy", java.util.Locale.getDefault())
+        val startOfToday = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val lastDate = reservation.datesReserved
+            .mapNotNull { runCatching { format.parse(it)?.time }.getOrNull() }
+            .maxOrNull() ?: return false
+        return lastDate < startOfToday
+    }
+
+    // ADDED: the user's completed reservations (status "past", or all dates already over)
+    fun getCompletedReservationsForUser(
+        userId: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForUserByStatuses(userId, listOf("past", "upcoming", "current")) { list ->
+            callback(list.filter { it.status.trim().equals("past", ignoreCase = true) || hasEnded(it) })
+        }
     }
 
     fun getPastReservationsForUser(
@@ -555,10 +594,23 @@ class ReservationRepository {
     ) {
         getReservationsForUserByStatus(userId, "upcoming", callback)
     }
+
+
+
+    // ADDED: the user's cancelled reservations (cancelled by them or rejected by the owner)
+    fun getCancelledReservationsForUser(
+        userId: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForUserByStatuses(userId, listOf("cancelled", "rejected"), callback)
+    }
+
+    // CHANGED: takes a reason; records that the owner did it
     fun rejectReservationByOwner(
         reservationId: String,
         lotteryId: String? = null,
         rejectedStatus: String = "rejected",
+        reason: String = "",                 // ADDED
         callback: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
         if (reservationId.isBlank()) {
@@ -585,6 +637,12 @@ class ReservationRepository {
                 }
             }
 
+            val rejectFields = mapOf(          // ADDED
+                "status" to resolvedStatus,
+                "cancelReason" to reason,
+                "cancelledBy" to "owner"
+            )
+
             val persistStatusChanges = {
                 val batch = db.batch()
 
@@ -594,20 +652,12 @@ class ReservationRepository {
                         .document(campsiteId)
                         .collection("reservations")
                         .document(reservationId)
-                    batch.set(
-                        campsiteResRef,
-                        mapOf("status" to resolvedStatus),
-                        SetOptions.merge()
-                    )
+                    batch.set(campsiteResRef, rejectFields, SetOptions.merge())
                 }
 
                 // Keep the top-level reservation doc and entrantData reference so the user can see it was cancelled/rejected
                 val topLevelResRef = db.collection("reservations").document(reservationId)
-                batch.set(
-                    topLevelResRef,
-                    mapOf("status" to resolvedStatus),
-                    SetOptions.merge()
-                )
+                batch.set(topLevelResRef, rejectFields, SetOptions.merge())
 
                 batch.commit()
                     .addOnSuccessListener {
@@ -643,72 +693,81 @@ class ReservationRepository {
                 persistStatusChanges()
             }
         }
-        fun getReservationsForCampsiteByStatus(
-            campsite: Campsite,
-            targetStatus: String,
-            callback: (List<Reservation>) -> Unit
-        ) {
-            if (campsite.documentId.isBlank()) {
-                callback(emptyList())
-                return
-            }
+    }
 
-            db.collection("campsites")
-                .document(campsite.documentId)
-                .collection("reservations")
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    val matches = querySnapshot.documents.mapNotNull { doc ->
-                        val status = doc.getString("status") ?: ""
-                        if (!status.trim().equals(targetStatus, ignoreCase = true)) {
-                            return@mapNotNull null
-                        }
+    // CHANGED: these four used to sit INSIDE rejectReservationByOwner (so nothing could call them).
+    // They are now normal class functions.
+    // ADDED: every reservation of a campsite, whatever its status
+    fun getAllReservationsForCampsite(
+        campsite: Campsite,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        if (campsite.documentId.isBlank()) {
+            callback(emptyList())
+            return
+        }
 
-                        val datesReserved = (doc.get("datesReserved") as? List<*>)
-                            ?.filterIsInstance<String>()
-                            ?.toMutableList()
-                            ?: mutableListOf()
+        db.collection("campsites")
+            .document(campsite.documentId)
+            .collection("reservations")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val all = querySnapshot.documents.map { doc ->
+                    val datesReserved = (doc.get("datesReserved") as? List<*>)
+                        ?.filterIsInstance<String>()
+                        ?.toMutableList()
+                        ?: mutableListOf()
 
-                        Reservation(
-                            campsite = campsite,
-                            datesReserved = datesReserved,
-                            numberGuests = doc.getLong("numberGuests")?.toInt() ?: 0,
-                            userId = doc.getString("userId") ?: "",
-                            status = status
-                        ).apply {
-                            updateReservationId(doc.getString("reservationId") ?: doc.id)
-                            this.bookingName = doc.getString("bookingName") ?: ""
-                        }
+                    Reservation(
+                        campsite = campsite,
+                        datesReserved = datesReserved,
+                        numberGuests = doc.getLong("numberGuests")?.toInt() ?: 0,
+                        userId = doc.getString("userId") ?: "",
+                        status = doc.getString("status") ?: ""
+                    ).apply {
+                        updateReservationId(doc.getString("reservationId") ?: doc.id)
+                        this.bookingName = doc.getString("bookingName") ?: ""
+                        this.cancelReason = doc.getString("cancelReason") ?: ""
+                        this.cancelledBy = doc.getString("cancelledBy") ?: ""
                     }
-
-                    callback(matches)
                 }
-                .addOnFailureListener {
-                    callback(emptyList())
-                }
-        }
+                callback(all)
+            }
+            .addOnFailureListener {
+                callback(emptyList())
+            }
+    }
 
-        fun getPastReservationsForCampsite(
-            campsite: Campsite,
-            callback: (List<Reservation>) -> Unit
-        ) {
-            getReservationsForCampsiteByStatus(campsite, "past", callback)
-        }
-
-        fun getCurrentReservationsForCampsite(
-            campsite: Campsite,
-            callback: (List<Reservation>) -> Unit
-        ) {
-            getReservationsForCampsiteByStatus(campsite, "current", callback)
-        }
-
-        fun getUpcomingReservationsForCampsite(
-            campsite: Campsite,
-            callback: (List<Reservation>) -> Unit
-        ) {
-            getReservationsForCampsiteByStatus(campsite, "upcoming", callback)
+    // CHANGED: now just filters the full list
+    fun getReservationsForCampsiteByStatus(
+        campsite: Campsite,
+        targetStatus: String,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getAllReservationsForCampsite(campsite) { all ->
+            callback(all.filter { it.status.trim().equals(targetStatus, ignoreCase = true) })
         }
     }
 
+    fun getPastReservationsForCampsite(
+        campsite: Campsite,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForCampsiteByStatus(campsite, "past", callback)
+    }
+
+    fun getCurrentReservationsForCampsite(
+        campsite: Campsite,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForCampsiteByStatus(campsite, "current", callback)
+    }
+
+    fun getUpcomingReservationsForCampsite(
+        campsite: Campsite,
+        callback: (List<Reservation>) -> Unit
+    ) {
+        getReservationsForCampsiteByStatus(campsite, "upcoming", callback)
+    }
 
 }

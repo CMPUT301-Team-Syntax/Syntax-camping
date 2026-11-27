@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.syntax_camping.Campsite
+import com.example.syntax_camping.CampsiteRepository
 import com.example.syntax_camping.Database
 import com.example.syntax_camping.UserScreens.APP_GUIDELINES_ROUTE
 import com.example.syntax_camping.UserScreens.AppGuidelinesScreen
@@ -27,6 +28,7 @@ import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.dataClasses.AdminRepository
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.User
+import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseCampsites
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseImages
 import com.example.syntax_camping.screens.adminScreens.AdminBrowseProfiles
@@ -41,9 +43,13 @@ import com.example.syntax_camping.screens.ownerScreens.CampsiteMessagesScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.UpdateProfileScreen
 import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import com.example.syntax_camping.screens.ownerScreens.CampsiteOwnerHome
+import com.example.syntax_camping.screens.ownerScreens.OwnerReservationInfoScreen
+import com.example.syntax_camping.screens.ownerScreens.OwnerReservationsScreen
 import com.example.syntax_camping.screens.userScreens.notificationsDestination
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.LotteryDetailsScreen
 import com.example.syntax_camping.screens.userScreens.profileScreen.VeiwSearchHistory
+import com.example.syntax_camping.screens.userScreens.reservationScreens.CancelledReservationsScreen
+import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationCsvScreen
 import com.example.syntax_camping.screens.userScreens.reservationScreens.ReservationInfoScreen
 
 @Composable
@@ -145,6 +151,10 @@ fun SyntaxCamping(
         composable("Profile") {
             ProfileScreen(navController, userViewModel)
         }
+
+        composable("adminSettings") {
+            SettingsScreen(navController, userViewModel, adminMode = true)
+        }
         composable("CampsiteOwnerHome") {
             CampsiteOwnerHome(
                 navController,
@@ -207,8 +217,66 @@ fun SyntaxCamping(
             LaunchedEffect(userId) {
                 if (userId.isNotBlank()) {
                     Database().fetchUserDetails(userId) { result ->
-                        details = result.getOrNull()?.let {
-                            AdminUserDetails(it.name, it.email, it.phoneNumber, it.adminStatus())
+                        val user = result.getOrNull()
+                        if (user != null) {
+                            // show the basics straight away, fill in the rest as it arrives
+                            details = AdminUserDetails(
+                                name = user.name,
+                                email = user.email,
+                                phone = user.phoneNumber,
+                                status = user.adminStatus(),
+                                profileImageUrl = user.profileImageUrl
+                            )
+                            val admin = AdminRepository()
+
+                            admin.getUserReservations(user) { reservations ->
+                                details = details?.copy(reservations = reservations)
+                            }
+
+                            admin.getUserCampsites(user) { campsites ->
+                                details = details?.copy(campsites = campsites)
+
+                                // reviews this user wrote
+                                CampsiteRepository.refreshCampsiteCache {
+                                    val reviews = CampsiteRepository.getCampsites().flatMap { campsite ->
+                                        campsite.ratings
+                                            .filter { it.userId == userId }
+                                            .map { campsite to it }
+                                    }
+                                    details = details?.copy(reviews = reviews)
+                                }
+
+                                // lotteries: what the user record says, plus any lottery
+                                // their campsites point to that it missed
+                                admin.getUserLotteries(user) { owned, _ ->
+                                    val all = owned.toMutableList()
+                                    val knownIds = all.map { it.lotteryId }.toSet()
+                                    val missing = campsites
+                                        .mapNotNull { it.lotteryId?.takeIf { id -> id.isNotBlank() } }
+                                        .distinct()
+                                        .filter { it !in knownIds }
+
+                                    fun showLotteries() {
+                                        details = details?.copy(
+                                            ownedLotteries = all.filter { !it.isJoinable },
+                                            sharedLotteries = all.filter { it.isJoinable }
+                                        )
+                                    }
+
+                                    if (missing.isEmpty()) {
+                                        showLotteries()
+                                    } else {
+                                        var remaining = missing.size
+                                        for (id in missing) {
+                                            lotteryRepository().getLottery(id) { lottery ->
+                                                if (lottery != null) all.add(lottery)
+                                                remaining--
+                                                if (remaining == 0) showLotteries()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -246,6 +314,23 @@ fun SyntaxCamping(
 
         composable("History"){
             VeiwSearchHistory(history = userViewModel.searchHistory, { query -> /* navigate or handle click */ }, navController)
+        }
+
+        composable("reservationCsv/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationCsvScreen(navController, reservationId)
+        }
+        composable("cancelledReservations") {
+            CancelledReservationsScreen(navController, userViewModel)
+        }
+
+        composable("ownerReservations/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            OwnerReservationsScreen(navController, campsiteId)
+        }
+        composable("ownerReservation/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            OwnerReservationInfoScreen(navController, reservationId)
         }
 
     }

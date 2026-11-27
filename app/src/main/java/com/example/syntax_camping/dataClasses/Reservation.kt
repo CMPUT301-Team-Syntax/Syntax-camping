@@ -17,6 +17,8 @@ data class Reservation (
     //Note this oes not exist yet as I have nto done firebase
     var reservationId = ""
     var bookingName = ""
+    var cancelReason = ""      // ADDED: why it was cancelled / rejected
+    var cancelledBy = ""       // ADDED: "entrant" or "owner" (empty if not cancelled)
     val reservationRepository = ReservationRepository()
     var reservationSuccessful = true
     var reservationNotFull = true
@@ -78,6 +80,7 @@ data class Reservation (
     fun rejectByOwner(
         lotteryId: String? = null,
         rejectedStatus: String = "rejected",
+        reason: String = "",                       // ADDED
         callback: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
         if (reservationId.isBlank()) {
@@ -87,11 +90,14 @@ data class Reservation (
 
         val resolvedStatus = rejectedStatus.ifBlank { "rejected" }
         this.status = resolvedStatus
+        this.cancelReason = reason                 // ADDED
+        this.cancelledBy = "owner"                 // ADDED
 
         reservationRepository.rejectReservationByOwner(
             reservationId = reservationId,
             lotteryId = lotteryId,
             rejectedStatus = resolvedStatus,
+            reason = reason,                       // ADDED
             callback = callback
         )
     }

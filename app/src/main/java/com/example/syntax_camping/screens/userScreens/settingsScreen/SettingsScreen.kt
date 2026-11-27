@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.screens.tabs.AdminBottomBar
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
 
@@ -30,12 +31,16 @@ private val SettingsPink = Color(0xFFE2AEAF)
 private val LinkBlue = Color(0xFF6093B5)
 
 @Composable
-fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
+fun SettingsScreen(
+    navController: NavController,
+    userViewModel: UserViewModel,
+    adminMode: Boolean = false
+) {
     var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
     var showAdminDialog by remember { mutableStateOf(false) }
 
-    SettingsPagesLayout(navController) { innerPadding ->
+    SettingsPagesLayout(navController, adminMode = adminMode) { innerPadding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding)
                 .verticalScroll(rememberScrollState())
@@ -77,10 +82,31 @@ fun SettingsScreen(navController: NavController, userViewModel: UserViewModel) {
                 "Report a Problem", "About Syntax Camping").forEach { label ->
                 SettingsMenuRow(label)
             }
+
+            if (adminMode) {
+                // back to the normal app: clears the admin screens and lands on Search
+                SettingsMenuRow(
+                    label = "Switch back to user mode",
+                    modifier = Modifier.testTag("settingsSwitchToUserMode"),
+                    onClick = {
+                        navController.navigate("Search") {
+                            popUpTo("Search") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            } else {
+                SettingsMenuRow(
+                    label = "Login as admin",
+                    modifier = Modifier.testTag("settingsLoginAsAdmin"),
+                    onClick = { showAdminDialog = true }
+                )
+            }
+
             SettingsMenuRow(
-                label = "Login as admin",
-                modifier = Modifier.testTag("settingsLoginAsAdmin"),
-                onClick = { showAdminDialog = true }
+                label = "View cancelled reservations",
+                modifier = Modifier.testTag("settingsCancelledReservations"),
+                onClick = { navController.navigate("cancelledReservations") }
             )
             TextButton(
                 onClick = { navController.navigate(APP_GUIDELINES_ROUTE) { launchSingleTop = true } },
@@ -150,6 +176,7 @@ private fun SettingsMenuRow(
 internal fun SettingsPagesLayout(
     navController: NavController,
     backgroundColor: Color = Color.White,
+    adminMode: Boolean = false,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -157,7 +184,13 @@ internal fun SettingsPagesLayout(
         containerColor = backgroundColor,
         contentColor = Color.Black,
         topBar = { TopBar(navController) },
-        bottomBar = { CustomBottomBar(navController, currentRoute = "Settings") },
+        bottomBar = {
+            if (adminMode) {
+                AdminBottomBar(navController, currentRoute = "adminSettings")
+            } else {
+                CustomBottomBar(navController, currentRoute = "Settings")
+            }
+        },
         content = content
     )
 }

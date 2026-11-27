@@ -156,6 +156,17 @@ fun CampsiteDetailsScreen(
                     ) {
                         Text("Update Campsite", color = Color.White, fontWeight = FontWeight.Bold)
                     }
+
+                    Button(
+                        onClick = { navController.navigate("ownerReservations/${campsite.documentId}") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .testTag("viewReservationsButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text("View reservations", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
