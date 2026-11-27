@@ -212,17 +212,11 @@ fun AdminBrowseImages(navController: NavController) {
                                     imageUrl = image.downloadUrl,
                                     imageName = image.name,
                                     imageCategory = image.category,
-                                    onDeleteClick = {
-                                        Log.d("ImageDatabase", "Delete button clicked")
-
+                                    onDeleteClick = {   //Delete implementation
                                         coroutineScope.launch {
                                             try {
-                                                Log.d("ImageDatabase", "Starting deletion")
-
                                                 ImageDatabase.deleteImage(image)
-
                                                 Log.d("ImageDatabase", "Deletion successful")
-
                                                 images = images.filterNot {
                                                     it.storagePath == image.storagePath
                                                 }
@@ -231,6 +225,16 @@ fun AdminBrowseImages(navController: NavController) {
                                                 throw e
                                             } catch (e: Exception) {
                                                 Log.e("ImageDatabase", "Deletion failed", e)
+                                            }
+                                        }
+                                    },
+                                    onViewProfileClick = {  //Navigate to different screens
+                                        when (image.category) {
+                                            "users" -> {
+                                                navController.navigate("adminUserInfo/${image.parentId}")
+                                            }
+                                            "campsites" -> {
+                                                navController.navigate("ownerCampsiteDetails/${image.parentId}")
                                             }
                                         }
                                     }
@@ -253,6 +257,7 @@ fun CardToDisplay(
     imageName: String = "",
     imageCategory: String = "",
     onDeleteClick: () -> Unit = {},
+    onViewProfileClick: () -> Unit = {}
 ) {
 
     var showImageDetails by remember { mutableStateOf(false) }
@@ -304,18 +309,32 @@ fun CardToDisplay(
                         Icon(
                             painter = painterResource(id=R.drawable.ic_three_dots),
                             contentDescription = "More options",
-                            tint = Color.Red
+                            tint = Color.Black
                         )
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        //Delete picture button
                         DropdownMenuItem(
                             text = { Text(text = "Delete picture", color = Color.Red) },
                             onClick = {
                                 showMenu = false
                                 showDeleteConfirmation = true
+                            }
+                        )
+                        //Travel to user profile/campsite screen
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (imageCategory == "users") { "View user profile" }
+                                    else { "View Campsite" }
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onViewProfileClick()
                             }
                         )
                     }
