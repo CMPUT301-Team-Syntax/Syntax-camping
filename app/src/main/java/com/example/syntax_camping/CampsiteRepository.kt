@@ -210,4 +210,40 @@ object CampsiteRepository {
 
     }
 
+    fun applySearchFilter(filter: SearchFilter): MutableList<Campsite> {
+
+        val matchingCampsites = mutableListOf<Campsite>()
+
+        for (campsite in _campsites) {
+
+            val occupancy = campsite.maxOcc
+
+            // first, we check occupancy; if not a match, ignore rest of checks
+
+            if (occupancy > filter.maxOccupancy || occupancy < filter.minOccupancy){
+
+                continue    // don't add it
+
+            }
+
+            // if we pass the occupancy check, check all locations
+            // if we have a match, add the campsite and move on to next campsite
+
+            for (location in filter.validLocations) {
+
+                if (location == campsite.location) {
+
+                    matchingCampsites.add(campsite)
+                    break
+
+                }
+
+            }
+
+        }
+
+        return matchingCampsites
+
+    }
+
 }

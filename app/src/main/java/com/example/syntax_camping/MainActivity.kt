@@ -23,6 +23,11 @@ import com.example.syntax_camping.screens.SyntaxCamping
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
 import kotlin.collections.emptyList
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.util.CoilUtils.result
+import com.example.syntax_camping.dataClasses.Conversation
+
+
+var globalDeviceId = ""
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,13 +39,11 @@ class MainActivity : ComponentActivity() {
          *val user = User(name, userId)
          */
 
-
-
         CampsiteRepository.refreshCampsiteCache { success ->
             if (success) {
-                Log.d("MainActivity", "Successfully loaded Campsites from database!")
+                Log.d("CampsiteRepository", "Successfully loaded Campsites from database!")
             } else {
-                Log.e("MainActivity", "Could not fetch Campsites from database!")
+                Log.e("CampsiteRepository", "Could not fetch Campsites from database!")
             }
         }
 
@@ -48,13 +51,28 @@ class MainActivity : ComponentActivity() {
         // get deviceId from android
 
         val db = Database()
-        val deviceId = db.getDeviceId(this)
+        val deviceId = db.getDeviceId(this) // "907ab032fed2e813"
+        globalDeviceId = deviceId
 
+        Log.d("devId", deviceId);
+
+        ConversationRepository.refreshConversationCache(
+            deviceId,
+            onError = {
+
+                Log.e("ConversationRepository","Couldn't fetch conversations for user ${deviceId}!")
+
+            },
+            onSuccess = {
+
+                Log.d("ConversationRepository", "Loaded conversations!")
+
+            })
 
         // For now, I just have a test user.
         val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"),mutableListOf("maybeBook"))
         val testOwnerData = OwnerData(mutableListOf("lotteryid1"), mutableListOf("campsiteid2"))
-        val testUser = User(deviceId, "HelloWorld", "sorachat@ualberta.ca", "7802349700", testEntrantData, testOwnerData)
+        val testUser = User(deviceId, "ConversationTestUser", "test@testdomain.ca", "1234567890", testEntrantData, testOwnerData)
 
         // See if user already has account (by deviceId), then create it if not.
         db.userExistsByDeviceId(deviceId) { exists ->
