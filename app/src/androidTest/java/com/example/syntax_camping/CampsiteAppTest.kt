@@ -151,11 +151,6 @@ class CampsiteAppTest {
             .onNodeWithTag("search_icon")
             .performClick()
 
-
-
-
-
-
     }
 }
 
