@@ -120,45 +120,7 @@ fun AdminBrowseImages(navController: NavController) {
             }
 
             // Search Bar Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextField(
-                    value = searchImage,
-                    onValueChange = { searchImage = it },
-                    label = { Text("Type in the location or Campsite Name") },
-                    shape = RoundedCornerShape(30.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,   // Removes line when typing
-                        unfocusedIndicatorColor = Color.Transparent, // Removes line when idle
-                        disabledIndicatorColor = Color.Transparent   // Removes line if disabled
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("search_image_field"),
-                    singleLine = true
-                )
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                IconButton(
-                    onClick = {
-                        // keeps any near-me search that was already applied
-                    },
-                    modifier = Modifier
-                        .background(Color(0xFF3E6B68), shape = RoundedCornerShape(50))
-                        .testTag("search_icon")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_search),
-                        contentDescription = "Search",
-                        tint = Color.Unspecified
-                    )
-                }
-            }
 
             // Main Content Area (Placeholder / Grid)
             Box(
