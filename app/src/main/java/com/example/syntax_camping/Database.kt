@@ -639,12 +639,6 @@ class Database {
             }
     }
 
-    fun updateConversation(convoId: String, convo: Conversation) {
-
-        // todo
-
-    }
-
     fun updateCampsite(campsite: Campsite) {
 
 

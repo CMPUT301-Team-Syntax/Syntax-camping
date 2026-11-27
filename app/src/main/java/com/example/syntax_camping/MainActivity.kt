@@ -54,6 +54,8 @@ class MainActivity : ComponentActivity() {
         val deviceId = db.getDeviceId(this) // "907ab032fed2e813"
         globalDeviceId = deviceId
 
+        Log.d("devId", deviceId);
+
         ConversationRepository.refreshConversationCache(
             deviceId,
             onError = {
