@@ -35,10 +35,16 @@ import androidx.navigation.NavController
 import com.example.syntax_camping.UserViewModel
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import com.example.syntax_camping.dataClasses.DeleteRepository
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, modifier: Modifier = Modifier) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val deleteRepository = remember { DeleteRepository() }
+    val context = LocalContext.current
+    var isDeleting by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier
@@ -163,7 +169,39 @@ fun ProfileScreen(navController: NavController, userViewModel: UserViewModel, mo
 
         if (showDeleteDialog) {
             DeleteProfilePopUp(
-                onDismiss = { showDeleteDialog = false }
+                onDismiss = { showDeleteDialog = false },
+                isDeleting = isDeleting,
+                onConfirmDelete = {
+                    if (!isDeleting) {
+                        isDeleting = true
+
+                        //Integrated delete user button
+                        deleteRepository.removeUser(
+                            userViewModel.deviceId
+                        ) { result ->
+
+                            isDeleting = false
+
+                            result.onSuccess {
+                                showDeleteDialog = false
+                                userViewModel.refreshCurrentUser()
+
+                                Toast.makeText(
+                                    context,
+                                    "Account deleted successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                            }.onFailure { error ->
+                                Toast.makeText(
+                                    context,
+                                    error.message ?: "Account deletion failed",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                }
             )
         }
     }

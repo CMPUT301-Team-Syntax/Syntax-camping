@@ -1,8 +1,11 @@
 package com.example.syntax_camping.dataClasses
+import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.CampsiteRepository
+import com.example.syntax_camping.Database
+import com.example.syntax_camping.ImageDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -91,8 +94,8 @@ class DeleteRepository {
                             mapOf("entrantReservationIds" to FieldValue.arrayRemove(reservationId)),
                             SetOptions.merge()
                         )
-                        .addOnCompleteListener {
-                            callback(true, csv)
+                        .addOnCompleteListener { task ->
+                            callback(task.isSuccessful, csv)
                         }
                 }
             }
@@ -404,4 +407,226 @@ class DeleteRepository {
                 onComplete(false)
             }
     }
+
+
+    //Function to reset the user's info to a default state (just ignore its name)
+    fun removeUser(devId: String, callback: (Result<Unit>) -> Unit) {
+        val database = Database()
+        val lotteryRepo = lotteryRepository()
+
+        val defaultEntrantData = EntrantData(
+            mutableListOf(),
+            mutableListOf(),
+            mutableListOf()
+        )
+        val defaultOwnerData = OwnerData(
+            mutableListOf(),
+            mutableListOf()
+        )
+
+        val defaultUser = User(
+            devId,
+            "Default",
+            "Default@gmail.com",
+            "1234567890",
+            defaultEntrantData,
+            defaultOwnerData
+        )
+
+        //Retrieve user data.
+        database.fetchUserDetails(devId) { result ->
+            result.onSuccess { currentUser ->
+
+                if (currentUser == null) {
+                    callback(Result.failure(Exception("User not found.")))
+                    return@onSuccess
+                }
+
+                //Retrieve all IDs associated with the user.
+                val entrantLotteryIds = currentUser.entrantData
+                    ?.lotteryEntryIds.orEmpty().distinct()
+                val reservationIds = currentUser.entrantData
+                    ?.reservationIds.orEmpty().distinct()
+                val ownerLotteryIds = currentUser.ownerData
+                    ?.lotteryIds.orEmpty().distinct()
+                val ownerCampsiteIds = currentUser.ownerData
+                    ?.campsiteIds.orEmpty().distinct()
+
+                //Keeps track of operations??
+                val operations = mutableListOf<Pair<String, ((Boolean) -> Unit) -> Unit>>()
+
+                //Internal function to reset the user to a "default" state.
+                fun resetUser() {
+                    database.updateUser(devId, defaultUser) { result ->
+                        result.onSuccess {
+                            Log.d("UserDebug", "User successfully reset.")
+                            callback(Result.success(Unit))
+                        }.onFailure { error ->
+                            Log.e("UserDebug", "Failed to reset user", error)
+                            callback(Result.failure(error))
+                        }
+                    }
+                }
+
+                //Called every time a cleanup operation is completed
+                //Continues to the next operation regardless of success
+                //DO NOT TRY TO LIMIT IT TO NO MISTAKES, SOMETHING KEEPS FAILING AND IDK WHAT IT IS
+                fun processOperations(index: Int = 0) {
+
+                    //Special case: All cleanup operations finished
+                    if (index >= operations.size) {
+                        resetUser()
+                        return
+                    }
+
+                    val (name, operation) = operations[index]
+                    Log.d("UserDebug", "Starting: $name")
+                    operation { success ->
+
+                        if (success) {
+                            Log.d("UserDebug", "Completed: $name")
+                        } else {
+                            Log.w("UserDebug", "Cleanup failed: $name")
+                        }
+
+                        processOperations(index + 1)
+                    }
+                }
+
+                //Delete entrant data!!
+                //Remove user from entered lotteries.
+                for (id in entrantLotteryIds) {
+                    operations.add("Entrant lottery: $id" to { done ->
+                        database.removeLotteryEntry(
+                            id,
+                            LotteryEntry(
+                                devId,
+                                com.google.firebase.Timestamp.now()
+                            )
+                        ) { success ->
+                            done(success)
+                        }
+                    })
+                }
+
+                //Delete or anonymize the user's reservations.
+                for (id in reservationIds) {
+                    operations.add("Reservation: $id" to { done ->
+                        deleteOrAnonymizeReservation(
+                            reservationId = id,
+                            reason = "User account deleted",
+                            cancelledBy = "admin",
+                            callback = { success, _ ->
+                                done(success)
+                            }
+                        )
+                    })
+                }
+
+                //Delete owner data!!
+                //Delete the lottery individually.
+                for (id in ownerLotteryIds) {
+                    operations.add("Owned lottery: $id" to { done ->
+
+                        lotteryRepo.getLottery(id) { lottery ->
+                            if (lottery != null) {
+                                deleteLottery(
+                                    lotteryId = id,
+                                    campsiteIds = lottery.campsites.map {
+                                        it.documentId
+                                    },
+                                    lotteryName = lottery.name,
+                                    onComplete = done
+                                )
+                            } else {
+                                done(false)
+                            }
+                        }
+                    })
+                }
+
+                //Delete owned campsites after owned lotteries.
+                for (id in ownerCampsiteIds) {
+                    operations.add("Owned campsite: $id" to { done ->
+                        val campsite = CampsiteRepository.getCampsites()
+                            .find { it.documentId == id }
+
+                        if (campsite != null) {
+                            deleteCampsite(
+                                campsite = campsite,
+                                reason = "User account deleted",
+                                onComplete = done
+                            )
+                        } else {
+                            Log.w("UserDebug", "Campsite not found: $id")
+                            done(false)
+                        }
+                    })
+                }
+
+                //Delete user's profile image.
+                operations.add("Profile images" to { done ->
+                    ImageDatabase.deleteImages("users", devId, done)
+                })
+
+                //Delete images belonging to owned campsites.
+                for (id in ownerCampsiteIds) {
+                    operations.add("Campsite images: $id" to { done ->
+                        ImageDatabase.deleteImages("campsites", id, done)
+                    })
+                }
+
+                //TODO: Replace the user with a "DeletedUser" in every conservation they're in.
+                //replaceConservationWithDeletedUser(devId)
+
+                //TODO: Delete notifications.
+                /*
+                operations.add("Notifications" to { done ->
+                    deleteUserNotifications(devId, done)
+                })
+                */
+
+                //Start processing all cleanup and reset the user.
+                processOperations()
+
+            }.onFailure { error ->
+                Log.e("UserDebug", "Failed to fetch user", error)
+                callback(Result.failure(error))
+            }
+        }
+    }
+
+
+    //WORK IN PROGRESS, JUST CURRENTLY DELETES THE COLLECTION IN "users", NOWHERE ELSE.
+    fun deleteUserNotifications(
+        devId: String,
+        onComplete: (Boolean) -> Unit
+    ) {
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("users")
+            .document(devId)
+            .collection("notifications")
+            .get()
+            .addOnSuccessListener { snapshot ->
+
+                val batch = db.batch()
+
+                for (document in snapshot.documents) {
+                    batch.delete(document.reference)
+                }
+
+                batch.commit()
+                    .addOnSuccessListener {
+                        onComplete(true)
+                    }
+                    .addOnFailureListener {
+                        onComplete(false)
+                    }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
 }

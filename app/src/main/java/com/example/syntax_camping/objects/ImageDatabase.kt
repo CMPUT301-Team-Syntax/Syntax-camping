@@ -6,6 +6,7 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.google.android.gms.tasks.Tasks
 
 //Author: Sorachat Chaichana
 //Date: 2026-11-26
@@ -85,8 +86,9 @@ object ImageDatabase {
         if (document.exists()) {
             when (image.category) {
                 "campsites" -> {
-                    documentRef.update("images", FieldValue.arrayRemove(image.downloadUrl))
-                        .await()
+                    documentRef.update("images",
+                        FieldValue.arrayRemove(image.downloadUrl)
+                    ).await()
                 }
 
                 "users" -> {
@@ -100,5 +102,36 @@ object ImageDatabase {
         //2. Delete the actual image file from Firebase storage.
         storageRef.child(image.storagePath).delete().await()
     }
+
+    fun deleteImages(
+        category: String,
+        parentId: String,
+        onComplete: (Boolean) -> Unit
+    ) {
+        if (category !in listOf("users", "campsites") ||
+            parentId.isBlank() ||
+            parentId.contains("/")
+            ) { onComplete(false)
+                return
+        }
+
+        val storageRef = FirebaseStorage
+            .getInstance("gs://syntaxcamping.firebasestorage.app")
+            .reference
+            .child("$category/$parentId")
+
+        //Delete all images associated to the parent ID.
+        storageRef.listAll()
+            .addOnSuccessListener { result ->
+
+                val deleteTasks = result.items.map { image -> image.delete() }
+
+                Tasks.whenAll(deleteTasks)
+                    .addOnSuccessListener { onComplete(true) }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
 
 }

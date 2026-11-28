@@ -16,7 +16,8 @@ fun CampsiteListScreenAdmin(
     onItemClick: (String) -> Unit,
     onViewLogsClick: ((String) -> Unit)? = null,
     onViewOwnerProfileClick: ((String) -> Unit)? = null,
-    onViewNotificationsClick: ((String) -> Unit)? = null
+    onViewNotificationsClick: ((String) -> Unit)? = null,
+    onDeleteClick: ((String) -> Unit)? = null
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -29,7 +30,8 @@ fun CampsiteListScreenAdmin(
                 onClick = { onItemClick(camp.documentId) },
                 onViewLogsClick = onViewLogsClick?.let { cb -> { cb(camp.documentId) } },
                 onViewOwnerProfileClick = onViewOwnerProfileClick?.let { cb -> { cb(camp.documentId) } },
-                onViewNotificationsClick = onViewNotificationsClick?.let { cb -> { cb(camp.documentId) } }
+                onViewNotificationsClick = onViewNotificationsClick?.let { cb -> { cb(camp.documentId) } },
+                onDeleteClick = onDeleteClick?.let { cb -> { cb(camp.documentId) } }
             )
         }
     }

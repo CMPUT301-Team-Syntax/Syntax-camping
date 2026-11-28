@@ -21,16 +21,21 @@ import androidx.compose.ui.window.PopupProperties
 @Composable
 fun DeleteProfilePopUp(
     onDismiss: () -> Unit,
-    onConfirmDelete: () -> Unit = onDismiss
+    onConfirmDelete: () -> Unit = onDismiss,
+    isDeleting: Boolean = false
 ) {
     Popup(
         alignment = Alignment.Center,
         offset = IntOffset(0, 0),
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (!isDeleting) {
+                onDismiss()
+            }
+        },
         properties = PopupProperties(
             focusable = true,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
+            dismissOnBackPress = !isDeleting,
+            dismissOnClickOutside = !isDeleting
         )
     ) {
         ElevatedCard(
@@ -43,18 +48,30 @@ fun DeleteProfilePopUp(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Are you sure you want to delete your account?")
+                Text(
+                    text = if (isDeleting)
+                        "Deleting your account..."
+                    else
+                        "Are you sure you want to delete your account?"
+                )
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Button(
                         onClick = onConfirmDelete,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        enabled = !isDeleting,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red
+                        )
                     ) {
-                        Text(text = "Yes")
+                        Text(text = if (isDeleting) "Deleting..." else "Yes")
                     }
-                    Button(onClick = onDismiss) {
+
+                    Button(
+                        onClick = onDismiss,
+                        enabled = !isDeleting
+                    ) {
                         Text(text = "Cancel")
                     }
                 }

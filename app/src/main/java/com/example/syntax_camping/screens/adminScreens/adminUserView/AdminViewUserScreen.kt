@@ -48,7 +48,17 @@ import com.example.syntax_camping.screens.tabs.TopBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.example.syntax_camping.dataClasses.DeleteRepository
+import com.example.syntax_camping.screens.userScreens.profileScreen.DeleteProfilePopUp
 /**
  * What this screen shows. Whoever loads the data fills this in.
  * Everything after `status` has a default, so older calls still compile.
@@ -81,6 +91,12 @@ fun AdminViewUserScreen(
     userId: String,
     user: AdminUserDetails? = null
 ) {
+    val deleteRepository = remember { DeleteRepository() }
+    val context = LocalContext.current
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color(0xFFF5F5F5),
@@ -110,6 +126,35 @@ fun AdminViewUserScreen(
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                //Delete button placement
+                // Dropdown menu for administrative actions.
+                if (user != null) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = Color.Red
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Delete User", color = Color.Red) },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             if (user == null) {
@@ -124,7 +169,45 @@ fun AdminViewUserScreen(
             } else {
                 UserContent(navController, userId, user)
             }
+
         }
+    }
+
+    //Delete confirmation screen
+    if (showDeleteDialog) {
+        DeleteProfilePopUp(
+            onDismiss = { showDeleteDialog = false },
+            isDeleting = isDeleting,
+            onConfirmDelete = {
+                if (!isDeleting) {
+                    isDeleting = true
+
+                    deleteRepository.removeUser(userId) { result ->
+
+                        isDeleting = false
+
+                        result.onSuccess {
+                            showDeleteDialog = false
+
+                            Toast.makeText(
+                                context,
+                                "User deleted successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            navController.popBackStack()
+
+                        }.onFailure { error ->
+                            Toast.makeText(
+                                context,
+                                error.message ?: "Failed to delete user",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+        )
     }
 }
 

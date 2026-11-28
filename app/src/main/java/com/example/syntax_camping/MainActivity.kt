@@ -78,18 +78,18 @@ class MainActivity : ComponentActivity() {
 
         // For now, I just have a test user.
         val testEntrantData = EntrantData(
-            mutableListOf("reservationId1234"),
-            mutableListOf("entrantlotteryid1"),
-            mutableListOf("maybeBook")
+            mutableListOf(),
+            mutableListOf(),
+            mutableListOf()
         )
         val testOwnerData = OwnerData(
-            mutableListOf("lotteryid1"),
-            mutableListOf("campsiteid2")
+            mutableListOf(),
+            mutableListOf()
         )
         val testUser = User(
             deviceId,
-            "ConversationTestUser",
-            "test@testdomain.ca",
+            "Default",
+            "Default@gmail.com",
             "1234567890",
             testEntrantData,
             testOwnerData
