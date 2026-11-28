@@ -28,11 +28,21 @@ import com.example.syntax_camping.dataClasses.NotificationLogScope
 import com.example.syntax_camping.screens.adminScreens.adminCampsiteList.CampsiteListScreenAdmin
 import com.example.syntax_camping.screens.tabs.AdminBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.example.syntax_camping.dataClasses.DeleteRepository
 
 @Composable
 fun AdminBrowseCampsites(navController: NavController) {
     // start from whatever is already cached, then refresh through the repo
     var campsites by remember { mutableStateOf<List<Campsite>>(CampsiteRepository.getCampsites().toList()) }
+    val deleteRepository = remember { DeleteRepository() }
+    val context = LocalContext.current
+    var selectedCampsite by remember { mutableStateOf<Campsite?>(null) }
+
+    var isDeleting by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         CampsiteRepository.refreshCampsiteCache { success ->
@@ -82,9 +92,80 @@ fun AdminBrowseCampsites(navController: NavController) {
                     onItemClick = { id -> navController.navigate("ownerCampsiteDetails/$id") },
                     onViewNotificationsClick = { id ->
                         navController.openAdminNotificationLogs(NotificationLogScope.CAMPSITE, id)
+                    },
+                    //Select the campsite to delete and open the confirmation dialog.
+                    onDeleteClick = { id ->
+                        selectedCampsite = campsites.find { it.documentId == id }
                     }
+
                 )
             }
         }
+    }
+
+    //Deletion confirmation dialog!!!
+    selectedCampsite?.let { campsite ->
+
+        AlertDialog(
+            onDismissRequest = {
+                if (!isDeleting) {
+                    selectedCampsite = null
+                }
+            },
+            title = { Text("Delete Campsite") },
+            text = {
+                Text(
+                    if (isDeleting) "Deleting campsite..."
+                    else "Are you sure you want to delete ${campsite.name}?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = {
+                        isDeleting = true
+
+                        deleteRepository.deleteCampsite(
+                            campsite = campsite,
+                            reason = "Campsite deleted by admin",
+                            onComplete = { success ->
+                                isDeleting = false
+
+                                if (success) {
+                                    campsites = campsites.filter {
+                                        it.documentId != campsite.documentId
+                                    }
+
+                                    selectedCampsite = null   //Reset after deletion
+
+                                    Toast.makeText(
+                                        context,
+                                        "Campsite deleted successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to delete campsite",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        )
+                    }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+
+            dismissButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = { selectedCampsite = null }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

@@ -52,7 +52,8 @@ fun CampsiteCardAdmin(
     onClick: () -> Unit,
     onViewLogsClick: (() -> Unit)? = null,
     onViewOwnerProfileClick: (() -> Unit)? = null,
-    onViewNotificationsClick: (() -> Unit)? = null
+    onViewNotificationsClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val lotteryId = campsite.lotteryId?.takeIf { it.isNotBlank() }
     var lottery by remember(lotteryId) { mutableStateOf<Lottery?>(null) }
@@ -204,6 +205,18 @@ fun CampsiteCardAdmin(
                             onViewNotificationsClick?.invoke()
                         }
                     )
+                    if (onDeleteClick != null) {  //Incase some campsite doesn't delete or sum
+                        DropdownMenuItem(
+                            text = {
+                                Text("Delete Campsite", color = Color.Red)
+                            },
+                            modifier = Modifier.testTag("adminDeleteCampsiteItem"),
+                            onClick = {
+                                menuExpanded = false
+                                onDeleteClick.invoke()
+                            }
+                        )
+                    }
                 }
             }
         }
