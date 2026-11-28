@@ -5,6 +5,7 @@ import {
 } from "firebase-admin/firestore";
 import {onDocumentCreated, onDocumentUpdated, onDocumentWritten} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
+import {sendPushToUser} from "./notifications";
 
 const db = getFirestore();
 const pageSize = 50;
@@ -93,13 +94,29 @@ export const logLotteryWaitlist = onDocumentCreated(
 
         const lottery = (await event.data.ref.parent.parent!.get()).data();
         if (!lottery) return;
-        await saveLotteryAudit(event.params.lotteryId, lottery, {
-            key: event.id,
-            title: drawn ? "You're on the waitlist" : "Joined waitlist",
-            message: drawn
-                ? `You weren't picked in ${lotteryName(lottery)}. You're on the waitlist and will be offered a spot if one opens up.`
-                : "You’ve been added to the waitlist. Check the lottery details for updates.",
-        }, event.data.createTime.toMillis(), event.data.get("notificationCampsiteId"));
+
+        const title = drawn ? "You're on the waitlist" : "Joined waitlist";
+        const message = drawn
+            ? `You weren't picked in ${lotteryName(lottery)}. You're on the waitlist and will be offered a spot if one opens up.`
+            : "You’ve been added to the waitlist. Check the lottery details for updates.";
+
+        await Promise.all([
+            saveLotteryAudit(event.params.lotteryId, lottery, {
+                key: event.id,
+                title,
+                message,
+            }, event.data.createTime.toMillis(), event.data.get("notificationCampsiteId")),
+            sendPushToUser(
+                event.params.userId,
+                title,
+                message,
+                {
+                    type: "lottery_waitlist",
+                    lotteryId: event.params.lotteryId,
+                },
+                event.id,
+            ),
+        ]);
     },
 );
 
@@ -114,11 +131,27 @@ export const logLotteryWinner = onDocumentWritten(
 
         const lottery = (await after.ref.parent.parent!.get()).data();
         if (!lottery) return;
-        await saveLotteryAudit(event.params.lotteryId, lottery, {
-            key: event.id,
-            title: "You won the lottery!",
-            message: `You were picked in ${lotteryName(lottery)}. Open the lottery to choose a campsite and your dates.`,
-        }, after.updateTime!.toMillis());
+
+        const title = "You won the lottery!";
+        const message = `You were picked in ${lotteryName(lottery)}. Open the lottery to choose a campsite and your dates.`;
+
+        await Promise.all([
+            saveLotteryAudit(event.params.lotteryId, lottery, {
+                key: event.id,
+                title,
+                message,
+            }, after.updateTime!.toMillis()),
+            sendPushToUser(
+                event.params.userId,
+                title,
+                message,
+                {
+                    type: "lottery_won",
+                    lotteryId: event.params.lotteryId,
+                },
+                event.id,
+            ),
+        ]);
     },
 );
 
@@ -144,7 +177,6 @@ export const logLotteryOutcome = onDocumentUpdated(
 );
 
 export const getAdminNotificationLogs = onCall(async (request) => {
-
     const {scope, id, cursor} = request.data ?? {};
     if ((scope !== "campsite" && scope !== "owner") || !validId(id)) {
         throw new HttpsError("invalid-argument", "Choose a campsite or owner.");
@@ -234,6 +266,65 @@ export const logReservationCancellation = onDocumentUpdated(
         const completed = Promise.all(writes.map((write) => write.catch((error) => {
             if (error.code !== 6) throw error; // gRPC ALREADY_EXISTS
         })));
-        await Promise.all([writer.close(), completed]);
+
+        const pushData = {
+            type: "reservation_cancelled",
+            reservationId: event.params.reservationId,
+            campsiteId,
+        };
+
+        await Promise.all([
+            writer.close(),
+            completed,
+            // Only push to the party who didn't initiate the cancellation
+            byOwner
+                ? sendPushToUser(guestId, guestEntry.title, guestEntry.message, pushData, event.id)
+                : sendPushToUser(ownerId, ownerEntry.title, ownerEntry.message, pushData, event.id),
+        ]);
+    },
+);
+
+export const onConversationMessageCreated = onDocumentCreated(
+    {document: "conversations/{conversationId}/messages/{messageId}", retry: true},
+    async (event) => {
+        const snap = event.data;
+        if (!snap) return;
+
+        const senderId = snap.get("sender");
+        const contents = String(snap.get("contents") ?? "").trim();
+        if (!validId(senderId) || !contents) return;
+
+        const convoSnap = await snap.ref.parent.parent!.get();
+        const participants = convoSnap.get("participants");
+        if (!Array.isArray(participants)) return;
+
+        const recipientIds = participants.filter(
+            (id): id is string => validId(id) && id !== senderId,
+        );
+        if (recipientIds.length === 0) return;
+
+        const senderDoc = await db.collection("users").doc(senderId).get();
+        const senderName = typeof senderDoc.get("displayName") === "string" &&
+            senderDoc.get("displayName").trim()
+            ? senderDoc.get("displayName").trim()
+            : "New message";
+
+        const preview = contents.length > 120 ? `${contents.slice(0, 117)}…` : contents;
+
+        await Promise.all(
+            recipientIds.map((recipientId) =>
+                sendPushToUser(
+                    recipientId,
+                    senderName,
+                    preview,
+                    {
+                        type: "chat_message",
+                        conversationId: event.params.conversationId,
+                        senderId,
+                    },
+                    event.id,
+                ),
+            ),
+        );
     },
 );

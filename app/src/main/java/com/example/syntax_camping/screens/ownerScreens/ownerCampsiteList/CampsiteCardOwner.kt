@@ -1,6 +1,5 @@
 package com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -20,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.syntax_camping.Campsite
 import com.example.syntax_camping.R
+import com.example.syntax_camping.dataClasses.DeleteRepository
 import com.example.syntax_camping.dataClasses.Lottery
 import com.example.syntax_camping.dataClasses.lotteryRepository
 import com.example.syntax_camping.screens.CampsiteThumbnail
@@ -47,6 +47,9 @@ fun CampsiteCardOwner(
     campsite: Campsite,
     onClick: () -> Unit,
     onUpdateClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null,
+    actorUserId: String = "",
+    onDeleteSuccess: (() -> Unit)? = null,
     onViewLotClick: ((String) -> Unit)? = null,
     onRemoveFromLotteryClick: (() -> Unit)? = null,
     onUpdateLotteryClick: (() -> Unit)? = null
@@ -54,6 +57,8 @@ fun CampsiteCardOwner(
     val lotteryId = campsite.lotteryId?.takeIf { it.isNotBlank() }
     var lottery by remember(lotteryId) { mutableStateOf<Lottery?>(null) }
     var lotteryLoaded by remember(lotteryId) { mutableStateOf(false) }
+    var showConfirmDeleteDialog by remember(campsite.documentId) { mutableStateOf(false) }
+    var isDeleting by remember(campsite.documentId) { mutableStateOf(false) }
 
     LaunchedEffect(lotteryId) {
         if (lotteryId != null) {
@@ -149,75 +154,119 @@ fun CampsiteCardOwner(
                 )
             }
 
-            if (onUpdateClick != null || onRemoveFromLotteryClick != null || onUpdateLotteryClick != null) {
-                Box {
-                    var menuExpanded by remember { mutableStateOf(false) }
+            Box {
+                var menuExpanded by remember { mutableStateOf(false) }
 
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier.testTag("connectedCampsiteMenu_${campsite.documentId}")
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.more_vertical),
-                            contentDescription = "Options Menu",
-                            tint = Color.Unspecified
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("connectedCampsiteMenu_${campsite.documentId}")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.more_vertical),
+                        contentDescription = "Options Menu",
+                        tint = Color.Unspecified
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    if (onUpdateClick != null) {
+                        DropdownMenuItem(
+                            text = { Text("Update Campsite") },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateClick()
+                            }
                         )
                     }
 
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        // Standard Owner Home options
-                        if (onUpdateClick != null) {
-                            DropdownMenuItem(
-                                text = { Text("Update Campsite") },
-                                onClick = {
-                                    menuExpanded = false
-                                    onUpdateClick()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete Campsite") },
-                                onClick = {
-                                    menuExpanded = false
-                                    onUpdateClick()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("View Lotteries") },
-                                onClick = {
-                                    menuExpanded = false
-                                    lotteryId?.let { onViewLotClick?.invoke(it) }
-                                }
-                            )
+                    DropdownMenuItem(
+                        text = { Text("Delete Campsite") },
+                        modifier = Modifier.testTag("deleteCampsiteMenuItem_${campsite.documentId}"),
+                        onClick = {
+                            menuExpanded = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                showConfirmDeleteDialog = true
+                            }
                         }
+                    )
 
-                        // Lottery Details Screen options (for connected campsites)
-                        if (onRemoveFromLotteryClick != null) {
-                            DropdownMenuItem(
-                                text = { Text("Remove Campsite from Lottery") },
-                                modifier = Modifier.testTag("removeCampsiteFromLotteryItem"),
-                                onClick = {
-                                    menuExpanded = false
-                                    onRemoveFromLotteryClick()
-                                }
-                            )
+                    DropdownMenuItem(
+                        text = { Text("View Lotteries") },
+                        onClick = {
+                            menuExpanded = false
+                            lotteryId?.let { onViewLotClick?.invoke(it) }
                         }
-                        if (onUpdateLotteryClick != null) {
-                            DropdownMenuItem(
-                                text = { Text("Update Lottery") },
-                                modifier = Modifier.testTag("updateLotteryMenuItem"),
-                                onClick = {
-                                    menuExpanded = false
-                                    onUpdateLotteryClick()
-                                }
-                            )
-                        }
+                    )
+
+                    if (onRemoveFromLotteryClick != null) {
+                        DropdownMenuItem(
+                            text = { Text("Remove Campsite from Lottery") },
+                            modifier = Modifier.testTag("removeCampsiteFromLotteryItem"),
+                            onClick = {
+                                menuExpanded = false
+                                onRemoveFromLotteryClick()
+                            }
+                        )
+                    }
+
+                    if (onUpdateLotteryClick != null) {
+                        DropdownMenuItem(
+                            text = { Text("Update Lottery") },
+                            modifier = Modifier.testTag("updateLotteryMenuItem"),
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateLotteryClick()
+                            }
+                        )
                     }
                 }
             }
         }
+    }
+
+    if (showConfirmDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isDeleting) showConfirmDeleteDialog = false
+            },
+            title = { Text("Delete Campsite") },
+            text = {
+                Text("Are you sure you want to delete \"${campsite.name}\"? Active reservations will be cancelled and empty lotteries will be removed.")
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = {
+                        isDeleting = true
+                        DeleteRepository().deleteCampsite(
+                            campsite = campsite,
+                            actorUserId = actorUserId
+                        ) { success ->
+                            isDeleting = false
+                            showConfirmDeleteDialog = false
+                            if (success) {
+                                onDeleteSuccess?.invoke()
+                            }
+                        }
+                    }
+                ) {
+                    Text(if (isDeleting) "Deleting..." else "Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isDeleting,
+                    onClick = { showConfirmDeleteDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

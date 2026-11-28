@@ -1,6 +1,7 @@
 package com.example.syntax_camping.screens.ownerScreens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import com.example.syntax_camping.screens.ownerScreens.lotteryScreens.validateAndCreateLottery
@@ -8,8 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import com.example.syntax_camping.screens.ownerScreens.LotteryEditScreen
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -55,8 +57,8 @@ fun LotteryEditScreen(
     var name by remember { mutableStateOf("") }
     // draw (the countdown ends here)
     var drawDay by remember { mutableStateOf("") }
-    var isJoinable by remember { mutableStateOf(true) }
-    var ownerId by remember {mutableStateOf("")}
+    var isJoinable by remember { mutableStateOf(false) }
+    var ownerId by remember { mutableStateOf("") }
     var drawMonth by remember { mutableStateOf("") }
     var drawYear by remember { mutableStateOf("") }
     var drawHour by remember { mutableStateOf("") }
@@ -72,7 +74,7 @@ fun LotteryEditScreen(
     val selectedCampsites = remember { mutableStateListOf<Campsite>() }
     var capacity by remember { mutableStateOf("") }
     var lotteryDates by remember { mutableStateOf<List<String>>(emptyList()) }
-    var dateManager by remember{mutableStateOf<DateManager?>(null) }
+    var dateManager by remember { mutableStateOf<DateManager?>(null) }
     val selectedDatesString = remember { mutableStateListOf<String>() }
     val selectedDatesAsDate = remember { mutableStateListOf<Date>() }
     val db = Database()
@@ -102,15 +104,12 @@ fun LotteryEditScreen(
 
             selectedCampsites.clear()
             selectedCampsites.addAll(editingLottery.campsites)
-
-
-        }  else {
-            isJoinable = false //Note just a default value, will be updated before is actually passes to what user sets
+        } else {
+            isJoinable = false
             selectedCampsites.clear()
             // a new lottery started from a campsite's page begins with that campsite already in the list
             preselectedCampsite?.let { selectedCampsites.add(it) }
         }
-
     }
 
     val myOwnedCampsites = filterOwnedCampsites(
@@ -140,7 +139,6 @@ fun LotteryEditScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // --- Draw date and time: the countdown ends here ---
@@ -304,6 +302,25 @@ fun LotteryEditScreen(
                 myOwnedCampsites = myOwnedCampsites,
                 selectedCampsites = selectedCampsites
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isJoinable = !isJoinable }
+                    .padding(vertical = 4.dp)
+                    .testTag("isJoinableRow"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = isJoinable,
+                    onCheckedChange = { isJoinable = it },
+                    modifier = Modifier.testTag("isJoinableCheckbox")
+                )
+                Text(
+                    text = "Allow other campsite owners to add their campsites to this lottery",
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
 
             if (errorMessage.isNotEmpty()) {
                 Text(

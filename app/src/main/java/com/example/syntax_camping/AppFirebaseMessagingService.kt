@@ -24,12 +24,15 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        if (isOptedOut(applicationContext)) return
+
         val deviceId = Database().getDeviceId(applicationContext)
         saveFcmToken(deviceId, token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+        if (isOptedOut(applicationContext)) return
 
         val title = remoteMessage.notification?.title
             ?: remoteMessage.data["title"]
@@ -40,7 +43,9 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
         val deviceId = Database().getDeviceId(applicationContext)
         if (deviceId.isNotBlank()) {
-            val id = remoteMessage.messageId ?: System.currentTimeMillis().toString()
+            val id = remoteMessage.data["notificationId"]
+                ?: remoteMessage.messageId
+                ?: System.currentTimeMillis().toString()
             NotificationInbox(applicationContext, deviceId)
                 .showNotification(NotificationData.Message(id, title, body))
         }
@@ -84,6 +89,12 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         const val CHANNEL_ID = "default_notifications"
+        private const val PREFS_NAME = "notification_prefs"
+        private const val KEY_OPTED_OUT = "notifications_opted_out"
+
+        fun isOptedOut(context: Context): Boolean =
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_OPTED_OUT, false)
 
         fun createNotificationChannel(context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -99,7 +110,14 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
             }
         }
 
-        fun syncCurrentToken(context: Context, deviceId: String) {
+        fun syncCurrentToken(context: Context, deviceId: String, forceOptIn: Boolean = false) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            if (forceOptIn) {
+                prefs.edit().putBoolean(KEY_OPTED_OUT, false).apply()
+            } else if (prefs.getBoolean(KEY_OPTED_OUT, false)) {
+                return
+            }
+
             FirebaseMessaging.getInstance().token
                 .addOnSuccessListener { token ->
                     Log.d("FCM", "Fetched FCM token: $token")
@@ -107,6 +125,28 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
                 }
                 .addOnFailureListener { e ->
                     Log.e("FCM", "Failed to get FCM token", e)
+                }
+        }
+
+        fun disableNotificationsForDevice(context: Context, deviceId: String) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_OPTED_OUT, true).apply()
+
+            if (deviceId.isBlank()) return
+
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(deviceId)
+                        .update("fcmTokens", FieldValue.arrayRemove(token))
+                        .addOnSuccessListener {
+                            Log.d("FCM", "Removed FCM token from users/$deviceId")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("FCM", "Failed to remove FCM token", e)
+                        }
+                    FirebaseMessaging.getInstance().deleteToken()
                 }
         }
 
