@@ -193,9 +193,7 @@ class Campsite(documentId: String, name: String, location: String, description: 
         //will use reservvation id to make sure the reservation does not already exist
         _reservations.add(reservation)
     }
-    fun removeResarvation(reservation:Reservation){
-        //Todo Waitning on reservation id
-    }
+
     fun updateDateManager(newDateManager: DateManager){
         _dateManager = newDateManager
     }

@@ -1,5 +1,14 @@
 package com.example.syntax_camping.UserScreens
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -20,15 +30,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.example.syntax_camping.AppFirebaseMessagingService
 import com.example.syntax_camping.R
 import com.example.syntax_camping.UserViewModel
+import com.example.syntax_camping.globalDeviceId
 import com.example.syntax_camping.screens.tabs.AdminBottomBar
 import com.example.syntax_camping.screens.tabs.CustomBottomBar
 import com.example.syntax_camping.screens.tabs.TopBar
+import com.google.firebase.firestore.FirebaseFirestore
 
 private val SettingsPink = Color(0xFFE2AEAF)
 private val LinkBlue = Color(0xFF6093B5)
+
+private fun hasSystemNotificationPermission(context: Context): Boolean {
+    val runtimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+    } else {
+        true
+    }
+    return runtimeGranted && NotificationManagerCompat.from(context).areNotificationsEnabled()
+}
+
+private fun openAppNotificationSettings(context: Context) {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        }
+    } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+        }
+    }
+    context.startActivity(intent)
+}
 
 @Composable
 fun SettingsScreen(
@@ -36,9 +77,57 @@ fun SettingsScreen(
     userViewModel: UserViewModel,
     adminMode: Boolean = false
 ) {
-    var notificationsEnabled by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val deviceId = userViewModel.deviceId.ifBlank { globalDeviceId }
+
+    var notificationsEnabled by remember {
+        mutableStateOf(hasSystemNotificationPermission(context))
+    }
     var rememberDevice by rememberSaveable { mutableStateOf(true) }
     var showAdminDialog by remember { mutableStateOf(false) }
+
+    // Sync initial state from Firestore (in case user previously turned off notifications in-app)
+    LaunchedEffect(deviceId) {
+        if (deviceId.isNotBlank()) {
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(deviceId)
+                .get()
+                .addOnSuccessListener { doc ->
+                    val tokens = doc.get("fcmTokens") as? List<*>
+                    val hasToken = !tokens.isNullOrEmpty()
+                    notificationsEnabled = hasSystemNotificationPermission(context) && hasToken
+                }
+        }
+    }
+
+    // Re-check OS notification permission when returning from Android system settings
+    DisposableEffect(lifecycleOwner, deviceId) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (!hasSystemNotificationPermission(context)) {
+                    notificationsEnabled = false
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Android 13+ runtime permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            notificationsEnabled = true
+            AppFirebaseMessagingService.createNotificationChannel(context)
+            AppFirebaseMessagingService.syncCurrentToken(context, deviceId, forceOptIn = true)
+        } else {
+            notificationsEnabled = false
+            openAppNotificationSettings(context)
+        }
+    }
 
     SettingsPagesLayout(navController, adminMode = adminMode) { innerPadding ->
         Column(
@@ -48,8 +137,33 @@ fun SettingsScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                    .toggleable(value = notificationsEnabled, role = Role.Switch,
-                        onValueChange = { notificationsEnabled = it }),
+                    .toggleable(
+                        value = notificationsEnabled,
+                        role = Role.Switch,
+                        onValueChange = { enabled ->
+                            if (enabled) {
+                                if (hasSystemNotificationPermission(context)) {
+                                    notificationsEnabled = true
+                                    AppFirebaseMessagingService.createNotificationChannel(context)
+                                    AppFirebaseMessagingService.syncCurrentToken(
+                                        context,
+                                        deviceId,
+                                        forceOptIn = true
+                                    )
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    openAppNotificationSettings(context)
+                                }
+                            } else {
+                                notificationsEnabled = false
+                                AppFirebaseMessagingService.disableNotificationsForDevice(
+                                    context,
+                                    deviceId
+                                )
+                            }
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Enable notifications", modifier = Modifier.weight(1f),

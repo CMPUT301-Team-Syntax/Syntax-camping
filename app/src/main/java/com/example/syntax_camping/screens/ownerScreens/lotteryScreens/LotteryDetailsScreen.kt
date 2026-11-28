@@ -31,7 +31,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
-
+import com.example.syntax_camping.screens.filterOwnedCampsites
+import com.example.syntax_camping.screens.ownerScreens.ownerCampsiteList.CampsiteSelectorDropdown
 @Composable
 fun LotteryDetailsScreen(
     navController: NavController,
@@ -89,7 +90,28 @@ fun LotteryDetailsScreen(
     }
 
     val ownedIds = userViewModel.currentUser?.ownerData?.campsiteIds ?: emptyList()
-    val isOwner = participating.any { it.documentId in ownedIds }
+    val isOwner = if (current?.ownerId?.isNotBlank() == true) {
+        current.ownerId == userViewModel.deviceId
+    } else {
+        participating.any { it.documentId in ownedIds }
+    }
+    val myOwnedCampsites = remember(participating, userViewModel.currentUser?.ownerData, refreshTrigger) {
+        filterOwnedCampsites(
+            CampsiteRepository.getCampsites(),
+            userViewModel.currentUser?.ownerData
+        )
+    }
+
+// Exclude campsites already in this lottery or already attached to another lottery
+    val availableCampsitesToAdd = remember(myOwnedCampsites, participating, current) {
+        val existingIds = participating.map { it.documentId }.toSet()
+        myOwnedCampsites.filter { it.documentId !in existingIds && it.lotteryId.isNullOrBlank() }
+    }
+
+    var showAddCampsitesDropdown by remember { mutableStateOf(false) }
+    val selectedCampsitesToAdd = remember { mutableStateListOf<Campsite>() }
+    var addCampsitesStatusMessage by remember { mutableStateOf("") }
+    var isAddingCampsites by remember { mutableStateOf(false) }
 
     // CHANGED: counts are loaded here and reloaded whenever refreshTrigger changes
     var entryCount by remember { mutableIntStateOf(0) }
@@ -141,14 +163,11 @@ fun LotteryDetailsScreen(
         CampsiteRepository.getCampsites().find { it.documentId == lastCamp.documentId }?.updateLotteryId("")
         db.updateCampsiteLotteryId(lastCamp.documentId, "")
 
-        firestore.collection("lotteries")
-            .document(activeLottery.lotteryId)
-            .delete()
-            .addOnCompleteListener {
-                CampsiteRepository.refreshCampsiteCache {
-                    navController.popBackStack()
-                }
+        activeLottery.delete(userViewModel.deviceId) {
+            CampsiteRepository.refreshCampsiteCache {
+                navController.popBackStack()
             }
+        }
     }
 
     Scaffold(
@@ -298,6 +317,110 @@ fun LotteryDetailsScreen(
                         CampsiteCard(camp) {
                             navController.navigate("campsiteDetails/${camp.documentId}")
                         }
+                    }
+                }
+                if (
+                    current.isJoinable &&
+                    current.status == "initialAccepting" &&
+                    myOwnedCampsites.isNotEmpty()
+                ) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            showAddCampsitesDropdown = !showAddCampsitesDropdown
+                            if (!showAddCampsitesDropdown) {
+                                selectedCampsitesToAdd.clear()
+                            }
+                            addCampsitesStatusMessage = ""
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .testTag("toggleAddCampsitesToLotteryButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E6B68))
+                    ) {
+                        Text(
+                            text = if (showAddCampsitesDropdown) "Cancel Adding Campsites" else "Add My Campsites to Lottery",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (showAddCampsitesDropdown) {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (availableCampsitesToAdd.isEmpty()) {
+                            Text(
+                                text = "You have no available campsites to add to this lottery.",
+                                fontSize = 14.sp,
+                                color = Color.DarkGray,
+                                modifier = Modifier.padding(horizontal = 24.dp)
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                CampsiteSelectorDropdown(
+                                    myOwnedCampsites = availableCampsitesToAdd,
+                                    selectedCampsites = selectedCampsitesToAdd
+                                )
+
+                                Button(
+                                    onClick = {
+                                        if (selectedCampsitesToAdd.isEmpty()) {
+                                            addCampsitesStatusMessage = "Please select at least one campsite."
+                                            return@Button
+                                        }
+
+                                        isAddingCampsites = true
+                                        addCampsitesStatusMessage = ""
+
+                                        current.addCampsites(
+                                            newCampsites = selectedCampsitesToAdd.toList(),
+                                            requesterUserId = userViewModel.deviceId
+                                        ) { success ->
+                                            isAddingCampsites = false
+                                            if (success) {
+                                                selectedCampsitesToAdd.clear()
+                                                showAddCampsitesDropdown = false
+                                                addCampsitesStatusMessage = "Campsites added to lottery!"
+                                                refreshTrigger++
+                                            } else {
+                                                addCampsitesStatusMessage = "Failed to add campsites. Please try again."
+                                            }
+                                        }
+                                    },
+                                    enabled = !isAddingCampsites,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("confirmAddCampsitesToLotteryButton"),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                                ) {
+                                    Text(
+                                        text = if (isAddingCampsites) "Adding..." else "Confirm Selected Campsites",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (addCampsitesStatusMessage.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = addCampsitesStatusMessage,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (addCampsitesStatusMessage.startsWith("Campsites added")) Color(0xFF2E7D32) else Color(0xFFA13F3F),
+                            modifier = Modifier
+                                .padding(horizontal = 24.dp)
+                                .testTag("addCampsitesStatusText")
+                        )
                     }
                 }
 

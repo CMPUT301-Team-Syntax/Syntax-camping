@@ -455,6 +455,97 @@ class lotteryRepository {
                 onComplete(false)
             }
     }
+    fun deleteLotteryAndNotify(
+        lotteryId: String,
+        campsiteIds: List<String>,
+        lotteryName: String = "Lottery",
+        actorUserId: String = "",
+        onComplete: (Boolean) -> Unit
+    ) {
+        if (lotteryId.isBlank()) {
+            onComplete(false)
+            return
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+        val lotteryRef = firestore.collection("lotteries").document(lotteryId)
+        val displayName = lotteryName.ifBlank { "Lottery" }
+        val userIds = linkedSetOf<String>()
+        val subcollections = listOf("entries", "waitlist", "winners")
+        var completedSubcollections = 0
+
+        fun clearCampsitesAndDeleteLottery() {
+            val batch = firestore.batch()
+            campsiteIds.filter { it.isNotBlank() }.forEach { campId ->
+                batch.update(
+                    firestore.collection("campsites").document(campId),
+                    "lotteryId",
+                    ""
+                )
+            }
+            batch.delete(lotteryRef)
+
+            batch.commit()
+                .addOnSuccessListener { onComplete(true) }
+                .addOnFailureListener {
+                    // Fallback in case one of the campsite docs doesn't exist
+                    lotteryRef.delete()
+                        .addOnSuccessListener { onComplete(true) }
+                        .addOnFailureListener { onComplete(false) }
+                }
+        }
+
+        fun writeNotificationsThenDelete() {
+            val targets = userIds.filter { it.isNotBlank() && it != actorUserId }
+            if (targets.isEmpty()) {
+                clearCampsitesAndDeleteLottery()
+                return
+            }
+
+            val notifBatch = firestore.batch()
+            val nowMillis = System.currentTimeMillis()
+            targets.forEach { targetUserId ->
+                val notifRef = firestore
+                    .collection("users")
+                    .document(targetUserId)
+                    .collection("notifications")
+                    .document("lottery_deleted_$lotteryId")
+
+                notifBatch.set(
+                    notifRef,
+                    mapOf(
+                        "type" to "lottery_deleted",
+                        "title" to "Lottery Cancelled",
+                        "body" to "\"$displayName\" was cancelled and removed by the owner.",
+                        "lotteryId" to lotteryId,
+                        "read" to false,
+                        "createdAt" to nowMillis
+                    )
+                )
+            }
+
+            notifBatch.commit()
+                .addOnCompleteListener { clearCampsitesAndDeleteLottery() }
+        }
+
+        subcollections.forEach { sub ->
+            lotteryRef.collection(sub).get()
+                .addOnSuccessListener { snap ->
+                    for (doc in snap.documents) {
+                        val uid = doc.getString("userId")
+                            ?: doc.getString("userID")
+                            ?: doc.id
+                        if (uid.isNotBlank()) userIds.add(uid)
+                    }
+                }
+                .addOnCompleteListener {
+                    completedSubcollections++
+                    if (completedSubcollections == subcollections.size) {
+                        writeNotificationsThenDelete()
+                    }
+                }
+        }
+    }
 }
 
 

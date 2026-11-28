@@ -52,6 +52,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.compose.foundation.layout)
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0")) // keep your existing BoM line
+    implementation("com.google.firebase:firebase-messaging")
     implementation(libs.material3)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.10.1")

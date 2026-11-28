@@ -103,6 +103,28 @@ class Lottery(endTimeLottery: Long, endTimeBooking:Long, numWinners: Int, campsi
         db.removeLotteryEntry( lotteryId, entry){ success ->
             onResult(success)}
     }
+    fun delete(userId: String, onResult: (Boolean) -> Unit = {}) {
+        if (lotteryId.isBlank()) {
+            onResult(false)
+            return
+        }
+        val ids = campsites.map { it.documentId }
+
+        repository.deleteLotteryAndNotify(
+            lotteryId = lotteryId,
+            campsiteIds = ids,
+            lotteryName = name,
+            actorUserId = userId
+        ) { success ->
+            if (success) {
+                for (campsite in campsites) {
+                    campsite.updateLotteryId("")
+                }
+                campsites.clear()
+            }
+            onResult(success)
+        }
+    }
     fun addCampsites(
         newCampsites: List<Campsite>,
         requesterUserId: String = "",

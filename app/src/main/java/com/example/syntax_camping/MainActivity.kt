@@ -1,5 +1,8 @@
 package com.example.syntax_camping
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -9,28 +12,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.syntax_camping.dataClasses.EntrantData
 import com.example.syntax_camping.dataClasses.OwnerData
 import com.example.syntax_camping.dataClasses.User
-import com.example.syntax_camping.screens.tabs.LocalHasUnreadNotifications
 import com.example.syntax_camping.screens.NotificationBannerHost
 import com.example.syntax_camping.screens.SyntaxCamping
+import com.example.syntax_camping.screens.tabs.LocalHasUnreadNotifications
 import com.example.syntax_camping.ui.theme.SyntaxcampingTheme
-import kotlin.collections.emptyList
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.util.CoilUtils.result
-import com.example.syntax_camping.dataClasses.Conversation
-
 
 var globalDeviceId = ""
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         /**Ask user for name and account type, and then initialize User val with it.
          *we'll have to connect the register screen to this.
@@ -47,42 +45,66 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
         // get deviceId from android
-
         val db = Database()
         val deviceId = db.getDeviceId(this) // "907ab032fed2e813"
         globalDeviceId = deviceId
 
-        Log.d("devId", deviceId);
+        Log.d("devId", deviceId)
+
+        // Create notification channel & ask for permission on Android 13+
+        AppFirebaseMessagingService.createNotificationChannel(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
 
         ConversationRepository.refreshConversationCache(
             deviceId,
             onError = {
-
-                Log.e("ConversationRepository","Couldn't fetch conversations for user ${deviceId}!")
-
+                Log.e("ConversationRepository", "Couldn't fetch conversations for user ${deviceId}!")
             },
             onSuccess = {
-
                 Log.d("ConversationRepository", "Loaded conversations!")
-
-            })
+            }
+        )
 
         // For now, I just have a test user.
-        val testEntrantData = EntrantData(mutableListOf("reservationId1234"), mutableListOf("entrantlotteryid1"),mutableListOf("maybeBook"))
-        val testOwnerData = OwnerData(mutableListOf("lotteryid1"), mutableListOf("campsiteid2"))
-        val testUser = User(deviceId, "ConversationTestUser", "test@testdomain.ca", "1234567890", testEntrantData, testOwnerData)
+        val testEntrantData = EntrantData(
+            mutableListOf("reservationId1234"),
+            mutableListOf("entrantlotteryid1"),
+            mutableListOf("maybeBook")
+        )
+        val testOwnerData = OwnerData(
+            mutableListOf("lotteryid1"),
+            mutableListOf("campsiteid2")
+        )
+        val testUser = User(
+            deviceId,
+            "ConversationTestUser",
+            "test@testdomain.ca",
+            "1234567890",
+            testEntrantData,
+            testOwnerData
+        )
 
-        // See if user already has account (by deviceId), then create it if not.
+        // See if user already has account (by deviceId), then create it if not, and sync FCM token
         db.userExistsByDeviceId(deviceId) { exists ->
             if (exists) {
                 println("Welcome back, User!")
-            }
-            else {
+                AppFirebaseMessagingService.syncCurrentToken(this, deviceId)
+            } else {
                 db.createNewUser(deviceId, testUser) { result ->
                     if (result.isSuccess) {
                         println("User created!")
+                        AppFirebaseMessagingService.syncCurrentToken(this, deviceId)
                     } else {
                         println("Error: ${result.exceptionOrNull()?.message}")
                     }
@@ -90,7 +112,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             val userViewModel: UserViewModel = viewModel()
