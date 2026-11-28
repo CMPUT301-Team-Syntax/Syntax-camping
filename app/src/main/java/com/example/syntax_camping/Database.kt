@@ -419,7 +419,8 @@ class Database {
                         .update(
                             mapOf(
                                 "entrantReservationIds" to userDetails.entrantData.reservationIds,
-                                "entrantLotteryEntryIds" to userDetails.entrantData.lotteryEntryIds
+                                "entrantLotteryEntryIds" to userDetails.entrantData.lotteryEntryIds,
+                                "entrantPendingEntryIds" to entrantData.pendingEntryIds
                             )
                         )
                         .addOnSuccessListener {
@@ -640,69 +641,6 @@ class Database {
                 Log.d("UserDebug", "Error refreshing user cache: ${error.message}")
                 callback(false)
             }
-    }
-
-    //Delete user
-    fun removeUser(devId: String, callback: (Result<Unit>) -> Unit) {
-        val defaultEntrantData = EntrantData(mutableListOf<String>(),
-            mutableListOf<String>(),
-            mutableListOf<String>())
-        val defaultOwnerData = OwnerData(mutableListOf<String>(),
-            mutableListOf<String>())
-        val defaultUser = User(devId,
-            "Default",
-            "Default@gmail.com",
-            "1234567890",
-            defaultEntrantData,
-            defaultOwnerData)
-
-        //1. Get user data
-        var currentUser by mutableStateOf<User?>(null)
-        fetchUserDetails(devId) {result ->
-            result.onSuccess { user ->
-                currentUser = user
-            }.onFailure { error ->
-                Log.e("UserDebug", "Failed to fetch user", error)
-            }
-        }
-
-        //2. Delete entrant & owner data
-        currentUser?.entrantData?.let { entrantData ->
-
-            val entrantLotteryList = entrantData.lotteryEntryIds
-            val entrantReservationList = entrantData.reservationIds
-
-            for (id in entrantLotteryList) {
-                //removeUserFromLottery(id)
-            }
-            for (id in entrantReservationList) {
-                //removeReservation(id)
-            }
-        }
-
-        currentUser?.ownerData?.let { ownerData ->
-            val lotteryList = ownerData.lotteryIds
-            val campsiteList = ownerData.campsiteIds
-
-            for (id in lotteryList) {
-                //deleteLottery(id)
-            }
-            for (id in campsiteList) {
-                //deleteCampsite(id)
-            }
-        }
-
-        //3. Replace the user with a "DeletedUser" in every conservation they're in.
-        //replaceConservationWithDeletedUser(devId)
-
-        //4. Reset the user to a  "default" state.
-        updateUser(devId, defaultUser) { result ->
-            result.onSuccess {
-                callback(Result.success(Unit))
-            }.onFailure { error ->
-                Log.e("UserDebug", "Failed to reset user", error)
-            }
-        }
     }
 
     fun createNewCampsite(campsite: Campsite) {
